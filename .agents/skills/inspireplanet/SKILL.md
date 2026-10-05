@@ -32,7 +32,7 @@ covers/recap-cover.png
 - `inspireplanet-recap`：从会议转写生成只包含纪要正文的 `recap.md`；
 - `inspireplanet-cards`：从会议转写生成 `quote-cards.json`；
 - `inspireplanet-promo`：生成公众号摘要、标题和封面副标题候选、视频号文案，保存到 `promo.md`；
-- `inspireplanet-xiaohongshu`：为一位分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xiaohongshu.md`；
+- `inspireplanet-xhs`：为一位分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xiaohongshu.md`；
 - `inspireplanet-cover`：生成会议纪要封面，并把最终封面配置写回 `promo.md`。
 
 ## 路由
@@ -41,7 +41,7 @@ covers/recap-cover.png
 - “整理会议纪要” → `inspireplanet-recap`；
 - “金句 / 卡片 / JSON” → `inspireplanet-cards`；
 - “标题 / 摘要 / 视频号” → `inspireplanet-promo`；
-- “小红书 / 图文 / 图集” → `inspireplanet-xiaohongshu`；
+- “小红书 / 图文 / 图集” → `inspireplanet-xhs`；
 - “会议封面图” → `inspireplanet-cover`；
 - “完整发布包” → transcript（缺失时）→ recap → cards → xiaohongshu → promo → cover。
 

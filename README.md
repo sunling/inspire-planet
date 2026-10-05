@@ -47,7 +47,7 @@ scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
 - “整理会议纪要” → `inspireplanet-recap`
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成公众号文案、视频号文案” → `inspireplanet-promo`
-- “生成小红书图文” → `inspireplanet-xiaohongshu`
+- “生成小红书图文” → `inspireplanet-xhs`
 - “生成会议封面” → `inspireplanet-cover`
 
 生成内容与真实发布分开；只有明确要求发布时才操作外部平台。

@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-promo
-description: 为启发星球某期会议纪要生成公众号发布材料（摘要、标题建议、公众号封面副标题候选、视频号文案）与封面配置，保存到独立的 `promo.md`。小红书材料由 `inspireplanet-xiaohongshu` 负责。
+description: 为启发星球某期会议纪要生成公众号发布材料（摘要、标题建议、公众号封面副标题候选、视频号文案）与封面配置，保存到独立的 `promo.md`。小红书材料由 `inspireplanet-xhs` 负责。
 ---
 
 # Inspire Planet Promo
@@ -9,7 +9,7 @@ description: 为启发星球某期会议纪要生成公众号发布材料（摘�
 
 为某一期启发星球会议纪要准备**公众号**发布辅助材料，但不把编辑说明和社交文案混入会议纪要正文。
 
-小红书图文材料由 `inspireplanet-xiaohongshu` 生成到 `xiaohongshu.md`，本 Skill 不重复产出。
+小红书图文材料由 `inspireplanet-xhs` 生成到 `xiaohongshu.md`，本 Skill 不重复产出。
 
 ## 路径
 

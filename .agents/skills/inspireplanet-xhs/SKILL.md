@@ -1,5 +1,5 @@
 ---
-name: inspireplanet-xiaohongshu
+name: inspireplanet-xhs
 description: 为启发星球某一期的一位分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xiaohongshu.md`；一期可含多篇，每篇一节。
 ---
 
