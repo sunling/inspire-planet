@@ -14,7 +14,10 @@ description: 为启发星球某一期/某位分享者生成视频号材料（标
 ## 工作流程
 
 1. **下载逐字稿**：本期目录还没有 `transcript.txt` 时，先走 `inspireplanet-transcript`；
-2. **下载本期云录制**（人工）：`tmeet record address --meeting-record-id <id>` 只返回一个**查看地址**（网页，不是直链），需要人工下载一次 mp4 到本机；
+2. **下载本期云录制**（人工）：`tmeet record address --meeting-record-id <id>` 只返回**查看地址**（网页，页面里没有直链，需人工在腾讯会议里下载一次 mp4）。
+   官方接口 `GET /v1/addresses/{record_file_id}` 本可返回 `download_address`(mp4) 和 `audio_address`(m4a)，但 tmeet 走的是 `/v1/mcp/addresses`（只回 `view_address`），且其 OAuth token 加密保管、读不出来 —— **自动化下载暂不可行**，别在这上面反复试；
+   下载整场录制（约 1.3GB/80 分钟）只为取 60–90 秒，剪完即可删除源文件；
+   更省事的替代：请分享者自己录一段 60–90 秒（对视频号反而更真实）；
 3. **生成 `shipinhao.md`**：标题、文案、封面文字、视频脚本（选哪一段、时间轴、字幕、卡片文字）；
 4. **渲染出片**（人工触发）：用 `ffmpeg` 合成竖版视频。
 
