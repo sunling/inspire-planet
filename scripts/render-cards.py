@@ -201,7 +201,7 @@ def parse_md(text):
                 if pages:
                     groups.append((title, pages))
                 pages = []
-            in_pages = s.startswith("### 图集脚本")
+            in_pages = "脚本" in s
             continue
         if s.startswith("## "):
             if in_pages:
