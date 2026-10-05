@@ -131,6 +131,23 @@ def to_transcript(paragraphs):
     return "\n\n".join(blocks) + "\n"
 
 
+def ensure_dirs(path):
+    """确保目标目录存在；返回本次新建的目录（含年份目录），由浅到深。
+
+    events/{year} 不存在时，会在写入前先创建年份目录。
+    """
+    p = os.path.abspath(path)
+    missing, cur = [], p
+    while cur and not os.path.isdir(cur):
+        missing.append(cur)
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            break
+        cur = parent
+    os.makedirs(p, exist_ok=True)
+    return list(reversed(missing))
+
+
 def main():
     ap = argparse.ArgumentParser(description="拉取腾讯会议逐字稿到 meeting/transcript.txt")
     src = ap.add_mutually_exclusive_group(required=True)
@@ -171,7 +188,9 @@ def main():
         sys.exit("所有转写文件都取不到内容")
 
     text = to_transcript(paragraphs)
-    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    outdir = os.path.dirname(os.path.abspath(out))
+    for d in ensure_dirs(outdir):
+        print(f"已创建目录 {d}")
     with open(out, "w") as f:
         f.write(text)
     n = text.count("\n\n") + 1

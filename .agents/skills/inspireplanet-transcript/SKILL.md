@@ -32,7 +32,7 @@ meeting/transcript.txt
 ## 工作流程
 
 1. 读 `AGENTS.md`，确认本期日期与期数；
-2. event 目录不存在时，按 `events/{year}/{YYYYMMDD}-epXX/` 建立，只创建真实需要的文件；
+2. `events/{year}` 或 event 目录不存在时，先创建年份目录，再建立 event 目录 `events/{year}/{YYYYMMDD}-epXX/`；只创建真实需要的文件；
 3. 运行：
 
    ```bash
@@ -58,6 +58,7 @@ meeting/transcript.txt
 - 转写来自腾讯会议，可能含识别错误；原始转写不随编辑稿润色，纠错须有依据并注明更正；
 - 不从个人日记或个人分享稿补造会议事实；
 - 不自动覆盖已有 `transcript.txt`；
+- 年份不存在时先创建 `events/{year}`，不把新一年的内容写进旧年份目录；
 - 公开归档前检查参与者授权范围与可识别隐私；
 - 不自动对外发布或发送消息。
 
