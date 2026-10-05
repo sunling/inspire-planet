@@ -21,7 +21,7 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-cards.json     金句卡片数据
   promo.md             公众号发布材料与封面配置
   xiaohongshu.md       小红书图文材料（一期可多篇，每篇一节）
-  shipinhao.md         视频号材料（文案 + 视频脚本/字幕稿，一期可多条）
+  shipinhao.md         视频号图文材料（标题 + 正文 + 图片脚本，一期可多条）
   covers/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿、渲染卡片图等辅助脚本

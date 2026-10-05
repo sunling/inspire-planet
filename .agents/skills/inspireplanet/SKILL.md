@@ -34,7 +34,7 @@ covers/recap-cover.png
 - `inspireplanet-cards`：从会议转写生成 `quote-cards.json`；
 - `inspireplanet-promo`：生成公众号摘要、标题和封面副标题候选，保存到 `promo.md`；
 - `inspireplanet-xhs`：为一位分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xiaohongshu.md`；
-- `inspireplanet-sph`：为一位分享者生成视频号材料（标题、文案、封面文字、视频脚本与字幕稿），保存到 `shipinhao.md`；
+- `inspireplanet-sph`：为一位分享者生成视频号图文材料（标题、正文、图片脚本、话题词），保存到 `shipinhao.md`；
 - `inspireplanet-cover`：生成会议纪要封面，并把最终封面配置写回 `promo.md`。
 
 ## 路由
@@ -56,7 +56,7 @@ covers/recap-cover.png
 - `recap.md` 只保存会议纪要正文；
 - `promo.md` 只保存公众号发布材料与封面配置；
 - `xiaohongshu.md` 只保存小红书图文材料，一期可多篇、每篇一节；渲染成图和发布都是人工触发，不并入自动链；
-- `shipinhao.md` 只保存视频号材料（文案 + 视频脚本/字幕稿），一期可多条；出片和发布都是人工触发；
+- `shipinhao.md` 只保存视频号图文材料（标题 + 正文 + 图片脚本），一期可多条；出图和发布都是人工触发，图片可与小红书共用；
 - 这个 Skill 只处理线上会议及其会议纪要发布包；
 - `shares/` 中的个人分享稿只是安排在同一期分享，不是会议纪要的输入或产出；
 - `articles/` 中由个人分享稿改写的文章不属于这个 Skill；
