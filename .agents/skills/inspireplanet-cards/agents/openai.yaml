@@ -1,0 +1,4 @@
+interface:
+  display_name: "启发星球金句卡片"
+  short_description: "从会议内容提炼金句 JSON"
+  default_prompt: "Use $inspireplanet-cards to extract quote cards from this Inspire Planet episode."

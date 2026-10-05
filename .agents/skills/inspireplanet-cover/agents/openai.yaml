@@ -1,0 +1,4 @@
+interface:
+  display_name: "启发星球会议封面图"
+  short_description: "为会议纪要生成带副标题的公众号封面成品"
+  default_prompt: "Use $inspireplanet-cover to create a themed WeChat cover with a subtitle that does not repeat the recap title."

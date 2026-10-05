@@ -1,0 +1,4 @@
+interface:
+  display_name: "启发星球会议纪要"
+  short_description: "把会议转写稿整理成公众号纪要"
+  default_prompt: "Use $inspireplanet-recap to turn this episode transcript into a WeChat meeting recap."
