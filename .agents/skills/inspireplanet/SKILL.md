@@ -1,9 +1,15 @@
 ---
 name: inspireplanet
-description: 启发星球线上会议纪要发布包总控。用于根据某期会议转写，路由生成会议纪要、金句卡片、小红书图文材料、公众号发布辅助材料、视频号材料和会议纪要公众号封面；不负责个人分享稿，也不负责由个人分享稿改写的文章。
+description: 启发星球对外内容工作流总控：从某期会议转写路由生成分享文章（公众号）、金句卡片、小红书图文材料、视频号材料和封面。定位是把分享者的分享整理出来、让更多人看见；不负责个人分享稿，也不负责由个人分享稿改写的文章。
 ---
 
 # Inspire Planet Publisher
+
+## 定位
+
+启发星球的对外内容，目标是**把分享者的分享整理出来被更多人看见**，同时也吸引读者。
+
+所以默认产出不是“记录一场会议”，而是**把一位分享者的一件事做出来**：一期多篇、一篇一个人一件事。会议纪要式的长篇汇总不是默认形态；`recap.md` 在仓库里只作本期索引。
 
 ## Event workspace
 
@@ -30,9 +36,9 @@ covers/recap-cover.png
 ## 子 Skill
 
 - `inspireplanet-transcript`：从腾讯会议拉取会议逐字稿，保存为 `transcript.txt`；
-- `inspireplanet-recap`：从会议转写生成只包含纪要正文的 `recap.md`；
+- `inspireplanet-recap`：把选中的分享写成可独立阅读的公众号分享文章，另生成仓库内的本期索引；
 - `inspireplanet-cards`：从会议转写生成 `quote-cards.json`；
-- `inspireplanet-promo`：生成公众号摘要、标题和封面副标题候选，保存到 `promo.md`；
+- `inspireplanet-promo`：为各篇分享文章生成标题、摘要和封面副标题候选，保存到 `promo.md`；
 - `inspireplanet-xhs`：为一位分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xiaohongshu.md`；
 - `inspireplanet-sph`：为一位分享者生成视频号图文材料（标题、正文、图片脚本、话题词），保存到 `shipinhao.md`；
 - `inspireplanet-cover`：生成会议纪要封面，并把最终封面配置写回 `promo.md`。
@@ -40,7 +46,7 @@ covers/recap-cover.png
 ## 路由
 
 - “逐字稿 / 转写 / 下载本期逐字稿” → `inspireplanet-transcript`；
-- “整理会议纪要” → `inspireplanet-recap`；
+- “整理会议纪要 / 写分享文章” → `inspireplanet-recap`；
 - “金句 / 卡片 / JSON” → `inspireplanet-cards`；
 - “标题 / 摘要 / 公众号” → `inspireplanet-promo`；
 - “小红书 / 图文 / 图集” → `inspireplanet-xhs`；
@@ -55,7 +61,7 @@ covers/recap-cover.png
 用户说“生成这一期的内容 / 全套内容 / 一次把各渠道都生成好”时，按顺序一次做完：
 
 1. **逐字稿**（缺 `transcript.txt` 时）→ `inspireplanet-transcript`；
-2. **公众号纪要分篇** → `inspireplanet-recap`：`recap.md`（总览，300–600 字）+ `recap-{序}-{slug}.md`（每人一篇，450–1000 字）；
+2. **公众号分享文章** → `inspireplanet-recap`：`recap.md`（本期索引，200–400 字，不发公众号）+ `recap-{序}-{slug}.md`（分享文章，800–1500 字）；
 3. **公众号发布材料** → `inspireplanet-promo`：每篇一个标题与摘要；
 4. **小红书图文材料** → `inspireplanet-xhs`；
 5. **视频号图文材料** → `inspireplanet-sph`。
@@ -74,7 +80,7 @@ covers/recap-cover.png
 ## 共享边界
 
 - 会议事实以 `transcript.txt` 为准；
-- `recap.md` 只保存会议纪要正文；
+- `recap.md` 是本期索引（仓库内材料，不单独发公众号）；`recap-{序}-{slug}.md` 才是发公众号的分享文章；
 - `promo.md` 只保存公众号发布材料与封面配置；
 - `xiaohongshu.md` 只保存小红书图文材料，一期可多篇、每篇一节；渲染成图和发布都是人工触发，不并入自动链；
 - `shipinhao.md` 只保存视频号图文材料（标题 + 正文 + 图片脚本），一期可多条；出图和发布都是人工触发，图片可与小红书共用；

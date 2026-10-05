@@ -16,7 +16,8 @@
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt       会议原始转写
-  recap.md             会议纪要
+  recap.md             本期索引（仓库内，不单独发公众号）
+  recap-N-slug.md      公众号分享文章（一期可多篇，一篇一个人一件事）
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
   promo.md             公众号发布材料与封面配置
@@ -45,7 +46,7 @@ scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
 
 - “下载本期逐字稿” → `inspireplanet-transcript`
 - “整理某期会议的完整发布包” → `inspireplanet`
-- “整理会议纪要” → `inspireplanet-recap`
+- “整理会议纪要 / 写分享文章” → `inspireplanet-recap`
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成公众号文案” → `inspireplanet-promo`
 - “生成小红书图文” → `inspireplanet-xhs`
