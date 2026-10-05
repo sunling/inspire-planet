@@ -16,19 +16,19 @@ events/{year}/{YYYYMMDD}-epXX/
 输入：
 
 ```text
-meeting/transcript.txt
+transcript.txt
 ```
 
 输出：
 
 ```text
-meeting/quote-cards.json
+quote-cards.json
 ```
 
 早期人工整理材料如存在，保存在：
 
 ```text
-meeting/quote-notes.md
+quote-notes.md
 ```
 
 ## 边界

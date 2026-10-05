@@ -15,13 +15,12 @@
 
 ```text
 events/{year}/{YYYYMMDD}-epXX/
-  meeting/
-    transcript.txt       会议原始转写
-    recap.md             会议纪要
-    quote-notes.md       历史金句与语境笔记
-    quote-cards.json     金句卡片数据
-    promo.md             公众号、小红书、视频号发布文案
-  covers/                会议及社交平台封面
+  transcript.txt       会议原始转写
+  recap.md             会议纪要
+  quote-notes.md       历史金句与语境笔记
+  quote-cards.json     金句卡片数据
+  promo.md             公众号、小红书、视频号发布文案
+  covers/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿等辅助脚本
 ```

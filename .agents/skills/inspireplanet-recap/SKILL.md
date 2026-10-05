@@ -18,19 +18,19 @@ events/{year}/{YYYYMMDD}-epXX/
 默认输入：
 
 ```text
-meeting/transcript.txt
+transcript.txt
 ```
 
 默认输出：
 
 ```text
-meeting/recap.md
+recap.md
 ```
 
 相关产物：
 
-- 发布辅助材料：`meeting/promo.md`；
-- 金句 JSON：`meeting/quote-cards.json`；
+- 发布辅助材料：`promo.md`；
+- 金句 JSON：`quote-cards.json`；
 - 封面：`covers/recap-cover.png`。
 
 `recap.md` 只保存会议纪要文章本身。标题候选、摘要、社交文案和封面配置由 `promo.md` 承接，不追加到纪要正文末尾。
@@ -145,7 +145,7 @@ meeting/recap.md
 
 简短说明：
 
-1. 写入或更新的 `meeting/recap.md` 路径；
+1. 写入或更新的 `recap.md` 路径；
 2. 参会状态及判断依据；
 3. 本期纪要保留的主要人物和主题；
 4. 哪些活动时间、加入方式、事实或隐私仍需确认。

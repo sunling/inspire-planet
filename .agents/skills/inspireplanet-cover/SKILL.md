@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-cover
-description: 为启发星球某期会议纪要生成公众号横版封面或小红书竖版封面成品。根据当期纪要设计独有画面，分别读取对应平台的副标题候选，并把最终封面配置写回 `meeting/promo.md`；默认只交付带字封面，不生成或保存无字版本。
+description: 为启发星球某期会议纪要生成公众号横版封面或小红书竖版封面成品。根据当期纪要设计独有画面，分别读取对应平台的副标题候选，并把最终封面配置写回 `promo.md`；默认只交付带字封面，不生成或保存无字版本。
 ---
 
 # Inspire Planet Recap Covers
@@ -16,13 +16,13 @@ events/{year}/{YYYYMMDD}-epXX/
 主要输入：
 
 ```text
-meeting/recap.md
+recap.md
 ```
 
 可选输入：
 
 ```text
-meeting/promo.md
+promo.md
 ```
 
 公众号封面输出：
@@ -40,7 +40,7 @@ covers/xiaohongshu-cover.png
 最终封面配置写入：
 
 ```text
-meeting/promo.md
+promo.md
 ```
 
 ## 与 Promo Skill 的交接
@@ -51,7 +51,7 @@ meeting/promo.md
 - 两个平台分别构图，不把横版封面机械裁切成竖版，也不共用最终副标题；
 - 如果还没有 `promo.md`，cover 可以根据 recap 创建一个只含“公众号封面配置”的最小 `promo.md`；
 - 最终副标题只有一个，不能把多个候选都写进图片；
-- 不把封面配置追加到 `meeting/recap.md` 正文。
+- 不把封面配置追加到 `recap.md` 正文。
 
 ## 设计原则
 
@@ -69,15 +69,15 @@ meeting/promo.md
 
 ## 工作流程
 
-1. 确认 event、`meeting/recap.md` 和文章主标题；
-2. 若存在 `meeting/promo.md`，读取其中的“公众号封面副标题候选”；不存在时根据 recap 生成候选；
+1. 确认 event、`recap.md` 和文章主标题；
+2. 若存在 `promo.md`，读取其中的“公众号封面副标题候选”；不存在时根据 recap 生成候选；
 3. 选择或克制调整一个不与主标题重复的 6–14 字最终副标题；
 4. 从纪要提取一句视觉命题，把主题转换成可见的空间关系或动作；
 5. 设计适合公众号横版头图、手机端可读的构图和文字区域；
 6. 生成主题画面并加入中文副标题，只输出一张完整的带字封面；
 7. 检查副标题文字是否准确、完整、清晰，且没有与主标题表达相同信息；不合格就重做；
 8. 保存为当前 event 的 `covers/recap-cover.png`；
-9. 创建或更新 `meeting/promo.md` 中的“公众号封面配置”：
+9. 创建或更新 `promo.md` 中的“公众号封面配置”：
    - 最终副标题；
    - 视觉命题；
    - 生成提示词；
@@ -87,13 +87,13 @@ meeting/promo.md
 
 ## 小红书封面工作流程
 
-1. 确认 event、年份、期数和 `meeting/recap.md`；
-2. 从 `meeting/promo.md` 的“小红书封面副标题候选”中选择一个 5–8 字副标题；
+1. 确认 event、年份、期数和 `recap.md`；
+2. 从 `promo.md` 的“小红书封面副标题候选”中选择一个 5–8 字副标题；
 3. 沿用本期核心视觉命题，但为 `3:4` 竖版重新组织空间层级；
 4. 图片只放两组准确文字：期数 `{year}EP{episode}` 和最终副标题；
 5. 检查文字、竖版构图和手机端缩略图可读性，不合格就重做；
 6. 保存为 `covers/xiaohongshu-cover.png`；
-7. 创建或更新 `meeting/promo.md` 中的“小红书封面配置”：
+7. 创建或更新 `promo.md` 中的“小红书封面配置”：
    - 期数文字；
    - 最终副标题；
    - 视觉命题；
@@ -136,5 +136,5 @@ meeting/promo.md
 1. 封面平台与成品相对路径；
 2. 最终期数文字和副标题；
 3. 视觉命题；
-4. 更新的 `meeting/promo.md` 路径；
+4. 更新的 `promo.md` 路径；
 5. 是否仍有需要人工确认的文字或事实。
