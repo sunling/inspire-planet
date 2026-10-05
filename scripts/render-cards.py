@@ -14,7 +14,7 @@ pages.json 是一个数组，每项对应一张卡：
         "meta":    "2026EP39 · 启发星球",   # 左上角小字，可省
         "big":     "一个人在夏威夷\\n开了一整天车",  # 大字，\\n 强制换行
         "small":   "带着害怕，也在路上",       # 小字，可省
-        "big_font":"brush",                # kai(默认) | brush | klee
+        "big_font":"brush",                # brush(默认) | kai | klee
         "big_size":100,                    # 可选，默认 90
         "sm_size": 46,                     # 可选，默认 46
         "theme":   "dark",                 # 可选，深色原声页
@@ -123,7 +123,7 @@ def render(page, out, fonts):
     maxw = W - MARGIN * 2
 
     f_meta = ImageFont.truetype(fonts["kai_r"], 34)
-    f_big = ImageFont.truetype(fonts.get(page.get("big_font", "kai"), fonts["kai"]),
+    f_big = ImageFont.truetype(fonts.get(page.get("big_font", "brush"), fonts["brush"]),
                                page.get("big_size", 90))
     f_sm = ImageFont.truetype(fonts["kai_r"], page.get("sm_size", 46))
 
