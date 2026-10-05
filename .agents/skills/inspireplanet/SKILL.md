@@ -27,6 +27,7 @@ covers/recap-cover.png
 
 ## 子 Skill
 
+- `inspireplanet-transcript`：从腾讯会议拉取会议逐字稿，保存为 `meeting/transcript.txt`；
 - `inspireplanet-recap`：从会议转写生成只包含纪要正文的 `meeting/recap.md`；
 - `inspireplanet-cards`：从会议转写生成 `meeting/quote-cards.json`；
 - `inspireplanet-promo`：生成摘要、标题、社交文案和封面副标题候选，保存到 `meeting/promo.md`；
@@ -34,11 +35,12 @@ covers/recap-cover.png
 
 ## 路由
 
+- “逐字稿 / 转写 / 下载本期逐字稿” → `inspireplanet-transcript`；
 - “整理会议纪要” → `inspireplanet-recap`；
 - “金句 / 卡片 / JSON” → `inspireplanet-cards`；
 - “标题 / 摘要 / 小红书 / 视频号” → `inspireplanet-promo`；
 - “会议封面图” → `inspireplanet-cover`；
-- “完整发布包” → recap → cards → promo → cover。
+- “完整发布包” → transcript（缺失时）→ recap → cards → promo → cover。
 
 执行完整发布包时，后一步读取前一步的真实产物，不把同一内容复制到多个文件。
 

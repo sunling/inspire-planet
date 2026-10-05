@@ -23,6 +23,7 @@ events/{year}/{YYYYMMDD}-epXX/
     promo.md             公众号、小红书、视频号发布文案
   covers/                会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
+scripts/                 拉取逐字稿等辅助脚本
 ```
 
 每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
@@ -41,6 +42,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 在本仓库根目录打开支持项目 skills 的 AI 工具，先读取 [AGENTS.md](AGENTS.md)。例如：
 
+- “下载本期逐字稿” → `inspireplanet-transcript`
 - “整理某期会议的完整发布包” → `inspireplanet`
 - “整理会议纪要” → `inspireplanet-recap`
 - “提炼金句卡片” → `inspireplanet-cards`
