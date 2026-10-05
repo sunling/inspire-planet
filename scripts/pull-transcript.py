@@ -3,16 +3,17 @@
 
 用法：
 
-    # 按日期（北京时间）查找已结束会议，写到指定输出
-    python3 scripts/pull-transcript.py --date 2026-09-26 \
-        --out events/2026/20260926-ep39/meeting/transcript.txt
+    # 用会议时间自动推出目录 events/{year}/{YYYYMMDD}-ep{NN}/meeting/transcript.txt
+    python3 scripts/pull-transcript.py --date 2026-09-26 --episode 39
 
-    # 指定 event 目录，自动写入 <event>/meeting/transcript.txt
+    # 指定 event 目录
     python3 scripts/pull-transcript.py --date 2026-09-26 \
         --event events/2026/20260926-ep39
 
     # 直接指定会议 ID
     python3 scripts/pull-transcript.py --meeting-id 13319006708380765410 --out /tmp/t.txt
+
+目录日期取腾讯会议返回的会议时间戳日期（UTC），例如 2026-09-26T00:00:00Z → 20260926。
 
 依赖：腾讯会议官方 CLI `tmeet`（@tencentcloud/tmeet）。
 首次使用需先授权：`tmeet auth login`（凭据保存在 ~/.tmeet，不进仓库）。
@@ -25,7 +26,7 @@ import shutil
 import subprocess
 import sys
 
-TIME_FMT_HINT = "ISO 8601，例如 2026-09-26T00:00+08:00"
+TIME_FMT_HINT = "ISO 8601，例如 2026-09-26T00:00:00Z"
 
 
 def tmeet_bin():
@@ -49,15 +50,28 @@ def run(*args, fatal=True):
 
 
 def find_meeting_by_date(date):
-    """按北京时间日期查找已结束会议。"""
-    d = run("meeting", "list-ended", "--start", f"{date}T00:00+08:00",
-            "--end", f"{date}T23:59+08:00")
+    """按日期查找已结束会议。date 是腾讯会议返回时间戳所在的日期（UTC）。"""
+    d = run("meeting", "list-ended", "--start", f"{date}T00:00:00Z",
+            "--end", f"{date}T23:59:59Z")
     items = (d or {}).get("data", {}).get("meeting_info_list", [])
     if not items:
         sys.exit(f"{date} 没有找到已结束的会议（{TIME_FMT_HINT}）")
     if len(items) > 1:
         print(f"注意：{date} 有 {len(items)} 场会议，使用第一场；如需指定请用 --meeting-id")
     return items[0]
+
+
+def meeting_datestamp(meeting):
+    """取腾讯会议返回的会议时间戳日期（UTC），返回 (year, YYYYMMDD)。"""
+    start = meeting.get("start_time")
+    if not start:
+        d = run("meeting", "get", "--meeting-id", meeting["meeting_id"], fatal=False) or {}
+        infos = (d.get("data", {}) or {}).get("meeting_info_list") or []
+        start = infos[0].get("start_time") if infos else None
+    if not start:
+        sys.exit("无法获取会议时间，请改用 --event 或 --out 指定输出路径")
+    day = start[:10]
+    return day[:4], day.replace("-", "")
 
 
 def dur_seconds(text):
@@ -151,28 +165,40 @@ def ensure_dirs(path):
 def main():
     ap = argparse.ArgumentParser(description="拉取腾讯会议逐字稿到 meeting/transcript.txt")
     src = ap.add_mutually_exclusive_group(required=True)
-    src.add_argument("--date", help="北京时间日期 YYYY-MM-DD")
+    src.add_argument("--date", help="会议日期 YYYY-MM-DD（腾讯会议时间戳所在日期，UTC）")
     src.add_argument("--meeting-id", help="腾讯会议 meeting_id")
-    ap.add_argument("--event", help="event 目录，自动写入 <event>/meeting/transcript.txt")
+    ap.add_argument("--event", help="event 目录，写入 <event>/meeting/transcript.txt")
+    ap.add_argument("--episode", help="期号（如 39 或 ep39），用会议时间自动生成 event 目录")
+    ap.add_argument("--repo-root", help="仓库根目录，默认取脚本上级目录")
     ap.add_argument("--out", help="输出文件路径")
     ap.add_argument("--force", action="store_true", help="覆盖已存在的 transcript.txt")
     a = ap.parse_args()
 
-    out = a.out
-    if a.event:
-        out = os.path.join(a.event, "meeting", "transcript.txt")
-    if not out:
-        sys.exit("需要 --out 或 --event")
-
-    if os.path.exists(out) and not a.force:
-        sys.exit(f"已存在 {out}，未覆盖（如需覆盖加 --force）")
-
     if a.meeting_id:
+        if a.episode:
+            sys.exit("--episode 需要配合 --date 使用：周期会议的 meeting-id 相同，"
+                     "meeting-id 无法区分是哪一期；请用 --date 或直接给 --event")
         meeting = {"meeting_id": a.meeting_id, "subject": "(按 meeting-id)"}
     else:
         meeting = find_meeting_by_date(a.date)
 
     print(f"会议: {meeting.get('subject', '?')} id={meeting['meeting_id']}")
+
+    if a.out:
+        out = a.out
+    elif a.event:
+        out = os.path.join(a.event, "meeting", "transcript.txt")
+    elif a.episode:
+        year, ymd = meeting_datestamp(meeting)
+        ep = a.episode.lower().removeprefix("ep")
+        root = a.repo_root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        out = os.path.join(root, "events", year, f"{ymd}-ep{ep}", "meeting", "transcript.txt")
+        print(f"按会议时间戳生成目录: {os.path.dirname(os.path.dirname(out))}")
+    else:
+        sys.exit("需要 --out、--event 或 --episode 之一")
+
+    if os.path.exists(out) and not a.force:
+        sys.exit(f"已存在 {out}，未覆盖（如需覆盖加 --force）")
     files = transcript_file_ids(meeting)
     if not files:
         sys.exit("未找到文字转写文件（该会议可能没有开启转写）")

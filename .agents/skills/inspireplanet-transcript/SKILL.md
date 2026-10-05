@@ -23,6 +23,9 @@ events/{year}/{YYYYMMDD}-epXX/
 meeting/transcript.txt
 ```
 
+目录名里的日期取腾讯会议返回的**会议时间戳日期（UTC）**，例如 `2026-09-26T00:00:00Z` → `20260926`。
+（历史上 2026 上半年的目录按会议当天的西雅图日期命名，例如 `20260925-ep38` 对应会议时间戳 `2026-09-26`；新旧命名不追溯统一，只对新增目录生效。）
+
 ## 前置条件
 
 - 腾讯会议官方 CLI `tmeet` 已安装并可从 PATH 调用（可用环境变量 `TMEET_BIN` 覆盖路径）；
@@ -33,13 +36,15 @@ meeting/transcript.txt
 
 1. 读 `AGENTS.md`，确认本期日期与期数；
 2. `events/{year}` 或 event 目录不存在时，先创建年份目录，再建立 event 目录 `events/{year}/{YYYYMMDD}-epXX/`；只创建真实需要的文件；
-3. 运行：
+3. 运行（用会议时间自动生成目录）：
 
    ```bash
-   python3 scripts/pull-transcript.py --date {YYYY-MM-DD} --event {event 目录}
+   python3 scripts/pull-transcript.py --date {YYYY-MM-DD} --episode {NN}
    ```
 
-   已知会议 ID 时改用 `--meeting-id`；脚本默认不覆盖已有 `transcript.txt`，确需覆盖再加 `--force`；
+   也可用 `--event {event 目录}` 指定目录，或用 `--meeting-id {id} --out {路径}` 直接指定输出。
+   `--episode` 必须配合 `--date`：周期会议的 meeting-id 相同，无法区分是哪一期。
+   脚本默认不覆盖已有 `transcript.txt`，确需覆盖再加 `--force`；
 4. 校验输出：应包含若干形如 `发言人(HH:MM:SS):` 的发言块，正文非空；
 5. 按下方“衔接”进入后续技能。
 
