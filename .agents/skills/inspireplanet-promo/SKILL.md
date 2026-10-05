@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-promo
-description: 为启发星球某期会议纪要生成公众号发布材料（摘要、标题建议、公众号封面副标题候选、视频号文案）与封面配置，保存到独立的 `promo.md`。小红书材料由 `inspireplanet-xhs` 负责。
+description: 为启发星球某期会议纪要生成公众号发布材料（摘要、标题建议、公众号封面副标题候选）与封面配置，保存到独立的 `promo.md`。小红书材料由 `inspireplanet-xhs`、视频号材料由 `inspireplanet-sph` 负责。
 ---
 
 # Inspire Planet Promo
@@ -9,7 +9,7 @@ description: 为启发星球某期会议纪要生成公众号发布材料（摘�
 
 为某一期启发星球会议纪要准备**公众号**发布辅助材料，但不把编辑说明和社交文案混入会议纪要正文。
 
-小红书图文材料由 `inspireplanet-xhs` 生成到 `xiaohongshu.md`，本 Skill 不重复产出。
+小红书图文材料由 `inspireplanet-xhs` 生成到 `xiaohongshu.md`，视频号材料由 `inspireplanet-sph` 生成到 `shipinhao.md`，本 Skill 不重复产出。
 
 ## 路径
 
@@ -43,7 +43,7 @@ promo.md
 - 纪要尚未生成、用户明确只需要公众号文案时，可以从 transcript 生成 `promo.md`；
 - 不因为缺少纪要而创建一个只含发布文案的 `recap.md`；
 - 已有 `promo.md` 时更新原文件，不创建 `promo-v2.md` 或把同一内容复制到多个文件；
-- 小红书标题、图集脚本和话题词不写进 `promo.md`。
+- 小红书和视频号的材料不写进 `promo.md`。
 
 ## 当前运营信息
 
@@ -61,7 +61,6 @@ promo.md
 - 120 字以内公众号摘要；
 - 5–10 个自然、不标题党的公众号标题建议；
 - 3–5 条公众号横版封面副标题候选；
-- 约 150–250 字视频号文案；
 - 用户需要时提供公众号合集分类建议。
 
 ## 公众号标题
@@ -101,9 +100,6 @@ promo.md
 
 ## 公众号封面副标题候选
 - ...
-
-## 视频号文案
-{约 150–250 字}
 
 ## 公众号合集分类建议
 {用户需要时保留，否则省略}
