@@ -46,9 +46,23 @@ covers/recap-cover.png
 - “小红书 / 图文 / 图集” → `inspireplanet-xhs`；
 - “视频号 / 短视频” → `inspireplanet-sph`；
 - “会议封面图” → `inspireplanet-cover`；
-- “完整发布包” → transcript（缺失时）→ recap → cards → xiaohongshu → promo → shipinhao → cover。
+- “完整发布包” → transcript（缺失时）→ recap（分篇）→ promo → cards → xiaohongshu → shipinhao → cover。
 
 执行完整发布包时，后一步读取前一步的真实产物，不把同一内容复制到多个文件。
+
+## 整期一次性生成
+
+用户说“生成这一期的内容 / 全套内容 / 一次把各渠道都生成好”时，按顺序一次做完：
+
+1. **逐字稿**（缺 `transcript.txt` 时）→ `inspireplanet-transcript`；
+2. **公众号纪要分篇** → `inspireplanet-recap`：`recap.md`（总览，300–600 字）+ `recap-{序}-{slug}.md`（每人一篇，450–1000 字）；
+3. **公众号发布材料** → `inspireplanet-promo`：每篇一个标题与摘要；
+4. **小红书图文材料** → `inspireplanet-xhs`；
+5. **视频号图文材料** → `inspireplanet-sph`。
+
+生成阶段**只产出文字文件**：图片渲染（`scripts/render-cards.py`）和发布都由人手动完成，不在这条链里烧时间。
+
+金句卡片（`inspireplanet-cards`）不在默认链里，用户明确要时才做。
 
 ## 共享边界
 
