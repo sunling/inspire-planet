@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""从腾讯会议拉取某一期的逐字稿（文字转写），保存为仓库里的 meeting/transcript.txt。
+"""从腾讯会议拉取某一期的逐字稿（文字转写），保存为仓库里的 transcript.txt。
 
 用法：
 
-    # 用会议时间自动推出目录 events/{year}/{YYYYMMDD}-ep{NN}/meeting/transcript.txt
+    # 用会议时间自动推出目录 events/{year}/{YYYYMMDD}-ep{NN}/transcript.txt
     python3 scripts/pull-transcript.py --date 2026-09-26 --episode 39
 
     # 指定 event 目录
@@ -163,11 +163,11 @@ def ensure_dirs(path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="拉取腾讯会议逐字稿到 meeting/transcript.txt")
+    ap = argparse.ArgumentParser(description="拉取腾讯会议逐字稿到 transcript.txt")
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--date", help="会议日期 YYYY-MM-DD（腾讯会议时间戳所在日期，UTC）")
     src.add_argument("--meeting-id", help="腾讯会议 meeting_id")
-    ap.add_argument("--event", help="event 目录，写入 <event>/meeting/transcript.txt")
+    ap.add_argument("--event", help="event 目录，写入 <event>/transcript.txt")
     ap.add_argument("--episode", help="期号（如 39 或 ep39），用会议时间自动生成 event 目录")
     ap.add_argument("--repo-root", help="仓库根目录，默认取脚本上级目录")
     ap.add_argument("--out", help="输出文件路径")
@@ -187,13 +187,13 @@ def main():
     if a.out:
         out = a.out
     elif a.event:
-        out = os.path.join(a.event, "meeting", "transcript.txt")
+        out = os.path.join(a.event, "transcript.txt")
     elif a.episode:
         year, ymd = meeting_datestamp(meeting)
         ep = a.episode.lower().removeprefix("ep")
         root = a.repo_root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        out = os.path.join(root, "events", year, f"{ymd}-ep{ep}", "meeting", "transcript.txt")
-        print(f"按会议时间戳生成目录: {os.path.dirname(os.path.dirname(out))}")
+        out = os.path.join(root, "events", year, f"{ymd}-ep{ep}", "transcript.txt")
+        print(f"按会议时间戳生成目录: {os.path.dirname(out)}")
     else:
         sys.exit("需要 --out、--event 或 --episode 之一")
 

@@ -1,13 +1,13 @@
 ---
 name: inspireplanet-transcript
-description: 从腾讯会议拉取某一期会议的逐字稿（文字转写），按仓库格式保存为 meeting/transcript.txt，并衔接会议纪要与金句生成。
+description: 从腾讯会议拉取某一期会议的逐字稿（文字转写），按仓库格式保存为 transcript.txt，并衔接会议纪要与金句生成。
 ---
 
 # Inspire Planet Transcript
 
 ## 目标
 
-把每周线上会议的逐字稿从腾讯会议取下来，落到对应 event 的 `meeting/transcript.txt`，作为 `inspireplanet-recap`、`inspireplanet-cards`、`inspireplanet-promo` 的输入。
+把每周线上会议的逐字稿从腾讯会议取下来，落到对应 event 的 `transcript.txt`，作为 `inspireplanet-recap`、`inspireplanet-cards`、`inspireplanet-promo` 的输入。
 
 ## 路径
 
@@ -20,11 +20,11 @@ events/{year}/{YYYYMMDD}-epXX/
 输出：
 
 ```text
-meeting/transcript.txt
+transcript.txt
 ```
 
 目录名里的日期取腾讯会议返回的**会议时间戳日期（UTC）**，例如 `2026-09-26T00:00:00Z` → `20260926`。
-（历史上 2026 上半年的目录按会议当天的西雅图日期命名，例如 `20260925-ep38` 对应会议时间戳 `2026-09-26`；新旧命名不追溯统一，只对新增目录生效。）
+2026-10-06 起，全部期目录（含历史 33 期）已统一按此口径命名。
 
 ## 前置条件
 
@@ -69,7 +69,7 @@ meeting/transcript.txt
 
 ## 完成后的回复
 
-1. 写入的 `meeting/transcript.txt` 路径；
+1. 写入的 `transcript.txt` 路径；
 2. 会议名称、发言块数量与大致字数；
 3. 建议的下一步（recap / cards）；
 4. 是否有授权、隐私或识别错误需要人工确认。

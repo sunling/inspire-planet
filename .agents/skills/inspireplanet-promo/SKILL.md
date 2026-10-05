@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-promo
-description: 为启发星球某期会议纪要分别生成公众号标题、小红书标题、短封面副标题、公众号摘要、小红书或视频号帖文和话题词，并统一保存到独立的 `meeting/promo.md`。
+description: 为启发星球某期会议纪要分别生成公众号标题、小红书标题、短封面副标题、公众号摘要、小红书或视频号帖文和话题词，并统一保存到独立的 `promo.md`。
 ---
 
 # Inspire Planet Promo
@@ -20,19 +20,19 @@ events/{year}/{YYYYMMDD}-epXX/
 优先输入：
 
 ```text
-meeting/recap.md
+recap.md
 ```
 
 备选输入：
 
 ```text
-meeting/transcript.txt
+transcript.txt
 ```
 
 默认输出：
 
 ```text
-meeting/promo.md
+promo.md
 ```
 
 规则：
@@ -102,7 +102,7 @@ meeting/promo.md
 
 - 从候选中选择或克制调整最终副标题；
 - 设计视觉命题并生成封面；
-- 将最终选择、视觉命题、提示词和成品路径写回 `meeting/promo.md` 的“公众号封面配置”部分。
+- 将最终选择、视觉命题、提示词和成品路径写回 `promo.md` 的“公众号封面配置”部分。
 
 若用户只运行 cover Skill、还没有 `promo.md`，cover 可以创建一个只含公众号封面配置的最小 `promo.md`。
 
@@ -163,6 +163,6 @@ meeting/promo.md
 简短说明：
 
 1. 使用了 recap 还是 transcript；
-2. 创建或更新的 `meeting/promo.md` 路径；
+2. 创建或更新的 `promo.md` 路径；
 3. 推荐的首选标题和副标题候选；
 4. 哪些事实、时间、链接或活动信息仍需确认。

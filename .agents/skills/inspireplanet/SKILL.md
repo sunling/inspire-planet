@@ -16,10 +16,10 @@ events/{year}/{YYYYMMDD}-epXX/
 常见文件：
 
 ```text
-meeting/transcript.txt
-meeting/recap.md
-meeting/promo.md
-meeting/quote-cards.json
+transcript.txt
+recap.md
+promo.md
+quote-cards.json
 covers/recap-cover.png
 ```
 
@@ -27,11 +27,11 @@ covers/recap-cover.png
 
 ## 子 Skill
 
-- `inspireplanet-transcript`：从腾讯会议拉取会议逐字稿，保存为 `meeting/transcript.txt`；
-- `inspireplanet-recap`：从会议转写生成只包含纪要正文的 `meeting/recap.md`；
-- `inspireplanet-cards`：从会议转写生成 `meeting/quote-cards.json`；
-- `inspireplanet-promo`：生成摘要、标题、社交文案和封面副标题候选，保存到 `meeting/promo.md`；
-- `inspireplanet-cover`：生成会议纪要封面，并把最终封面配置写回 `meeting/promo.md`。
+- `inspireplanet-transcript`：从腾讯会议拉取会议逐字稿，保存为 `transcript.txt`；
+- `inspireplanet-recap`：从会议转写生成只包含纪要正文的 `recap.md`；
+- `inspireplanet-cards`：从会议转写生成 `quote-cards.json`；
+- `inspireplanet-promo`：生成摘要、标题、社交文案和封面副标题候选，保存到 `promo.md`；
+- `inspireplanet-cover`：生成会议纪要封面，并把最终封面配置写回 `promo.md`。
 
 ## 路由
 
@@ -46,9 +46,9 @@ covers/recap-cover.png
 
 ## 共享边界
 
-- 会议事实以 `meeting/transcript.txt` 为准；
-- `meeting/recap.md` 只保存会议纪要正文；
-- `meeting/promo.md` 只保存发布辅助材料与封面配置；
+- 会议事实以 `transcript.txt` 为准；
+- `recap.md` 只保存会议纪要正文；
+- `promo.md` 只保存发布辅助材料与封面配置；
 - 这个 Skill 只处理线上会议及其会议纪要发布包；
 - `shares/` 中的个人分享稿只是安排在同一期分享，不是会议纪要的输入或产出；
 - `articles/` 中由个人分享稿改写的文章不属于这个 Skill；
