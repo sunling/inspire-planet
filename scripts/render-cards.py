@@ -5,7 +5,8 @@
 不依赖浏览器：只用 Pillow + 一款中文字体，输出文字精确、可复现、零模型开销。
 
 用法：
-    python3 scripts/render-cards.py pages.json out_dir/
+    python3 scripts/render-cards.py pages.json out_dir/                    # 逐页 JSON
+    python3 scripts/render-cards.py events/{年}/{期}/xiaohongshu.md out_dir/  # 直接读图集脚本 md
 
 pages.json 是一个数组，每项对应一张卡：
 
@@ -157,9 +158,91 @@ def render(page, out, fonts):
     return out
 
 
+FIELD_MAP = {
+    "左上署名": "meta",
+    "主标题": "big",
+    "图上大字": "big",
+    "副标题": "small",
+    "小字": "small",
+}
+
+
+def slug(text):
+    keep = "".join(c for c in text if c.isalnum() or c in "-_")
+    return (keep or "post")[:40]
+
+
+def parse_md(text):
+    """从 xiaohongshu.md 解析出 [(篇名, [页, ...]), ...]。
+
+    识别约定格式：`### 图集脚本` 开一节，`#### 第 N 页` 开一页，
+    页内用 `- 图上大字：` / `- 小字：` / `- 左上署名：` / `- 主标题：` / `- 副标题：`。
+    页标题里含"原声"时默认用深色主题，也可用 `- 主题：dark` 显式指定。
+    """
+    groups, pages, page = [], [], None
+    title, in_pages, last_key = "", False, None
+
+    def close_page():
+        nonlocal page
+        if page and (page.get("big") or page.get("small")):
+            pages.append(page)
+        page = None
+
+    for raw in text.splitlines():
+        s = raw.strip()
+        if s.startswith("#### "):
+            if in_pages:
+                close_page()
+                page = {"big": "", "small": "", "_hint_dark": "原声" in s}
+            continue
+        if s.startswith("### "):
+            if in_pages:
+                close_page()
+                if pages:
+                    groups.append((title, pages))
+                pages = []
+            in_pages = s.startswith("### 图集脚本")
+            continue
+        if s.startswith("## "):
+            if in_pages:
+                close_page()
+                if pages:
+                    groups.append((title, pages))
+            pages, in_pages = [], False
+            title = s[3:].strip()
+            continue
+        if not in_pages or page is None or s.startswith(">"):
+            continue
+        if s.startswith("- ") and "：" in s:
+            key, val = s[2:].split("：", 1)
+            key, val = key.strip(), val.strip()
+            last_key = key
+            if key == "图片建议":
+                continue
+            if key == "主题":
+                page["theme"] = val
+            elif key == "大字字体":
+                page["big_font"] = val
+            elif key in FIELD_MAP:
+                field = FIELD_MAP[key]
+                page[field] = (page.get(field, "") + "\n" + val).strip() if page.get(field) else val
+        elif s and last_key in FIELD_MAP:
+            field = FIELD_MAP[last_key]
+            page[field] = page.get(field, "") + s
+
+    close_page()
+    if pages:
+        groups.append((title, pages))
+    for _, pgs in groups:
+        for p in pgs:
+            if p.pop("_hint_dark", False) and "theme" not in p:
+                p["theme"] = "dark"
+    return [(t, p) for t, p in groups if p]
+
+
 def main():
-    ap = argparse.ArgumentParser(description="把图集脚本 JSON 渲染成卡片 PNG")
-    ap.add_argument("pages", help="逐页 JSON 文件")
+    ap = argparse.ArgumentParser(description="把图集脚本（JSON 或 xiaohongshu.md）渲染成卡片 PNG")
+    ap.add_argument("pages", help="逐页 JSON，或 xiaohongshu.md")
     ap.add_argument("out_dir", help="输出目录")
     args = ap.parse_args()
 
@@ -169,12 +252,25 @@ def main():
     except ImportError:
         sys.exit("缺少 Pillow：pip install pillow")
 
-    pages = json.load(open(args.pages, encoding="utf-8"))
+    if args.pages.lower().endswith(".md"):
+        groups = parse_md(open(args.pages, encoding="utf-8").read())
+        if not groups:
+            sys.exit("没从 md 里解析到图集脚本；需要 `### 图集脚本` / `#### 第 N 页` / `- 图上大字：` 这样的格式。")
+    else:
+        groups = [("", json.load(open(args.pages, encoding="utf-8")))]
+
     fonts = ensure_fonts()
     os.makedirs(args.out_dir, exist_ok=True)
-    for i, page in enumerate(pages, 1):
-        page.setdefault("page", f"{i:02d}")
-        print(render(page, os.path.join(args.out_dir, f"{i:02d}.png"), fonts))
+    total = 0
+    for gi, (title, pages) in enumerate(groups, 1):
+        sub = os.path.join(args.out_dir, f"{gi:02d}-{slug(title)}") if len(groups) > 1 else args.out_dir
+        os.makedirs(sub, exist_ok=True)
+        for i, page in enumerate(pages, 1):
+            page.setdefault("page", f"{i:02d}")
+            render(page, os.path.join(sub, f"{i:02d}.png"), fonts)
+            total += 1
+        print(f"{title or 'pages'}: {len(pages)} 张 -> {sub}")
+    print(f"共 {total} 张")
 
 
 if __name__ == "__main__":

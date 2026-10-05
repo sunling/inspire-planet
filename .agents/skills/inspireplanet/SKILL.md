@@ -52,7 +52,7 @@ covers/recap-cover.png
 - 会议事实以 `transcript.txt` 为准；
 - `recap.md` 只保存会议纪要正文；
 - `promo.md` 只保存公众号发布材料与封面配置；
-- `xiaohongshu.md` 只保存小红书图文材料，一期可多篇、每篇一节；
+- `xiaohongshu.md` 只保存小红书图文材料，一期可多篇、每篇一节；渲染成图和发布都是人工触发，不并入自动链；
 - 这个 Skill 只处理线上会议及其会议纪要发布包；
 - `shares/` 中的个人分享稿只是安排在同一期分享，不是会议纪要的输入或产出；
 - `articles/` 中由个人分享稿改写的文章不属于这个 Skill；
