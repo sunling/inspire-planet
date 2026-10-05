@@ -19,10 +19,12 @@ events/{year}/{YYYYMMDD}-epXX/
   recap.md             会议纪要
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
-  promo.md             公众号、小红书、视频号发布文案
+  promo.md             公众号发布材料与封面配置
+  xiaohongshu.md       小红书图文材料（一期可多篇，每篇一节）
+  shipinhao.md         视频号材料（文案 + 视频脚本/字幕稿，一期可多条）
   covers/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
-scripts/                 拉取逐字稿等辅助脚本
+scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
 ```
 
 每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
@@ -45,7 +47,9 @@ scripts/                 拉取逐字稿等辅助脚本
 - “整理某期会议的完整发布包” → `inspireplanet`
 - “整理会议纪要” → `inspireplanet-recap`
 - “提炼金句卡片” → `inspireplanet-cards`
-- “生成小红书、视频号文案” → `inspireplanet-promo`
+- “生成公众号文案” → `inspireplanet-promo`
+- “生成小红书图文” → `inspireplanet-xhs`
+- “生成视频号内容” → `inspireplanet-sph`
 - “生成会议封面” → `inspireplanet-cover`
 
 生成内容与真实发布分开；只有明确要求发布时才操作外部平台。
