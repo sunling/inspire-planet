@@ -1,0 +1,4 @@
+interface:
+  display_name: "启发星球公众号"
+  short_description: "把会议转写稿写成公众号分享文章，并备好标题、摘要和横版封面"
+  default_prompt: "Use $inspireplanet-gzh to turn this episode transcript into a WeChat article with its title, summary and cover."

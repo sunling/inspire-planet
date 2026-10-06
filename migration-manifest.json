@@ -25,47 +25,47 @@
     },
     {
       "source_path": ".agents/skills/inspireplanet-cover/LEARNINGS.md",
-      "target_path": ".agents/skills/inspireplanet-cover/LEARNINGS.md",
+      "target_path": ".agents/skills/inspireplanet-gzh/LEARNINGS.md",
       "source_blob_sha": "cefb2d66ad9c829c63ff7ce3e6660d4dac0b0854"
     },
     {
       "source_path": ".agents/skills/inspireplanet-cover/SKILL.md",
-      "target_path": ".agents/skills/inspireplanet-cover/SKILL.md",
+      "target_path": ".agents/skills/inspireplanet/references/cover-design.md",
       "source_blob_sha": "457c9fbc693498579e74d8289abd83763c93b02c"
     },
     {
       "source_path": ".agents/skills/inspireplanet-cover/agents/openai.yaml",
-      "target_path": ".agents/skills/inspireplanet-cover/agents/openai.yaml",
+      "target_path": ".agents/skills/inspireplanet-gzh/agents/openai.yaml",
       "source_blob_sha": "b976a530d2fa5e6ff45282abb0d50a2906093113"
     },
     {
       "source_path": ".agents/skills/inspireplanet-promo/SKILL.md",
-      "target_path": ".agents/skills/inspireplanet-promo/SKILL.md",
+      "target_path": ".agents/skills/inspireplanet-gzh/SKILL.md",
       "source_blob_sha": "886e03e7c7e27bb4c0f263d9214ddae773413111"
     },
     {
       "source_path": ".agents/skills/inspireplanet-promo/agents/openai.yaml",
-      "target_path": ".agents/skills/inspireplanet-promo/agents/openai.yaml",
+      "target_path": ".agents/skills/inspireplanet-gzh/agents/openai.yaml",
       "source_blob_sha": "730db738c71713466c82a5e343989bc4d3bd89ca"
     },
     {
       "source_path": ".agents/skills/inspireplanet-recap/EXAMPLES.md",
-      "target_path": ".agents/skills/inspireplanet-recap/EXAMPLES.md",
+      "target_path": ".agents/skills/inspireplanet-gzh/EXAMPLES.md",
       "source_blob_sha": "fb9a6e41744e54bc72db54decaf443fcfb1ccf95"
     },
     {
       "source_path": ".agents/skills/inspireplanet-recap/LEARNINGS.md",
-      "target_path": ".agents/skills/inspireplanet-recap/LEARNINGS.md",
+      "target_path": ".agents/skills/inspireplanet-gzh/LEARNINGS.md",
       "source_blob_sha": "1dbbf78709a02e81e96afe53137dcaf72f467bf0"
     },
     {
       "source_path": ".agents/skills/inspireplanet-recap/SKILL.md",
-      "target_path": ".agents/skills/inspireplanet-recap/SKILL.md",
+      "target_path": ".agents/skills/inspireplanet-gzh/SKILL.md",
       "source_blob_sha": "d8768ff582751f83b9390e07daa1ba691fe06d88"
     },
     {
       "source_path": ".agents/skills/inspireplanet-recap/agents/openai.yaml",
-      "target_path": ".agents/skills/inspireplanet-recap/agents/openai.yaml",
+      "target_path": ".agents/skills/inspireplanet-gzh/agents/openai.yaml",
       "source_blob_sha": "e6e755eb242b481ae5fc065f6831174346d78857"
     },
     {
