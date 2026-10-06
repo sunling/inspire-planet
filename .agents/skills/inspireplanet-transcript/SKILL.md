@@ -52,7 +52,7 @@ transcript.txt
 
 逐字稿落地后，按需要继续：
 
-- 会议纪要 → `inspireplanet-recap`：`transcript.txt` → `recap.md`；
+- 会议纪要 / 分享文章 → `inspireplanet-recap`：`transcript.txt` → `index.md` + `gzh-{slug}.md`；
 - 金句卡片 → `inspireplanet-cards`：`transcript.txt` → `quote-cards.json`；
 - 发布文案 → `inspireplanet-promo`；封面 → `inspireplanet-cover`。
 

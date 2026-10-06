@@ -6,7 +6,7 @@
 
 用法：
     python3 scripts/render-cards.py pages.json out_dir/                    # 逐页 JSON
-    python3 scripts/render-cards.py events/{年}/{期}/xiaohongshu.md out_dir/  # 直接读图集脚本 md
+    python3 scripts/render-cards.py events/{年}/{期}/xhs-liying.md out_dir/  # 直接读图集脚本 md
 
 pages.json 是一个数组，每项对应一张卡：
 
@@ -173,7 +173,7 @@ def slug(text):
 
 
 def parse_md(text):
-    """从 xiaohongshu.md 解析出 [(篇名, [页, ...]), ...]。
+    """从图集脚本 md（`xhs-*.md` / `sph-*.md`）解析出 [(篇名, [页, ...]), ...]。
 
     识别约定格式：`### 图集脚本`（或 `### 图片脚本`）开一节，`#### 第 N 页` 开一页，
     页内用 `- 图上大字：` / `- 小字：` / `- 左上署名：` / `- 主标题：` / `- 副标题：`。
@@ -241,8 +241,8 @@ def parse_md(text):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="把图集脚本（JSON 或 xiaohongshu.md）渲染成卡片 PNG")
-    ap.add_argument("pages", help="逐页 JSON，或 xiaohongshu.md")
+    ap = argparse.ArgumentParser(description="把图集脚本（JSON 或 md）渲染成卡片 PNG")
+    ap.add_argument("pages", help="逐页 JSON，或图集脚本 md（xhs-*.md / sph-*.md）")
     ap.add_argument("out_dir", help="输出目录")
     args = ap.parse_args()
 

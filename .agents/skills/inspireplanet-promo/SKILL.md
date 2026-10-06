@@ -9,7 +9,7 @@ description: 为启发星球某期选中的各篇分享文章生成公众号发�
 
 为某一期启发星球**公众号分享文章**准备发布辅助材料（每篇一个标题、一个摘要），但不把编辑说明和社交文案混入文章正文。
 
-小红书图文材料由 `inspireplanet-xhs` 生成到 `xiaohongshu.md`，视频号材料由 `inspireplanet-sph` 生成到 `shipinhao.md`，本 Skill 不重复产出。
+小红书图文材料由 `inspireplanet-xhs` 生成到 `xhs-{slug}.md`，视频号材料由 `inspireplanet-sph` 生成到 `sph-{slug}.md`，本 Skill 不重复产出。
 
 ## 路径
 
@@ -22,13 +22,13 @@ events/{year}/{YYYYMMDD}-epXX/
 优先输入：
 
 ```text
-recap-{序}-{slug}.md     # 各篇分享文章
+gzh-{slug}.md     # 各篇分享文章
 ```
 
 备选输入：
 
 ```text
-recap.md                 # 本期索引
+index.md                 # 本期索引
 transcript.txt
 ```
 
@@ -42,7 +42,7 @@ promo.md
 
 - 分享文章已存在时，以它们为主要输入，一篇对应一个标题与摘要；
 - 分享文章尚未生成、用户明确只需要公众号文案时，可以从 transcript 生成 `promo.md`；
-- `recap.md` 是本期索引，**不单独发公众号，不为它写摘要**；
+- `index.md` 是本期索引，**不单独发公众号，不为它写摘要**；
 - 已有 `promo.md` 时更新原文件，不创建 `promo-v2.md` 或把同一内容复制到多个文件；
 - 小红书和视频号的材料不写进 `promo.md`。
 
@@ -125,9 +125,9 @@ promo.md
 
 - 所有事实和人物观点必须来自 recap、transcript 或其他明确可追溯材料；
 - 不制造冲突、不夸大结论、不写喊话式口号；
-- 摘要准确概括本期，不用“这一次我们聊了很多”等空话；
-- 不在 `promo.md` 中新增纪要正文没有支持的事实；
-- 每篇摘要对应一篇分享文章；本期索引（`recap.md`）不写摘要、不进群发；
+- 摘要准确概括这篇文章，不用“这一次我们聊了很多”等空话；
+- 不在 `promo.md` 中新增文章正文没有支持的事实；
+- 每篇摘要对应一篇分享文章；本期索引（`index.md`）不写摘要、不进群发；
 - `promo.md` 是发布辅助材料，不是另一篇文章。
 
 ## 完成后的回复

@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-xhs
-description: 为启发星球某一期挑出的分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xiaohongshu.md`；一期可含多篇，不要求覆盖每一位分享者，与视频号/公众号可以挑不同的人。
+description: 为启发星球某一期挑出的分享者生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词），保存到 `xhs-{slug}.md`；一期可含多篇，不要求覆盖每一位分享者，与视频号/公众号可以挑不同的人。
 ---
 
 # Inspire Planet 小红书
@@ -29,7 +29,7 @@ description: 为启发星球某一期挑出的分享者生成小红书图文材�
 ## 工作流程
 
 1. **下载逐字稿**：本期目录还没有 `transcript.txt` 时，先走 `inspireplanet-transcript`；
-2. **生成 `xiaohongshu.md`**：读 `transcript.txt`（有 `recap.md` 时优先），一位分享者写一节；
+2. **生成 `xhs-{slug}.md`**：读 `transcript.txt`（有 `gzh-{slug}.md` 时优先），一位分享者一个文件；
 3. **手动触发渲染**：文字定稿后，由用户触发命令出图（见「渲染成图」）；
 4. **手动发布**：图片和文案由人随手发到小红书。本流程**不接平台发布自动化**。
 
@@ -44,7 +44,7 @@ events/{year}/{YYYYMMDD}-epXX/
 优先输入：
 
 ```text
-recap.md
+gzh-{slug}.md
 ```
 
 备选输入：
@@ -56,14 +56,14 @@ transcript.txt
 输出：
 
 ```text
-xiaohongshu.md
+xhs-{slug}.md
 ```
 
 规则：
 
-- 一期一个 `xiaohongshu.md`，内部**一节一篇**；一节对应一位分享者的一次分享；本期只写挑中的那几位；
+- **一位分享者一个文件**：`xhs-{slug}.md`（如 `xhs-liying.md`），一个文件就是一篇；本期只写挑中的那几位；
 - 文件开头保留 `## 发布排期`（见「选题与排期」）；
-- 已有 `xiaohongshu.md` 时更新原文件、追加新节，不创建 `xiaohongshu-2.md`；
+- 已有同名文件时更新原文件，不创建 `xhs-liying-2.md`；换一位分享者就新建对应的 `xhs-{slug}.md`；
 - 小红书内容不写进 `promo.md`（`promo.md` 是公众号材料）。
 
 ## 一节的结构
@@ -128,18 +128,18 @@ xiaohongshu.md
 
 ## 渲染成图
 
-- 定稿后由用户手动触发一条命令，直接从 `xiaohongshu.md` 出图（也支持逐页 JSON）：
+- 定稿后由用户手动触发一条命令，直接从 `xhs-{slug}.md` 出图（也支持逐页 JSON）：
 
 ```bash
-python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/xiaohongshu.md out_dir/
+python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/
 ```
 
 - 渲染样式：暖纸摘录风，无需浏览器；大字默认马善政毛笔楷书（可用 `- 大字字体：kai|klee` 或 JSON 的 `big_font` 切换），小字用霞鹜文楷；页标题里含"原声"的页自动用深色主题（也可写 `- 主题：dark`）；字体首次运行自动下载；
-- **卡片图不保存进仓库**：仓库只保留 `xiaohongshu.md`（图上的文字）。图片是产物，随时可以重渲。
+- **卡片图不保存进仓库**：仓库只保留 `xhs-{slug}.md`（图上的文字）。图片是产物，随时可以重渲。
 
 ## 边界
 
-- 所有事实、人物经历必须来自 `recap.md` / `transcript.txt`，不虚构现场；
+- 所有事实、人物经历必须来自 `gzh-{slug}.md` / `transcript.txt`，不虚构现场；
 - 首图必须落在具体的人与事上，不使用抽象金句；
 - 不制造冲突、不夸大结论、不写喊话式口号；
 - 生成内容与真实发布分开：**本流程不做平台发布自动化**，发布由人手动完成；
@@ -149,6 +149,6 @@ python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/xiaohongshu.md out
 简短说明：
 
 1. 使用的输入（recap 还是 transcript）；
-2. 创建或更新的 `xiaohongshu.md` 路径、本期挑了谁（以及为什么没写其他人）、建议的发布顺序；
+2. 创建或更新的 `xhs-{slug}.md` 路径、本期挑了谁（以及为什么没写其他人）、建议的发布顺序；
 3. 推荐的首选标题与封面副标题；
 4. 哪些授权、素材或事实仍需确认。

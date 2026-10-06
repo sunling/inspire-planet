@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-sph
-description: 为启发星球某一期挑出的分享者生成视频号图文材料（标题、正文、图片脚本、话题词），保存到 `shipinhao.md`；一期可含多条，不要求覆盖每一位分享者，与小红书/公众号可以挑不同的人。
+description: 为启发星球某一期挑出的分享者生成视频号图文材料（标题、正文、图片脚本、话题词），保存到 `sph-{slug}.md`；一期可含多条，不要求覆盖每一位分享者，与小红书/公众号可以挑不同的人。
 ---
 
 # Inspire Planet 视频号
@@ -48,7 +48,7 @@ description: 为启发星球某一期挑出的分享者生成视频号图文材�
 ## 工作流程
 
 1. **下载逐字稿**：本期目录还没有 `transcript.txt` 时，先走 `inspireplanet-transcript`；
-2. **生成 `shipinhao.md`**：标题、正文、图片脚本、话题词；
+2. **生成 `sph-{slug}.md`**：标题、正文、图片脚本、话题词；
 3. **渲染成图**（人工触发）：复用小红书那套卡片，见「渲染成图」；
 4. **手动发布**：电脑端「视频号助手」（channels.weixin.qq.com）→ 内容管理 → 图文 → 发表图文。
 
@@ -64,20 +64,20 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ```text
 transcript.txt
-recap.md
+gzh-{slug}.md
 ```
 
 默认输出：
 
 ```text
-shipinhao.md
+sph-{slug}.md
 ```
 
 规则：
 
-- 一期可以有多条，**一条讲一个人的一件事**；本期只写挑中的那几位；
+- **一位分享者一个文件**：`sph-{slug}.md`（如 `sph-liying.md`），一条一个人一件事；本期只写挑中的那几位；
 - 文件开头保留 `## 发布排期`（见「选题与排期」）；
-- 已有 `shipinhao.md` 时更新原文件，不创建 `shipinhao-v2.md`；
+- 已有同名文件时更新原文件，不创建 `sph-liying-2.md`；换一位分享者就新建对应的 `sph-{slug}.md`；
 - 公众号材料不写进本文件（那是 `promo.md`）。
 
 ## 默认产出
@@ -124,11 +124,11 @@ shipinhao.md
 与小红书共用同一套卡片（暖纸摘录风，无需浏览器）：
 
 ```bash
-python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/shipinhao.md out_dir/
+python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/
 ```
 
 - 大字默认马善政毛笔楷书，小字霞鹜文楷；页标题含"原声"自动深色；字体首次运行自动下载；
-- **卡片图不进仓库**：仓库只保留 `shipinhao.md`（图上的文字），随时可以重渲。
+- **卡片图不进仓库**：仓库只保留 `sph-{slug}.md`（图上的文字），随时可以重渲。
 
 ## 附：为什么不做原声视频
 
@@ -144,7 +144,7 @@ python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/shipinhao.md out_d
 
 ## 边界
 
-- 所有事实、人物经历必须来自 `transcript.txt` 或 `recap.md`，不虚构；
+- 所有事实、人物经历必须来自 `transcript.txt` 或 `gzh-{slug}.md`，不虚构；
 - 生成内容与发布分开：**本流程不做平台发布自动化**，发布由人手动完成。
 
 ## 完成后的回复
@@ -152,6 +152,6 @@ python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/shipinhao.md out_d
 简短说明：
 
 1. 使用了 transcript 还是 recap；
-2. 创建或更新的 `shipinhao.md` 路径；
+2. 创建或更新的 `sph-{slug}.md` 路径；
 3. 本期挑了谁（以及为什么没写其他人）、建议的发布顺序；
 4. 哪些地方仍需确认。
