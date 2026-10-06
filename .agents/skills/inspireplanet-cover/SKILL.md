@@ -28,13 +28,13 @@ promo.md
 公众号封面输出：
 
 ```text
-covers/recap-cover.png
+covers/recap-cover.jpg
 ```
 
 小红书封面输出：
 
 ```text
-covers/xiaohongshu-cover.png
+covers/xiaohongshu-cover.jpg
 ```
 
 最终封面配置写入：
@@ -67,6 +67,19 @@ promo.md
 - 小红书封面的期数和副标题必须分别准确呈现，不加入长标题或额外解释文字；
 - 不出现 Logo、水印、伪文字和营销海报感。
 
+## 保存规范（JPEG）
+
+封面成品一律输出 **JPEG**，不交付 PNG：
+
+- 参数：`quality=88`、`optimize=True`、`progressive=True`；
+- 保存前转 `RGB`；画面若带 alpha，先合成到设计底色，不留透明通道；
+- 分辨率不降：公众号横版宽度保持 ≥1920px，小红书保持 1080×1440（3:4）；
+- 单张目标 ≤ 400 KB；超出则先降到 `quality=85`，再把 `subsampling` 设为 `2`（4:2:0），仍超出再缩到宽 1600px；
+- 保存后打印实际体积；超过 500 KB 视为不合格，重存；
+- 平台上传直接用这个 JPEG，不再另存一份 PNG。
+
+理由：同一张 1920px 封面，PNG 约 2 MB，JPEG q88 约 0.25 MB（小 8–10 倍），手机端肉眼无差别（实测平均像素差 2/255，99.9% 的像素差 ≤10/255）。封面每期都要提交进仓库，格式是长期体积的唯一杠杆——用 git 覆盖同名文件并不能让仓库变小，历史会保留每一版。
+
 ## 工作流程
 
 1. 确认 event、`index.md` 和文章主标题；
@@ -76,7 +89,7 @@ promo.md
 5. 设计适合公众号横版头图、手机端可读的构图和文字区域；
 6. 生成主题画面并加入中文副标题，只输出一张完整的带字封面；
 7. 检查副标题文字是否准确、完整、清晰，且没有与主标题表达相同信息；不合格就重做；
-8. 保存为当前 event 的 `covers/recap-cover.png`；
+8. 保存为当前 event 的 `covers/recap-cover.jpg`；
 9. 创建或更新 `promo.md` 中的“公众号封面配置”：
    - 最终副标题；
    - 视觉命题；
@@ -92,7 +105,7 @@ promo.md
 3. 沿用本期核心视觉命题，但为 `3:4` 竖版重新组织空间层级；
 4. 图片只放两组准确文字：期数 `{year}EP{episode}` 和最终副标题；
 5. 检查文字、竖版构图和手机端缩略图可读性，不合格就重做；
-6. 保存为 `covers/xiaohongshu-cover.png`；
+6. 保存为 `covers/xiaohongshu-cover.jpg`；
 7. 创建或更新 `promo.md` 中的“小红书封面配置”：
    - 期数文字；
    - 最终副标题；
@@ -111,7 +124,7 @@ promo.md
 - 最终副标题：
 - 视觉命题：
 - 生成提示词：
-- 成品路径：covers/recap-cover.png
+- 成品路径：covers/recap-cover.jpg
 ```
 
 ## 最小小红书封面配置格式
@@ -124,7 +137,7 @@ promo.md
 - 最终副标题：
 - 视觉命题：
 - 生成提示词：
-- 成品路径：covers/xiaohongshu-cover.png
+- 成品路径：covers/xiaohongshu-cover.jpg
 ```
 
 同一张图删掉文字后若可无差别用于最近三期，说明画面太通用，必须重做。

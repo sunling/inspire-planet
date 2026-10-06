@@ -43,7 +43,7 @@ index.md
 
 - 发布辅助材料：`promo.md`；
 - 金句 JSON：`quote-cards.json`；
-- 封面：`covers/recap-cover.png`。
+- 封面：`covers/recap-cover.jpg`。
 
 `index.md` 只保存本期索引（一行概括 + 各篇链接），不放文章正文。标题候选、摘要、社交文案和封面配置由 `promo.md` 承接，不追加到索引末尾。
 
