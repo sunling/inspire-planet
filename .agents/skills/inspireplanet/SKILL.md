@@ -29,7 +29,7 @@ xhs-{slug}.md         # 小红书图文（一位分享者一篇）
 sph-{slug}.md         # 视频号图文（一位分享者一篇）
 promo.md              # 发布材料与封面配置
 quote-cards.json
-covers/recap-cover.png
+assets/recap-cover.jpg
 ```
 
 文件名规则：**渠道缩写-分享者英文 slug**，例如 `gzh-liying.md`、`xhs-liying.md`、`sph-liying.md`。一期选了谁、哪个渠道有内容，看文件名就知道；同一渠道有多位分享者时就有多个文件。历史期沿用旧的 `recap.md` / `xiaohongshu.md`，不追溯改名。

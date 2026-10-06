@@ -23,7 +23,7 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
   promo.md             发布材料（标题、摘要、排期）与封面配置
-  covers/              会议及社交平台封面
+  assets/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
 ```

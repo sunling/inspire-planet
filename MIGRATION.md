@@ -13,3 +13,9 @@
 2026-10-05，原仓库清理 [PR #96](https://github.com/sunling/sunling-os/pull/96) 已合并，系统结构与内容完整性 CI 均通过。已迁移的共同文件从原仓库主分支移除，个人材料保留原位。今后请以本仓库为共同会议内容的维护位置。
 
 2026-10-06，调整 events 目录结构：去掉每期下的 `meeting/` 子目录，会议文件直接放在期目录下，`covers/` 保留；同时把历史 33 期的目录日期由会议当天的西雅图日期改为会议时间戳日期（北京时间，即原目录 +1 天），例如 `20260925-ep38` 改为 `20260926-ep38`。`migration-manifest.json` 的 `source_path` 保留原仓库来源，未改动。
+
+2026-10-06，封面产出规范化，两处变更：
+
+1. 每期图片目录由 `covers/` 更名为 `assets/`（6 期已迁移目录一并改名）。`migration-manifest.json` 只更新 `target_path`，`source_path` 仍保留原仓库来源；`recap.md`、`promo.md`、`README.md`、`events/README.md` 与相关 skills 中的路径引用同步更新。
+2. 封面成品由 PNG 改为 JPEG（`quality=88`、`optimize`、`progressive`，横版宽度 ≥1920px、竖版 1080×1440），单张体积约为原来的 1/10。历史 PNG 文件保留原位、不追溯转换；新格式的保存规范写在 `.agents/skills/inspireplanet-cover/SKILL.md`。
+

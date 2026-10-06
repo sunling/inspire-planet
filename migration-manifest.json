@@ -225,7 +225,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260529-ep21/covers/recap-cover.png",
-      "target_path": "events/2026/20260530-ep21/covers/recap-cover.png",
+      "target_path": "events/2026/20260530-ep21/assets/recap-cover.png",
       "source_blob_sha": "37bd5d3d4d47f991250f57a341937b194e8c261e"
     },
     {
@@ -250,7 +250,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260605-ep22/covers/recap-cover.png",
-      "target_path": "events/2026/20260606-ep22/covers/recap-cover.png",
+      "target_path": "events/2026/20260606-ep22/assets/recap-cover.png",
       "source_blob_sha": "b7ca1163bb3017da6d5ebeedc3e80bd550e616d5"
     },
     {
@@ -275,7 +275,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260612-ep23/covers/recap-cover.png",
-      "target_path": "events/2026/20260613-ep23/covers/recap-cover.png",
+      "target_path": "events/2026/20260613-ep23/assets/recap-cover.png",
       "source_blob_sha": "cf67e25362240ec4649f3690cbfc936a56628716"
     },
     {
@@ -295,7 +295,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260619-ep24/covers/recap-cover-plain.png",
-      "target_path": "events/2026/20260620-ep24/covers/recap-cover-plain.png",
+      "target_path": "events/2026/20260620-ep24/assets/recap-cover-plain.png",
       "source_blob_sha": "4826b312c9b92b294a3f1d5498b59a41638cf55f"
     },
     {
@@ -345,7 +345,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260710-ep27/covers/recap-cover.png",
-      "target_path": "events/2026/20260711-ep27/covers/recap-cover.png",
+      "target_path": "events/2026/20260711-ep27/assets/recap-cover.png",
       "source_blob_sha": "88be97fc1cdb3a08c21d23803295cd27bc30b4cf"
     },
     {
@@ -365,12 +365,12 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260717-ep28/covers/recap-cover.png",
-      "target_path": "events/2026/20260718-ep28/covers/recap-cover.png",
+      "target_path": "events/2026/20260718-ep28/assets/recap-cover.png",
       "source_blob_sha": "9505f2cd603cb55062580d322dabbb994fc0cca5"
     },
     {
       "source_path": "practices/inspire-planet/2026/20260717-ep28/covers/xiaohongshu-cover.png",
-      "target_path": "events/2026/20260718-ep28/covers/xiaohongshu-cover.png",
+      "target_path": "events/2026/20260718-ep28/assets/xiaohongshu-cover.png",
       "source_blob_sha": "bf513be37bc2d4c27bfb15b86407024d945d3706"
     },
     {
