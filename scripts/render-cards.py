@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """启发星球 · 卡片渲染器
 
-把"图集脚本"(逐页 JSON) 渲染成小红书竖版卡片 PNG。
+把"图集脚本"(逐页 JSON) 渲染成小红书竖版卡片 JPEG（quality=88、optimize、progressive）。
 不依赖浏览器：只用 Pillow + 一款中文字体，输出文字精确、可复现、零模型开销。
 
 用法：
@@ -154,7 +154,9 @@ def render(page, out, fonts):
         t = str(page["page"])
         draw.text((W - MARGIN - draw.textlength(t, font=f_meta), H - 104),
                   t, font=f_meta, fill=sub)
-    img.save(out, "PNG")
+    # 卡片成品存 JPEG：同一张 1080×1440 卡片，PNG 约 1–2 MB，JPEG q88 约 0.2 MB。
+    # 体积对仓库长期增长影响最大；PNG/覆盖同名文件都不能减小 git 仓库体积。
+    img.convert("RGB").save(out, "JPEG", quality=88, optimize=True, progressive=True)
     return out
 
 
@@ -241,7 +243,7 @@ def parse_md(text):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="把图集脚本（JSON 或 md）渲染成卡片 PNG")
+    ap = argparse.ArgumentParser(description="把图集脚本（JSON 或 md）渲染成卡片 JPEG")
     ap.add_argument("pages", help="逐页 JSON，或图集脚本 md（xhs-*.md / sph-*.md）")
     ap.add_argument("out_dir", help="输出目录")
     args = ap.parse_args()
@@ -267,7 +269,7 @@ def main():
         os.makedirs(sub, exist_ok=True)
         for i, page in enumerate(pages, 1):
             page.setdefault("page", f"{i:02d}")
-            render(page, os.path.join(sub, f"{i:02d}.png"), fonts)
+            render(page, os.path.join(sub, f"{i:02d}.jpg"), fonts)
             total += 1
         print(f"{title or 'pages'}: {len(pages)} 张 -> {sub}")
     print(f"共 {total} 张")
