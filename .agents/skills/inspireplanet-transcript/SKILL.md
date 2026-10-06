@@ -7,7 +7,7 @@ description: 从腾讯会议拉取某一期会议的逐字稿（文字转写）�
 
 ## 目标
 
-把每周线上会议的逐字稿从腾讯会议取下来，落到对应 event 的 `transcript.txt`，作为 `inspireplanet-recap`、`inspireplanet-cards`、`inspireplanet-promo` 的输入。
+把每周线上会议的逐字稿从腾讯会议取下来，落到对应 event 的 `transcript.txt`，作为 `inspireplanet-gzh`、`inspireplanet-cards`、`inspireplanet-xhs`、`inspireplanet-sph` 的输入。
 
 ## 路径
 
@@ -52,11 +52,12 @@ transcript.txt
 
 逐字稿落地后，按需要继续：
 
-- 会议纪要 / 分享文章 → `inspireplanet-recap`：`transcript.txt` → `index.md` + `gzh-{slug}.md`；
+- 公众号文章（含标题、摘要、横版封面）→ `inspireplanet-gzh`：`transcript.txt` → `gzh-{slug}.md` + `assets/recap-cover.jpg`；
 - 金句卡片 → `inspireplanet-cards`：`transcript.txt` → `quote-cards.json`；
-- 发布文案 → `inspireplanet-promo`；封面 → `inspireplanet-cover`。
+- 小红书图文 → `inspireplanet-xhs`；视频号图文 → `inspireplanet-sph`；
+- 本期索引与发布面板 → 总控 `inspireplanet`：`index.md`。
 
-用户说“整理完整发布包”时，若 `transcript.txt` 缺失则先取逐字稿，再依次 recap → cards → promo → cover。
+用户说“整理完整发布包”时，若 `transcript.txt` 缺失则先取逐字稿，再依次 gzh → index → xhs → sph → cards。
 
 ## 边界
 
@@ -71,5 +72,5 @@ transcript.txt
 
 1. 写入的 `transcript.txt` 路径；
 2. 会议名称、发言块数量与大致字数；
-3. 建议的下一步（recap / cards）；
+3. 建议的下一步（gzh / cards）；
 4. 是否有授权、隐私或识别错误需要人工确认。
