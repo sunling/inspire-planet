@@ -127,10 +127,10 @@ Michael 最后讲到爱。宇宙飞船、小行星、文明毁灭都可以很宏
 
 ## 封面图片
 
-图片路径：`../covers/recap-cover-plain.png`
+图片路径：`../assets/recap-cover-plain.png`
 
 
-无字底图：`../covers/recap-cover-plain.png`
+无字底图：`../assets/recap-cover-plain.png`
 
 
 封面文字建议：跳出日常 / 欣赏即富足

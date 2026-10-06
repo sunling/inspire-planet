@@ -28,13 +28,13 @@ promo.md
 公众号封面输出：
 
 ```text
-covers/recap-cover.jpg
+assets/recap-cover.jpg
 ```
 
 小红书封面输出：
 
 ```text
-covers/xiaohongshu-cover.jpg
+assets/xiaohongshu-cover.jpg
 ```
 
 最终封面配置写入：
@@ -89,7 +89,7 @@ promo.md
 5. 设计适合公众号横版头图、手机端可读的构图和文字区域；
 6. 生成主题画面并加入中文副标题，只输出一张完整的带字封面；
 7. 检查副标题文字是否准确、完整、清晰，且没有与主标题表达相同信息；不合格就重做；
-8. 保存为当前 event 的 `covers/recap-cover.jpg`；
+8. 保存为当前 event 的 `assets/recap-cover.jpg`；
 9. 创建或更新 `promo.md` 中的“公众号封面配置”：
    - 最终副标题；
    - 视觉命题；
@@ -105,7 +105,7 @@ promo.md
 3. 沿用本期核心视觉命题，但为 `3:4` 竖版重新组织空间层级；
 4. 图片只放两组准确文字：期数 `{year}EP{episode}` 和最终副标题；
 5. 检查文字、竖版构图和手机端缩略图可读性，不合格就重做；
-6. 保存为 `covers/xiaohongshu-cover.jpg`；
+6. 保存为 `assets/xiaohongshu-cover.jpg`；
 7. 创建或更新 `promo.md` 中的“小红书封面配置”：
    - 期数文字；
    - 最终副标题；
@@ -124,7 +124,7 @@ promo.md
 - 最终副标题：
 - 视觉命题：
 - 生成提示词：
-- 成品路径：covers/recap-cover.jpg
+- 成品路径：assets/recap-cover.jpg
 ```
 
 ## 最小小红书封面配置格式
@@ -137,7 +137,7 @@ promo.md
 - 最终副标题：
 - 视觉命题：
 - 生成提示词：
-- 成品路径：covers/xiaohongshu-cover.jpg
+- 成品路径：assets/xiaohongshu-cover.jpg
 ```
 
 同一张图删掉文字后若可无差别用于最近三期，说明画面太通用，必须重做。
