@@ -154,8 +154,8 @@ def render(page, out, fonts):
         t = str(page["page"])
         draw.text((W - MARGIN - draw.textlength(t, font=f_meta), H - 104),
                   t, font=f_meta, fill=sub)
-    # 卡片成品存 JPEG：同一张 1080×1440 卡片，PNG 约 1–2 MB，JPEG q88 约 0.2 MB。
-    # 体积对仓库长期增长影响最大；PNG/覆盖同名文件都不能减小 git 仓库体积。
+    # 卡片成品存 JPEG：实测同一张 1080×1440 卡片 PNG ≈297 KB → JPEG q88 ≈72 KB。
+    # 卡片图不进仓库，省的是本地磁盘与上传体积；注意 git 覆盖同名文件不会减小仓库体积。
     img.convert("RGB").save(out, "JPEG", quality=88, optimize=True, progressive=True)
     return out
 
