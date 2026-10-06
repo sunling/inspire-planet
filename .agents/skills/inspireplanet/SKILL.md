@@ -69,11 +69,10 @@ assets/recap-cover.jpg
 2. **公众号分享文章** → `inspireplanet-recap`：`index.md`（本期索引，200–400 字，不发公众号）+ `gzh-{slug}.md`（分享文章，一期通常 1–2 篇，篇幅由内容决定）；
 3. **公众号发布材料** → `inspireplanet-promo`：每篇一个标题与摘要；
 4. **小红书图文材料** → `inspireplanet-xhs`；
-5. **视频号图文材料** → `inspireplanet-sph`。
+5. **视频号图文材料** → `inspireplanet-sph`；
+6. **金句卡片** → `inspireplanet-cards`：`quote-cards.json`，条数按内容密度决定、覆盖主要分享者。
 
-生成阶段**只产出文字文件**：图片渲染（`scripts/render-cards.py`）和发布都由人手动完成，不在这条链里烧时间。
-
-金句卡片（`inspireplanet-cards`）不在默认链里，用户明确要时才做。
+生成阶段**只产出文字文件**：图片渲染（`scripts/render-cards.py`）和发布都由人手动完成，不在这条链里烧时间。金句卡片属于文字产物，**在默认链里**。
 
 ## 选题与排期
 
