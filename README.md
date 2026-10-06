@@ -1,6 +1,6 @@
 # 启发星球 · Inspire Planet
 
-这里保存启发星球共同创作的会议资料、金句、会议纪要与发布文案，以及整理这些内容的 AI skills。
+这里保存启发星球共同创作的会议资料、金句、分享文章与发布材料，以及整理这些内容的 AI skills。
 
 启发星球是一个持续分享真实生活、问题、尝试和变化的共同学习空间。内容来自参与者的分享与讨论，保留发言归属，不把共同成果归为某一个人的个人知识库。
 
@@ -8,7 +8,7 @@
 
 - [按期浏览会议资料](events/README.md)
 - [当前活动信息](current.md)：只有经过确认的信息才用于新的邀请与发布文案。
-- [AI 工作流](.agents/skills/)：会议纪要、金句卡片、发布文案和封面。
+- [AI 工作流](.agents/skills/)：分享文章、金句卡片、发布材料、小红书/视频号图文和封面。
 - [迁移说明](MIGRATION.md)
 
 ## 文件结构
@@ -16,16 +16,19 @@
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt       会议原始转写
-  recap.md             会议纪要
+  index.md             本期索引（仓库内，不单独发公众号）
+  gzh-{slug}.md        公众号分享文章（一位分享者一篇）
+  xhs-{slug}.md        小红书图文（一位分享者一篇）
+  sph-{slug}.md        视频号图文（一位分享者一篇）
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
-  promo.md             公众号发布材料与封面配置
-  xiaohongshu.md       小红书图文材料（一期可多篇，每篇一节）
-  shipinhao.md         视频号图文材料（标题 + 正文 + 图片脚本，一期可多条）
+  promo.md             发布材料（标题、摘要、排期）与封面配置
   covers/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
 ```
+
+文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md`，不追溯改名。
 
 每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
 
@@ -45,7 +48,7 @@ scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
 
 - “下载本期逐字稿” → `inspireplanet-transcript`
 - “整理某期会议的完整发布包” → `inspireplanet`
-- “整理会议纪要” → `inspireplanet-recap`
+- “整理会议纪要 / 写分享文章” → `inspireplanet-recap`
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成公众号文案” → `inspireplanet-promo`
 - “生成小红书图文” → `inspireplanet-xhs`

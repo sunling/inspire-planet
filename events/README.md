@@ -37,4 +37,4 @@
 | 20260912-ep36 | [转写](2026/20260912-ep36/transcript.txt) | [纪要](2026/20260912-ep36/recap.md) | [卡片 JSON](2026/20260912-ep36/quote-cards.json) | [文案](2026/20260912-ep36/promo.md) | — |
 | 20260919-ep37 | [转写](2026/20260919-ep37/transcript.txt) | [纪要](2026/20260919-ep37/recap.md) | [卡片 JSON](2026/20260919-ep37/quote-cards.json) | [文案](2026/20260919-ep37/promo.md) | — |
 | 20260926-ep38 | [转写](2026/20260926-ep38/transcript.txt) | [纪要](2026/20260926-ep38/recap.md) | [卡片 JSON](2026/20260926-ep38/quote-cards.json) | [文案](2026/20260926-ep38/promo.md) | — |
-| 20261003-ep39 | [转写](2026/20261003-ep39/transcript.txt) | — | — | [小红书](2026/20261003-ep39/xiaohongshu.md) · [视频号](2026/20261003-ep39/shipinhao.md) | — |
+| 20261003-ep39 | [转写](2026/20261003-ep39/transcript.txt) | [索引](2026/20261003-ep39/index.md) · [公众号 2 篇](2026/20261003-ep39/gzh-liying.md) | — | [小红书](2026/20261003-ep39/xhs-liying.md) · [视频号](2026/20261003-ep39/sph-liying.md) · [发布材料](2026/20261003-ep39/promo.md) | — |
