@@ -35,7 +35,7 @@ description: 为启发星球某一期挑出的分享者生成视频号图文材�
 
 ## 与小红书的关系
 
-同一期的同一件事，**图片可以共用**（都走 `scripts/render-cards.py`）。差别只在文案：
+同一期的同一件事，**图片可以共用**（都走 `scripts/text-cards/render.py`）。差别只在文案：
 
 | | 小红书 | 视频号 |
 |---|---|---|
@@ -110,6 +110,9 @@ sph-{slug}.md
 {≤1000 字；前 3 行独立成立}
 
 ### 图片脚本
+- 分享者：...
+- 日期：...
+
 #### 第 1 页
 - 图上大字：...
 - 小字：...
@@ -121,13 +124,13 @@ sph-{slug}.md
 
 ## 渲染成图
 
-与小红书共用同一套卡片（暖纸摘录风，无需浏览器）：
+与小红书共用同一套卡片和主题：
 
 ```bash
-python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/ [--theme paper|inspire]
 ```
 
-- 大字默认马善政毛笔楷书，小字霞鹜文楷；页标题含"原声"自动深色；字体首次运行自动下载；
+- 默认 `paper` 主题：毛笔大字 + 霞鹜文楷小字，页标题含"原声"自动深色；字体首次运行自动下载；详见 `scripts/text-cards/README.md`；
 - **卡片图不进仓库**：仓库只保留 `sph-{slug}.md`（图上的文字），随时可以重渲。
 
 ## 附：为什么不做原声视频

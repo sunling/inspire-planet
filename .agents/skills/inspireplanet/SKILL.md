@@ -72,7 +72,7 @@ assets/xiaohongshu-cover.jpg  # 小红书竖版封面
 5. **视频号图文** → `inspireplanet-sph`；
 6. **金句卡片** → `inspireplanet-cards`：`quote-cards.json`。
 
-生成阶段产出文字文件与封面成品；卡片图渲染（`scripts/render-cards.py`）和发布都由人手动完成，不在这条链里烧时间。
+生成阶段产出文字文件与封面成品；卡片图渲染（`scripts/text-cards/render.py`）和发布都由人手动完成，不在这条链里烧时间。
 
 ## index.md（本 Skill 产出）
 

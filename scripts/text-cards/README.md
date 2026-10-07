@@ -1,19 +1,40 @@
-# 长文文字卡渲染器
+# 文字卡渲染器
 
-把一篇分页 Markdown 渲染为小红书竖版（1080 × 1440）文字卡 PNG。用 HTML/CSS 排版、浏览器截图，文字精确、可复现。
+把文字稿渲染为小红书 / 视频号竖版（1080 × 1440）卡片图。HTML/CSS 排版、浏览器截图，文字精确、可复现；主题是纯 CSS，不同分享者、不同栏目可以用不同主题。
 
-与 `scripts/render-cards.py` 的分工：
+## 两种输入
 
-| | `render-cards.py` | `text-cards/render.py` |
-|---|---|---|
-| 适合 | 大字摘录卡：一页一句大字 + 一行小字 | 需要连续阅读的长文：一位分享者的完整分享稿 |
-| 输入 | `xhs-{slug}.md` 的图集脚本 / 逐页 JSON | 分页 Markdown（独占一行 `---` 分页） |
-| 依赖 | Pillow | Playwright + 本机 Chrome/Chromium |
-| 风格 | 暖纸、毛笔大字 | 启发星球橙、霞鹜文楷正文 |
+**1. 图集脚本**（`events/.../xhs-{slug}.md`、`sph-{slug}.md`，`inspireplanet-xhs` / `inspireplanet-sph` Skill 的产物，格式不变）
 
-来源同步自 `sunling-os/tools/xiaohongshu/`，此处只保留启发星球的主题与默认值。
+```markdown
+### 图集脚本
 
-## 分页 Markdown
+#### 第 1 页（封面）
+- 主标题：大字
+- 副标题：一行小字
+- 左上署名：启发星球 · 第 39 期
+
+#### 第 2 页
+- 图上大字：一句摘录
+- 小字：一两行补充
+
+#### 第 7 页（原声）
+- 图上大字：页标题含“原声”自动变深色页，也可写 `- 主题：dark`
+```
+
+页眉页脚文字：`### 图集脚本` 之后、第一页之前可写篇目级设置行，字段与下面 frontmatter 一一对应：
+
+```markdown
+### 图集脚本
+- 分享者：李影          → speaker
+- 日期：2026-10-03     → date
+- 期数：第 39 期        → episode
+- 栏目：/ 署名：/ 站点：/ 主题：   → series / signature / site / theme
+```
+
+文件开头也可以放一段 frontmatter 对整个文件生效；优先级：命令行 `--theme` > 篇目级设置 > 文件 frontmatter > 默认值。一个文件里有多个 `##` 篇目时，各自输出到 `out_dir/01-{篇名}/`、`02-.../`，每篇可以有自己的分享者和主题。默认主题 `paper`。
+
+**2. 分页 Markdown**（一位分享者的完整分享稿，可连续阅读）
 
 ```markdown
 ---
@@ -22,9 +43,9 @@ date: 2026-06-12
 speaker: 孙玲
 ---
 
-# 自我欺骗的边界
+# 封面标题
 
-当我说"所有努力都有意义"，我是在乐观，还是在自我欺骗？
+封面副题一两句。
 
 ---
 
@@ -34,45 +55,54 @@ speaker: 孙玲
 
 ---
 
-> 整页只有一个引用块时成为引用页：原文里已有的一句话，单独放大。
+> 整页只有引用块时成为引用页。
 
 ---
-
-## 清单页
 
 - 整页只有列表项时成为清单页
 - 只在原文本来就是并列短句时使用
 ```
 
-第一页自动成为封面（橙色底 `#fff9f0`、大标题、无页码）。frontmatter 均可选：
+第一页自动成为封面（无页码）。默认主题 `inspire`。frontmatter 均可选：
 
 | 字段 | 位置 | 默认 |
 |---|---|---|
+| `theme` | 主题名 | `inspire` |
 | `series` | 页眉左 | `启发星球` |
 | `episode` | 页眉左，`series · episode` | 无 |
-| `date` | 封面底部，显示为 `YYYY年M月D日` | 无 |
+| `date` | 封面底部，`YYYY年M月D日` | 无 |
 | `speaker` | 页眉右、封面底部 | 无；缺省用 `signature` |
 | `signature` | 同上 | `启发星球笔记` |
 | `site` | 封面右下、末页左下 | `inspireplanet.cc`；写 `site:` 留空可隐藏 |
 
-一组 7–11 页里穿插 1–2 个引用页即可，不连续两页引用，也不为了节奏造一句原文没有的话。
+## 主题
+
+| 主题 | 风格 | 适合 |
+|---|---|---|
+| `inspire` | 启发星球橙（`#ff5a36` / 封面 `#fff9f0`），霞鹜文楷 | 官方账号的连续长文 |
+| `paper` | 暖纸摘录风：纸色渐变、马善政毛笔大字、原声页深色 | 一页一句的大字摘录卡 |
+
+选择方式：frontmatter `theme: paper` 或命令行 `--theme paper`；都不写时按输入类型取默认。
+
+新增主题：复制 `theme-paper.css` 为 `theme-{name}.css`，改 `:root` 里的变量（`--accent --background --cover-background --ink --muted --muted-strong --rule`）和少量规则即可，`theme.css` 只负责版式结构，不要改它来换色。主题名只用小写字母、数字和连字符。临时微调用 `--accent`、`--background`、`--cover-background`。
 
 ## 运行
 
 ```bash
 python3 -m pip install -r scripts/text-cards/requirements.txt
 python3 -m playwright install chromium          # 或用 --browser 指定本机 Chrome
-python3 scripts/text-cards/render.py <分页稿.md> <空输出目录> \
+
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ \
   --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --contact-sheet /tmp/sheet.png                 # 临时总览图，便于检查
+# 可选：--theme inspire|paper   --jpeg（输出 JPEG q88 而非 PNG）
 ```
 
-- 字体：优先读 `~/.cache/inspireplanet-fonts/LXGWWenKai-Regular.ttf`（`render-cards.py` 首次运行会下载到这里），也查 `~/Library/Fonts/`；都没有时用 `--font` 指定。
-- 输出目录必须为空；先渲染到临时目录检查，再复制到 `events/{year}/{YYYYMMDD}-epXX/assets/`。渲染器会拒绝溢出和页眉重叠的页面；遇到溢出先拆页或删重复，不缩字号。
-- 卡片图是产物，不提交进仓库；仓库只保留分页 Markdown。
-- 微调配色：`--accent`、`--background`、`--cover-background`。
+- 字体首次运行自动下载到 `~/.cache/inspireplanet-fonts/`（`INSPIRE_FONTS_DIR` 可改；也会查 `~/Library/Fonts/`、`~/.local/share/fonts/`）；离线时用 `--font` 指定霞鹜文楷。
+- 输出目录必须为空。渲染器会拒绝溢出和页眉重叠的页面；遇到溢出先拆页或删重复，不缩字号。
+- 卡片图是产物，不提交进仓库；仓库只保留文字稿。
 
-改动渲染器后运行：
+改动渲染器或主题后运行：
 
 ```bash
 python3 scripts/text-cards/test_render.py --font <字体.ttf> [--browser <浏览器路径>]
