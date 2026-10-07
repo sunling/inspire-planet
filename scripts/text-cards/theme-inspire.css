@@ -1,0 +1,10 @@
+/* 启发星球橙。取自 inspireplanet.cc：--primary-dark #ff5a36（标题；站点 --primary #ff7f50 在手机上对比度不足）、--bg-light #fff9f0（封面）。 */
+:root {
+  --accent: #ff5a36;
+  --background: #ffffff;
+  --cover-background: #fff9f0;
+  --ink: #191919;
+  --muted: #626262;
+  --muted-strong: #4a464c;
+  --rule: #e9e5e2;
+}

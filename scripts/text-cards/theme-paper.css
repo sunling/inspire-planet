@@ -1,0 +1,36 @@
+/* 暖纸摘录风：竖向暖纸渐变 + 柔和水彩斑，毛笔大字，`原声` 页为深色。
+   配色沿用早期 Pillow 版渲染器。 */
+:root {
+  --accent: #c48e54;
+  --ink: #3c3228;
+  --muted: #8c7c68;
+  --muted-strong: #6e5f4e;
+  --rule: rgba(140, 124, 104, 0.25);
+  --paper-top: #faf6ef;
+  --paper-bottom: #f1e7d6;
+  --background: var(--paper-top);
+  --cover-background: var(--paper-top);
+}
+.card, .card.cover {
+  background:
+    radial-gradient(420px 420px at 18% 22%, rgba(236,214,180,0.55), transparent 70%),
+    radial-gradient(380px 380px at 82% 38%, rgba(244,226,196,0.50), transparent 70%),
+    radial-gradient(460px 460px at 30% 86%, rgba(228,208,176,0.45), transparent 70%),
+    radial-gradient(300px 300px at 88% 90%, rgba(236,214,180,0.40), transparent 70%),
+    linear-gradient(var(--paper-top), var(--paper-bottom));
+}
+header { border-bottom: none; }
+h1 { font-family: BrushChinese, LocalChinese, serif; font-size: 90px; line-height: 1.34; color: var(--ink); margin: 0 0 44px; }
+h1::after { content: ''; display: block; width: 70px; height: 4px; background: var(--accent); margin-top: 40px; }
+p { font-size: 46px; line-height: 1.72; color: var(--muted); }
+main { display: flex; flex-direction: column; justify-content: center; }
+.cover h1 { font-family: BrushChinese, LocalChinese, serif; font-size: 100px; letter-spacing: 0; }
+.cover h1::after { width: 70px; height: 4px; margin-top: 40px; }
+.cover footer .site { color: var(--muted); }
+.quote p { font-family: BrushChinese, LocalChinese, serif; font-size: 72px; color: var(--ink); }
+
+/* 深色原声页 */
+.card.dark {
+  --ink: #faf6f0; --muted: #c4baac; --muted-strong: #c4baac; --accent: #c69660;
+  background: linear-gradient(#2c2824, #1c1a18);
+}
