@@ -9,6 +9,8 @@
   2. 图集脚本（`xhs-{slug}.md` / `sph-{slug}.md`）：`### 图集脚本` 下按 `#### 第 N 页`
      分页，页内 `- 图上大字：` / `- 小字：` / `- 左上署名：` / `- 主标题：` / `- 副标题：`；
      页标题含“原声”或写 `- 主题：dark` 时为深色页。一个文件里多个 `##` 篇目各自输出到子目录。
+     页眉页脚文字：文件开头 frontmatter（同下）对全文件生效；`### 图集脚本` 下、第一页之前可写
+     篇目级设置 `- 分享者：` `- 日期：` `- 期数：` `- 栏目：` `- 署名：` `- 站点：` `- 主题：` 覆盖。
 
 主题是纯 CSS：`theme-{name}.css` 覆盖 `theme.css` 的变量与少量规则。
   inspire  启发星球橙（分页 Markdown 的默认）
@@ -95,11 +97,14 @@ def load_paged(text: str) -> tuple[dict, list[dict]]:
 # ---------- input: 图集脚本 ----------
 
 FIELD_MAP = {'左上署名': 'meta', '主标题': 'big', '图上大字': 'big', '副标题': 'small', '小字': 'small'}
+# 图集脚本里页面之外的设置行（`### 图集脚本` 与第一个 `#### 第 N 页` 之间），对应 frontmatter 字段
+META_MAP = {'主题': 'theme', '栏目': 'series', '期数': 'episode', '日期': 'date',
+            '分享者': 'speaker', '署名': 'signature', '站点': 'site'}
 
 
-def load_script(text: str) -> list[tuple[str, list[dict]]]:
-    """Parse `### 图集脚本` sections into [(篇名, [page, ...]), ...]."""
-    groups, pages, page = [], [], None
+def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
+    """Parse `### 图集脚本` sections into [(篇名, [page, ...], 篇目级设置), ...]."""
+    groups, pages, page, gmeta = [], [], None, {}
     title, in_pages, last_key = '', False, None
 
     def close_page():
@@ -109,11 +114,11 @@ def load_script(text: str) -> list[tuple[str, list[dict]]]:
         page = None
 
     def close_group():
-        nonlocal pages
+        nonlocal pages, gmeta
         close_page()
         if pages:
-            groups.append((title, pages))
-        pages = []
+            groups.append((title, pages, gmeta))
+        pages, gmeta = [], {}
 
     for raw in text.splitlines():
         s = raw.strip()
@@ -132,7 +137,13 @@ def load_script(text: str) -> list[tuple[str, list[dict]]]:
                 close_group()
             in_pages, title = False, s[3:].strip()
             continue
-        if not in_pages or page is None or s.startswith('>'):
+        if not in_pages or s.startswith('>'):
+            continue
+        if page is None:
+            if s.startswith('- ') and '：' in s:
+                key, val = (x.strip() for x in s[2:].split('：', 1))
+                if key in META_MAP:
+                    gmeta[META_MAP[key]] = val
             continue
         if s.startswith('- ') and '：' in s:
             key, val = (x.strip() for x in s[2:].split('：', 1))
@@ -147,11 +158,11 @@ def load_script(text: str) -> list[tuple[str, list[dict]]]:
             page[f] = page.get(f, '') + s
     close_group()
     out = []
-    for name, pgs in groups:
+    for name, pgs, gm in groups:
         out.append((name, [{'kind': 'text', 'title': p['big'].replace('\n', ' '),
                             'items': [x for x in p['small'].split('\n') if x.strip()],
-                            'dark': p.get('dark', False), 'meta': p.get('meta', '')} for p in pgs]))
-    return [(n, p) for n, p in out if p]
+                            'dark': p.get('dark', False), 'meta': p.get('meta', '')} for p in pgs], gm))
+    return [(n, p, m) for n, p, m in out if p]
 
 
 # ---------- fonts ----------
@@ -298,18 +309,21 @@ def render(source, out, theme=None, font=None, browser_path=None, preview=None, 
     text = Path(source).read_text(encoding='utf-8').replace('\r\n', '\n').strip()
     out = Path(out)
     if '### 图集脚本' in text or '### 图片脚本' in text:
-        groups = load_script(text)
+        file_meta, body = parse_frontmatter(text)
+        groups = load_script(body)
         if not groups:
             raise ValueError('没从图集脚本解析到页面；需要 `### 图集脚本` / `#### 第 N 页` / `- 图上大字：` 这样的格式。')
-        meta, theme = {}, theme or 'paper'
+        default_theme = 'paper'
     else:
-        meta, pages = load_paged(text)
-        groups, theme = [('', pages)], theme or meta.get('theme') or 'inspire'
+        file_meta, pages = load_paged(text)
+        groups, default_theme = [('', pages, {})], 'inspire'
     results = []
-    for gi, (name, pages) in enumerate(groups, 1):
+    for gi, (name, pages, gmeta) in enumerate(groups, 1):
+        meta = {**file_meta, **gmeta}  # 文件 frontmatter < 篇目级设置 < 命令行 --theme
+        group_theme = theme or meta.get('theme') or default_theme
         slug = re.sub(r'[^\w-]', '', name)[:40] or 'post'
         sub = out / f'{gi:02d}-{slug}' if len(groups) > 1 else out
-        document = build(meta, pages, theme, font, accent, background, cover_background)
+        document = build(meta, pages, group_theme, font, accent, background, cover_background)
         checks = screenshot(document, sub, browser_path, jpeg)
         if preview:
             p = Path(preview) if len(groups) == 1 else Path(preview).with_name(f'{Path(preview).stem}-{gi:02d}.html')
@@ -318,7 +332,7 @@ def render(source, out, theme=None, font=None, browser_path=None, preview=None, 
         if sheet:
             s = Path(sheet) if len(groups) == 1 else Path(sheet).with_name(f'{Path(sheet).stem}-{gi:02d}.png')
             contact_sheet(sub, s)
-        results.append({'group': name, 'theme': theme, 'output': str(sub), 'cards': checks})
+        results.append({'group': name, 'theme': group_theme, 'output': str(sub), 'cards': checks})
     print(json.dumps(results, ensure_ascii=False))
     return results
 

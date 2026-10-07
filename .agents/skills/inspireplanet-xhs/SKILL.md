@@ -80,6 +80,10 @@ xhs-{slug}.md
 - ...
 
 ### 图集脚本
+- 分享者：{分享人}
+- 日期：{YYYY-MM-DD}
+- 期数：第 {episode} 期
+
 #### 第 1 页（封面）
 - 左上署名：{year}EP{episode} · {分享人}的分享
 - 主标题：
@@ -146,6 +150,7 @@ xhs-{slug}.md
 python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire] [--jpeg]
 ```
 
+- 页眉页脚文字都来自文件：第一页之前的 `- 分享者：` `- 日期：` `- 期数：` 决定页眉右和封面底部（还可写 `- 栏目：` `- 署名：` `- 站点：` `- 主题：`）；每页的 `- 左上署名：` 决定该页页眉左；
 - 图集脚本默认 `paper` 主题（暖纸摘录风：毛笔大字 + 霞鹜文楷小字；页标题含"原声"或写 `- 主题：dark` 的页自动深色）；字体首次运行自动下载；主题是 CSS，不同分享者可换不同主题，见 `scripts/text-cards/README.md`；
 - **卡片图不保存进仓库**：仓库只保留 `xhs-{slug}.md`（图上的文字）。图片是产物，随时可以重渲。
 - 需要把一位分享者的**完整分享稿**做成可连续阅读的多页文字卡时，同一个渲染器也接受分页 Markdown（独占一行 `---` 分页，默认 `inspire` 橙色主题）；字段见 `scripts/text-cards/README.md`。

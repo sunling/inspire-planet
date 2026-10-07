@@ -9,11 +9,18 @@ from PIL import Image
 from render import render
 
 
-SCRIPT = '''# 第 39 期 · 测试
+SCRIPT = '''---
+episode: 第 39 期
+site:
+---
+# 第 39 期 · 测试
 
 ## 测试篇目
 
 ### 图集脚本
+
+- 分享者：李影
+- 日期：2026-10-03
 
 #### 第 1 页（封面）
 - 主标题：大字封面
@@ -65,6 +72,7 @@ def main():
         document = (t / 'script.html').read_text()
         assert results[0]['theme'] == 'paper' and len(results[0]['cards']) == 3
         assert 'card text dark' in document and '启发星球 · 第 39 期' in document
+        assert '李影 · 2026年10月3日' in document and 'class="site">inspireplanet.cc<' not in document, '图集脚本 frontmatter / 篇目级设置'
         assert '第一段小字。续行也算。' in document and '第二段小字。' in document
         results = render(source, t / 'script-inspire', theme='inspire', **kw)
         assert results[0]['theme'] == 'inspire'
@@ -87,7 +95,7 @@ def main():
         if args.browser:
             command += ['--browser', str(args.browser)]
         subprocess.run(command, check=True)
-    print('PASS: escaping, themes, metadata, cover, page kinds, episode/site, script input, dark page, source update, dimensions, overflow, header overlap, output protection, unknown theme, no-Git build')
+    print('PASS: escaping, themes, metadata, script settings, cover, page kinds, episode/site, script input, dark page, source update, dimensions, overflow, header overlap, output protection, unknown theme, no-Git build')
 
 
 if __name__ == '__main__':
