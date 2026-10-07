@@ -7,28 +7,10 @@ description: 从启发星球某期会议转写中提炼可追溯的金句卡片 
 
 ## 路径
 
-活动目录：
-
 ```text
 events/{year}/{YYYYMMDD}-epXX/
-```
-
-输入：
-
-```text
-transcript.txt
-```
-
-输出：
-
-```text
-quote-cards.json
-```
-
-早期人工整理材料如存在，保存在：
-
-```text
-quote-notes.md
+  transcript.txt     输入
+  quote-cards.json   输出
 ```
 
 ## 边界
@@ -67,11 +49,11 @@ quote-notes.md
 
 ## 工作流程
 
-1. 阅读转写并按发言人分段。
+1. 读同目录 `LEARNINGS.md`、`EXAMPLES.md`，再阅读转写并按发言人分段。
 2. 找出观点明确、能独立成句、对理解本期有帮助的表达。
 3. 回到上下文确认说话人、事实和真实含义。
 4. 为每条 quote 回到前后文，按“具体场景—发展与转折—金句语境”写 `detail`。
 5. 生成 JSON 并验证可解析。
 6. 检查字段、人物归属、重复卡片、过度改写，以及 `detail` 是否被压缩成一句摘要。
 
-稳定偏好记录在同目录 `LEARNINGS.md`，典型样本记录在 `EXAMPLES.md`；只有用户明确要求复盘时才更新。
+稳定偏好写进 `LEARNINGS.md`，典型样本写进 `EXAMPLES.md`；用户明确要求复盘时才更新。

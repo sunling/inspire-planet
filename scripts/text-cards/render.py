@@ -6,10 +6,11 @@
 支持两种输入：
   1. 分页 Markdown：独占一行 `---` 分页，第一页为封面；整页只有 `>` 时为引用页，
      整页只有 `-` 列表项时为清单页，其余为正文页。适合可连续阅读的长文。
-  2. 图集脚本（`xhs-{slug}.md` / `sph-{slug}.md`）：`### 图集脚本` 下按 `#### 第 N 页`
-     分页，页内 `- 图上大字：` / `- 小字：` / `- 左上署名：` / `- 主标题：` / `- 副标题：`；
-     页标题含“原声”或写 `- 主题：dark` 时为深色页。一个文件里多个 `##` 篇目各自输出到子目录。
-     页眉页脚文字：文件开头 frontmatter（同下）对全文件生效；`### 图集脚本` 下、第一页之前可写
+  2. 图集脚本（`xhs-{slug}.md` / `sph-{slug}.md`）：标题含「脚本」的小节（如 `## 图集脚本`）
+     下按更深一级的 `### 第 N 页` 分页，层级不固定、按语义识别；页内 `- 图上大字：` / `- 小字：` /
+     `- 左上署名：` / `- 主标题：` / `- 副标题：`；页标题含“原声”或写 `- 主题：dark` 时为深色页。
+     一个文件里多个篇目（各自带脚本小节）各自输出到子目录。
+     页眉页脚文字：文件开头 frontmatter（同下）对全文件生效；脚本小节下、第一页之前可写
      篇目级设置 `- 分享者：` `- 日期：` `- 期数：` `- 栏目：` `- 署名：` `- 站点：` `- 主题：` 覆盖。
 
 主题是纯 CSS：`theme-{name}.css` 覆盖 `theme.css` 的变量与少量规则。
@@ -97,15 +98,21 @@ def load_paged(text: str) -> tuple[dict, list[dict]]:
 # ---------- input: 图集脚本 ----------
 
 FIELD_MAP = {'左上署名': 'meta', '主标题': 'big', '图上大字': 'big', '副标题': 'small', '小字': 'small'}
-# 图集脚本里页面之外的设置行（`### 图集脚本` 与第一个 `#### 第 N 页` 之间），对应 frontmatter 字段
+# 图集脚本里页面之外的设置行（脚本标题与第一个「第 N 页」之间），对应 frontmatter 字段
 META_MAP = {'主题': 'theme', '栏目': 'series', '期数': 'episode', '日期': 'date',
             '分享者': 'speaker', '署名': 'signature', '站点': 'site'}
 
 
 def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
-    """Parse `### 图集脚本` sections into [(篇名, [page, ...], 篇目级设置), ...]."""
+    """Parse 图集脚本 sections into [(篇名, [page, ...], 篇目级设置), ...].
+
+    标题按语义识别，不依赖固定层级：标题含「脚本」开一节；节内更深层级、形如「第 N 页」的
+    标题分页；篇目名取脚本标题之上最近一个更浅层级的标题。既支持扁平的
+    `# 篇名 / ## 图集脚本 / ### 第 N 页`，也兼容旧的 `## 篇名 / ### 图集脚本 / #### 第 N 页`。
+    """
     groups, pages, page, gmeta = [], [], None, {}
     title, in_pages, last_key = '', False, None
+    script_level, headings = 0, []  # headings: [(level, text)] seen so far
 
     def close_page():
         nonlocal page
@@ -114,28 +121,30 @@ def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
         page = None
 
     def close_group():
-        nonlocal pages, gmeta
+        nonlocal pages, gmeta, in_pages
         close_page()
         if pages:
             groups.append((title, pages, gmeta))
-        pages, gmeta = [], {}
+        pages, gmeta, in_pages = [], {}, False
 
     for raw in text.splitlines():
         s = raw.strip()
-        if s.startswith('#### '):
-            if in_pages:
+        m = re.match(r'^(#{1,6})\s+(.*)$', s)
+        if m:
+            level, text_ = len(m.group(1)), m.group(2).strip()
+            if in_pages and level > script_level and re.match(r'^第\s*\d+\s*页', text_):
                 close_page()
-                page = {'big': '', 'small': '', 'dark': '原声' in s}
-            continue
-        if s.startswith('### '):
+                page = {'big': '', 'small': '', 'dark': '原声' in text_}
+                continue
+            if in_pages and level > script_level:
+                continue  # 脚本节内的其他子标题，忽略
             if in_pages:
                 close_group()
-            in_pages = '脚本' in s
-            continue
-        if s.startswith('## '):
-            if in_pages:
-                close_group()
-            in_pages, title = False, s[3:].strip()
+            if '脚本' in text_:
+                in_pages, script_level = True, level
+                title = next((t for l, t in reversed(headings) if l < level), '')
+            else:
+                headings.append((level, text_))
             continue
         if not in_pages or s.startswith('>'):
             continue
@@ -308,11 +317,11 @@ def render(source, out, theme=None, font=None, browser_path=None, preview=None, 
            accent=None, background=None, cover_background=None, jpeg=False):
     text = Path(source).read_text(encoding='utf-8').replace('\r\n', '\n').strip()
     out = Path(out)
-    if '### 图集脚本' in text or '### 图片脚本' in text:
+    if re.search(r'^#{1,6}\s+(图集|图片)脚本', text, flags=re.M):
         file_meta, body = parse_frontmatter(text)
         groups = load_script(body)
         if not groups:
-            raise ValueError('没从图集脚本解析到页面；需要 `### 图集脚本` / `#### 第 N 页` / `- 图上大字：` 这样的格式。')
+            raise ValueError('没从图集脚本解析到页面；需要 `## 图集脚本` / `### 第 N 页` / `- 图上大字：` 这样的格式。')
         default_theme = 'paper'
     else:
         file_meta, pages = load_paged(text)

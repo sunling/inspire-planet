@@ -16,7 +16,7 @@
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt       会议原始转写
-  index.md             本期索引与发布面板（仓库内，不单独发公众号）
+  README.md            本期索引与发布面板（仓库内，不单独发公众号）
   gzh-{slug}.md        公众号分享文章（一位分享者一篇；末尾附标题与摘要）
   xhs-{slug}.md        小红书图文（一位分享者一篇）
   sph-{slug}.md        视频号图文（一位分享者一篇）
