@@ -24,7 +24,7 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-cards.json     金句卡片数据
   assets/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
-scripts/                 拉取逐字稿、渲染卡片图等辅助脚本
+scripts/                 拉取逐字稿、渲染卡片图等辅助脚本；scripts/text-cards/ 渲染长文文字卡
 ```
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md`，不追溯改名。

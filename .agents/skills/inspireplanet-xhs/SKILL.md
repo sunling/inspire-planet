@@ -148,6 +148,7 @@ python3 scripts/render-cards.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_
 
 - 渲染样式：暖纸摘录风，无需浏览器；大字默认马善政毛笔楷书（可用 `- 大字字体：kai|klee` 或 JSON 的 `big_font` 切换），小字用霞鹜文楷；页标题里含"原声"的页自动用深色主题（也可写 `- 主题：dark`）；字体首次运行自动下载；
 - **卡片图不保存进仓库**：仓库只保留 `xhs-{slug}.md`（图上的文字）。图片是产物，随时可以重渲。
+- 需要把一位分享者的**完整分享稿**做成可连续阅读的多页文字卡时，改用 `scripts/text-cards/render.py`（分页 Markdown 输入，启发星球橙主题）；用法与字段见 `scripts/text-cards/README.md`。
 
 ## 边界
 
