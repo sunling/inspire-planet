@@ -101,7 +101,7 @@ events/{year}/{YYYYMMDD}-epXX/
 python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/ [--theme paper|inspire]
 ```
 
-字段与主题见 `scripts/text-cards/README.md`。
+选项、字段与主题见 `scripts/text-cards/README.md`。
 
 ## 完成后的回复
 
