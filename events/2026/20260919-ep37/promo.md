@@ -1,6 +1,6 @@
 # EP37 发布辅助材料
 
-整理依据：`practices/inspire-planet/2026/20260918-ep37/meeting/recap.md`。原始转写保留在 `practices/inspire-planet/2026/20260918-ep37/transcript.md`。
+整理依据：本期 `recap.md`。原始转写保留在本期 `transcript.txt`。
 
 ## 公众号摘要
 
