@@ -545,7 +545,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260925-ep38/meeting/promo.md",
-      "target_path": "events/2026/20260926-ep38/promo.md",
+      "target_path": "events/2026/20260926-ep38/README.md",
       "source_blob_sha": "060ca8e2dddc898da9294b512e9b873c36ebc2d0"
     },
     {
@@ -555,7 +555,7 @@
     },
     {
       "source_path": "practices/inspire-planet/2026/20260925-ep38/meeting/recap.md",
-      "target_path": "events/2026/20260926-ep38/recap.md",
+      "target_path": "events/2026/20260926-ep38/README.md",
       "source_blob_sha": "8a47794f2a465d6c42a21d4ac4b7eedc92889132"
     },
     {

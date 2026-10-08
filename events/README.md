@@ -36,7 +36,7 @@
 | 20260905-ep35 | [转写](2026/20260905-ep35/transcript.txt) | [纪要](2026/20260905-ep35/recap.md) | [卡片 JSON](2026/20260905-ep35/quote-cards.json) | [文案](2026/20260905-ep35/promo.md) | — |
 | 20260912-ep36 | [转写](2026/20260912-ep36/transcript.txt) | [纪要](2026/20260912-ep36/recap.md) | [卡片 JSON](2026/20260912-ep36/quote-cards.json) | [文案](2026/20260912-ep36/promo.md) | — |
 | 20260919-ep37 | [转写](2026/20260919-ep37/transcript.txt) | [纪要](2026/20260919-ep37/recap.md) | [卡片 JSON](2026/20260919-ep37/quote-cards.json) | [文案](2026/20260919-ep37/promo.md) | — |
-| 20260926-ep38 | [转写](2026/20260926-ep38/transcript.txt) | [纪要](2026/20260926-ep38/recap.md) | [卡片 JSON](2026/20260926-ep38/quote-cards.json) | [文案](2026/20260926-ep38/promo.md) | — |
+| 20260926-ep38 | [转写](2026/20260926-ep38/transcript.txt) | [索引／公众号 5 篇](2026/20260926-ep38/README.md) | [卡片 JSON](2026/20260926-ep38/quote-cards.json) | [小红书／视频号各 5 篇](2026/20260926-ep38/README.md) | [封面](2026/20260926-ep38/assets) |
 | 20261003-ep39 | [转写](2026/20261003-ep39/transcript.txt) | [索引](2026/20261003-ep39/README.md) · [公众号 2 篇](2026/20261003-ep39/gzh-liying.md) | — | [小红书](2026/20261003-ep39/xhs-liying.md) · [视频号](2026/20261003-ep39/sph-liying.md) | — |
 
 2026-10-06 起，公众号文章的标题、备选标题、摘要与封面配置随文章放在 `gzh-{slug}.md`；本期索引、发布状态与发布备注在 `README.md`，不再新增 `promo.md`。上表历史期的「发布文案」指向当时的 `promo.md`，保留原样。
