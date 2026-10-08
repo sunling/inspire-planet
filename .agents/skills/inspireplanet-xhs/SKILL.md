@@ -83,7 +83,7 @@ events/{year}/{YYYYMMDD}-epXX/
 - 每页只有图上大字、小字、图片建议，一屏读得完；
 - 首图落在具体的人和事上（时间、动作、场景），不放抽象金句；
 - 内页走一条叙事弧：处境 → 细节 → 转折 → 一句原声收尾；页标题含「原声」的页渲染为深色；
-- 末页用一个问题作邀请，落款「启发星球笔记」；
+- 末页用一个问题作邀请；
 - 图片优先用当事人提供的真实照片，没有时降级为氛围图或手写摘录卡。
 
 ## 正文
@@ -113,10 +113,10 @@ events/{year}/{YYYYMMDD}-epXX/
 定稿后由人手动出图，卡片图不进仓库：
 
 ```bash
-python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire] [--jpeg]
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire]
 ```
 
-字段与主题见 `scripts/text-cards/README.md`。
+选项、字段与主题见 `scripts/text-cards/README.md`。
 
 ## 完成后的回复
 
