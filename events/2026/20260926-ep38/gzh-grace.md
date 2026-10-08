@@ -37,5 +37,34 @@
 - 摘要：一次洗衣房场景的即兴表演里，Grace 因为抵触对方的开场，没能接住对话。事后，Grace 从“赠予原谅”想到文化语境、护士工作与 yes, and：想练习的，不只是把英文说顺。
 - 作者栏：Grace
 - 来源：`transcript.txt` 00:09:14–00:30:17，口述整理，非逐字引用。
-- 封面：`assets/recap-cover-grace.jpg`｜副标题：先接住一句话｜视觉命题：洗衣房里两段纸带一度中断，另一条柔软纸带留出连接的位置，表现对话可以重新接续。
+- 封面：`assets/recap-cover-grace.jpg`｜副标题：先接住一句话｜视觉命题：两张倾斜纸卡以“抵触”和“接住”相连，记录一次对话中断后的练习方向。｜生成：HTML/CSS · collage
 - 发布前：待 Grace 本人过目；涉及其他参与者的对话，需相关参与者确认。署名和社交媒体使用范围待确认。
+
+<!-- cover-config -->
+```json
+{
+  "theme": "collage",
+  "format": "wide",
+  "asset": "assets/recap-cover-grace.jpg",
+  "speaker": "Grace",
+  "episode": "2026EP38",
+  "date": "2026-09-26",
+  "headline": [
+    "先接住",
+    "一句话"
+  ],
+  "subtitle": "",
+  "tiles": [
+    {
+      "label": "洗衣房即兴",
+      "value": "抵触",
+      "note": "对话冷了下来"
+    },
+    {
+      "label": "事后想练习",
+      "value": "接住",
+      "note": "多一点体谅"
+    }
+  ]
+}
+```

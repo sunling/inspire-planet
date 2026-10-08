@@ -11,7 +11,36 @@
 - 跟着好奇读下去
 - 享受也可以安心
 
-封面：`assets/xiaohongshu-cover-liying.jpg`｜采用副标题：跟着好奇读下去｜视觉命题：两本不同装帧的书在画面中各自展开，一条从其中一本生出的细线自然通向另一本，表现兴趣跨作品重新连接。 竖版独立构图。
+封面：`assets/xiaohongshu-cover-liying.jpg`｜采用副标题：跟着好奇读下去｜视觉命题：“知否”和“艾玛”两张纸卡由细线连接，表达一部作品重新打开另一部作品。｜生成：HTML/CSS · collage
+
+<!-- cover-config -->
+```json
+{
+  "theme": "collage",
+  "format": "portrait",
+  "asset": "assets/xiaohongshu-cover-liying.jpg",
+  "speaker": "李影",
+  "episode": "2026EP38",
+  "date": "2026-09-26",
+  "headline": [
+    "看《知否》",
+    "又想读《艾玛》"
+  ],
+  "subtitle": "跟着好奇读下去",
+  "tiles": [
+    {
+      "label": "一个故事",
+      "value": "知否",
+      "note": "明兰的成长"
+    },
+    {
+      "label": "另一本书",
+      "value": "艾玛",
+      "note": "重新想读下去"
+    }
+  ]
+}
+```
 
 ## 图集脚本
 - 分享者：李影
@@ -21,7 +50,7 @@
 
 ### 第 1 页（封面）
 - 左上署名：2026EP38 · 李影的分享
-- 主标题：看《知否》，又想读《艾玛》
+- 主标题：看《知否》又想读《艾玛》
 - 副标题：跟着好奇读下去
 
 ### 第 2 页

@@ -50,15 +50,15 @@
 
 ## 封面
 
-使用内置 imagegen 生成带字隐喻插画，横竖独立构图；均为 JPEG。插画不作为真实现场照片。公众号横版约 2.35:1、宽 1923px；小红书竖版 1080×1440。文字和视觉命题是出图提示词的核心，具体配置留在对应渠道文件。
+使用 HTML/CSS + 浏览器截图生成 C 版纸张拼贴封面，主题 `collage`，横竖独立构图，均为 JPEG。公众号 1920×817、只放短副标题；小红书／视频号图集首图 1080×1440、放核心标题及补充短句。主题和纸卡配置保存在本篇 Markdown 的 `cover-config` JSON 块。
 
 | 分享者 | 横版封面 | 竖版封面 |
 |---|---|---|
-| Grace | [查看](assets/recap-cover-grace.jpg) · 346.3 KB | [查看](assets/xiaohongshu-cover-grace.jpg) · 391.5 KB |
-| 翟然 | [查看](assets/recap-cover-michael.jpg) · 359.4 KB | [查看](assets/xiaohongshu-cover-michael.jpg) · 375.0 KB |
-| 孙玲 | [查看](assets/recap-cover-sunling.jpg) · 369.5 KB | [查看](assets/xiaohongshu-cover-sunling.jpg) · 271.2 KB |
-| 李影 | [查看](assets/recap-cover-liying.jpg) · 356.1 KB | [查看](assets/xiaohongshu-cover-liying.jpg) · 377.6 KB |
-| Zoey | [查看](assets/recap-cover-zoey.jpg) · 366.7 KB | [查看](assets/xiaohongshu-cover-zoey.jpg) · 340.4 KB |
+| Grace | [查看](assets/recap-cover-grace.jpg) · 50.1 KB | [查看](assets/xiaohongshu-cover-grace.jpg) · 79.5 KB |
+| 翟然 | [查看](assets/recap-cover-michael.jpg) · 59.4 KB | [查看](assets/xiaohongshu-cover-michael.jpg) · 77.0 KB |
+| 孙玲 | [查看](assets/recap-cover-sunling.jpg) · 55.4 KB | [查看](assets/xiaohongshu-cover-sunling.jpg) · 71.7 KB |
+| 李影 | [查看](assets/recap-cover-liying.jpg) · 53.7 KB | [查看](assets/xiaohongshu-cover-liying.jpg) · 78.0 KB |
+| Zoey | [查看](assets/recap-cover-zoey.jpg) · 59.6 KB | [查看](assets/xiaohongshu-cover-zoey.jpg) · 74.0 KB |
 
 ## 金句溯源
 
@@ -108,3 +108,7 @@
 | 分享者 C | 想记录时，先把想法留下来 | 一位长期记录生活的分享者，做了一个小工具，把创建文件和存放记录的步骤简化，也接受有些日子没有记录。 |
 | 分享者 D | 看《知否》，又想读《艾玛》 | 一位分享者看明兰的成长时，忽然把它和《艾玛》连了起来，重新找到继续读这本书的好奇。 |
 | 分享者 E | 登录卡住，还是来到了圆桌 | 一位分享者登录时遇到账号问题，差点放弃，最后仍带着做事经常中断的困惑来到圆桌。 |
+
+## HTML 封面更新
+
+2026-10-07 按用户确认切换为 C 版 `collage` 模板，替换本期十张封面；视频号复用小红书首图。已有图集包的第 1 页同步替换，内页仍使用暖纸主题。HTML 预览与图集成品保存在仓库外。授权与本人过目状态不变。

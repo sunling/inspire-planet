@@ -11,7 +11,36 @@
 - 留想法也留空白
 - 记录服务于生活
 
-封面：`assets/xiaohongshu-cover-sunling.jpg`｜采用副标题：留想法也留空白｜视觉命题：几张承载片段的纸片沿柔和路径进入可回看的档案，途中留有空白间隔，表达记录服务生活而无需填满。 竖版独立构图。
+封面：`assets/xiaohongshu-cover-sunling.jpg`｜采用副标题：留想法也留空白｜视觉命题：“留下”和“空白”两张纸卡相连，表达记录生活也允许不记录的日子。｜生成：HTML/CSS · collage
+
+<!-- cover-config -->
+```json
+{
+  "theme": "collage",
+  "format": "portrait",
+  "asset": "assets/xiaohongshu-cover-sunling.jpg",
+  "speaker": "孙玲",
+  "episode": "2026EP38",
+  "date": "2026-09-26",
+  "headline": [
+    "想记录时",
+    "我先说出来"
+  ],
+  "subtitle": "留想法也留空白",
+  "tiles": [
+    {
+      "label": "有灵感时",
+      "value": "留下",
+      "note": "想法先说出来"
+    },
+    {
+      "label": "记录疲劳时",
+      "value": "空白",
+      "note": "不必每天记"
+    }
+  ]
+}
+```
 
 ## 图集脚本
 - 分享者：孙玲
@@ -21,7 +50,7 @@
 
 ### 第 1 页（封面）
 - 左上署名：2026EP38 · 孙玲的分享
-- 主标题：想记录时，我先说出来
+- 主标题：想记录时我先说出来
 - 副标题：留想法也留空白
 
 ### 第 2 页

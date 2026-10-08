@@ -11,7 +11,36 @@
 - 先接住一句话
 - 练习少说但是
 
-封面：`assets/xiaohongshu-cover-grace.jpg`｜采用副标题：先接住一句话｜视觉命题：洗衣房里两段纸带一度中断，另一条柔软纸带留出连接的位置，表现对话可以重新接续。 竖版独立构图。
+封面：`assets/xiaohongshu-cover-grace.jpg`｜采用副标题：先接住一句话｜视觉命题：两张倾斜纸卡以“抵触”和“接住”相连，记录一次对话中断后的练习方向。｜生成：HTML/CSS · collage
+
+<!-- cover-config -->
+```json
+{
+  "theme": "collage",
+  "format": "portrait",
+  "asset": "assets/xiaohongshu-cover-grace.jpg",
+  "speaker": "Grace",
+  "episode": "2026EP38",
+  "date": "2026-09-26",
+  "headline": [
+    "一场洗衣房即兴",
+    "我没接住"
+  ],
+  "subtitle": "先接住一句话",
+  "tiles": [
+    {
+      "label": "洗衣房即兴",
+      "value": "抵触",
+      "note": "对话冷了下来"
+    },
+    {
+      "label": "事后想练习",
+      "value": "接住",
+      "note": "多一点体谅"
+    }
+  ]
+}
+```
 
 ## 图集脚本
 - 分享者：Grace
@@ -21,7 +50,7 @@
 
 ### 第 1 页（封面）
 - 左上署名：2026EP38 · Grace的分享
-- 主标题：一场洗衣房即兴，我没接住
+- 主标题：一场洗衣房即兴我没接住
 - 副标题：先接住一句话
 
 ### 第 2 页

@@ -11,7 +11,36 @@
 - 慢慢少否定自己
 - 看见思路在变
 
-封面：`assets/xiaohongshu-cover-michael.jpg`｜采用副标题：慢慢少否定自己｜视觉命题：一个沉重的深色线团在几次轻柔牵引后逐渐展开，仍保留少量打结，表达改变缓慢而未完成。 竖版独立构图。
+封面：`assets/xiaohongshu-cover-michael.jpg`｜采用副标题：慢慢少否定自己｜视觉命题：“七年”和“慢慢改”两张纸卡相连，保留长期练习仍未完成的状态。｜生成：HTML/CSS · collage
+
+<!-- cover-config -->
+```json
+{
+  "theme": "collage",
+  "format": "portrait",
+  "asset": "assets/xiaohongshu-cover-michael.jpg",
+  "speaker": "翟然",
+  "episode": "2026EP38",
+  "date": "2026-09-26",
+  "headline": [
+    "教了七年书",
+    "还在学怎么聊"
+  ],
+  "subtitle": "慢慢少否定自己",
+  "tiles": [
+    {
+      "label": "英语教学",
+      "value": "七年",
+      "note": "仍有发音问题"
+    },
+    {
+      "label": "开始看见",
+      "value": "慢慢改",
+      "note": "少否定自己"
+    }
+  ]
+}
+```
 
 ## 图集脚本
 - 分享者：翟然
@@ -21,7 +50,7 @@
 
 ### 第 1 页（封面）
 - 左上署名：2026EP38 · 翟然的分享
-- 主标题：教了七年书，还在学怎么聊
+- 主标题：教了七年书还在学怎么聊
 - 副标题：慢慢少否定自己
 
 ### 第 2 页

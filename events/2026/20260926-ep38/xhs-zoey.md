@@ -11,7 +11,36 @@
 - 看见跨过的卡点
 - 把问题说具体
 
-封面：`assets/xiaohongshu-cover-zoey.jpg`｜采用副标题：看见跨过的卡点｜视觉命题：一条分段的路径遇到小小台阶后继续延伸，路径旁有几束来自不同方向的柔和光线，表达已有行动和不同经验。 竖版独立构图。
+封面：`assets/xiaohongshu-cover-zoey.jpg`｜采用副标题：看见跨过的卡点｜视觉命题：“卡住”和“来了”两张纸卡相连，突出登录遇到阻力之后已经完成的行动。｜生成：HTML/CSS · collage
+
+<!-- cover-config -->
+```json
+{
+  "theme": "collage",
+  "format": "portrait",
+  "asset": "assets/xiaohongshu-cover-zoey.jpg",
+  "speaker": "Zoey",
+  "episode": "2026EP38",
+  "date": "2026-09-26",
+  "headline": [
+    "登录卡住后",
+    "我还是来了"
+  ],
+  "subtitle": "看见跨过的卡点",
+  "tiles": [
+    {
+      "label": "登录遇到阻力",
+      "value": "卡住",
+      "note": "差点不参加"
+    },
+    {
+      "label": "最后来到圆桌",
+      "value": "来了",
+      "note": "把问题讲具体"
+    }
+  ]
+}
+```
 
 ## 图集脚本
 - 分享者：Zoey
@@ -21,7 +50,7 @@
 
 ### 第 1 页（封面）
 - 左上署名：2026EP38 · Zoey的分享
-- 主标题：登录卡住，我还是来到了圆桌
+- 主标题：登录卡住后我还是来了
 - 副标题：看见跨过的卡点
 
 ### 第 2 页
