@@ -98,7 +98,8 @@ events/{year}/{YYYYMMDD}-epXX/
 ## 竖版封面
 
 - `3:4`，1080×1440；
-- 角落放期数 `{year}EP{episode}`，主体文字只放一个 5–8 字副标题；
+- 角落放期数 `{year}EP{episode}`，主体放精简的核心标题，可另加 5–8 字补充副标题；
+- 默认 HTML/CSS 渲染，`collage` 主题；在封面配置处附 `cover-config` JSON 块，与本篇一起维护；
 - 单独构图，不从横版封面裁切；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`。
 

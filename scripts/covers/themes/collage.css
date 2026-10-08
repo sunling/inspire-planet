@@ -1,0 +1,7 @@
+/* C 版：纸张拼贴。版式留在 base.css，主题只定义视觉。 */
+:root { --background: #f2ebdd; --ink: #2b3430; --muted: #697269; --paper-one: #d7e0ce; --paper-two: #e6c4ad; --thread: #aa6848; }
+.cover { background: var(--background); color: var(--ink); }
+header, footer, .subtitle { color: var(--muted); }
+.paper { border: 1px solid #b9b8a655; box-shadow: 0 12px 30px #52483815; }
+.one { background: var(--paper-one); color: #32513e; }
+.two { background: var(--paper-two); color: #6b402a; }

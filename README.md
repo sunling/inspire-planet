@@ -24,7 +24,7 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-cards.json     金句卡片数据
   assets/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
-scripts/                 拉取逐字稿等辅助脚本；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）
+scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HTML 模板生成渠道封面；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）
 ```
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md`，不追溯改名。
@@ -51,6 +51,6 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/text-cards/ �
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成小红书图文” → `inspireplanet-xhs`
 - “生成视频号内容” → `inspireplanet-sph`
-- 封面随渠道走：公众号横版 → `inspireplanet-gzh`；小红书竖版 → `inspireplanet-xhs`
+- 封面随渠道走：公众号横版 → `inspireplanet-gzh`；小红书竖版 → `inspireplanet-xhs`。默认 [HTML 纸张拼贴模板](scripts/covers/README.md)，可扩展主题和接入真实照片。
 
 生成内容与真实发布分开；只有明确要求发布时才操作外部平台。
