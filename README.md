@@ -9,7 +9,6 @@
 - [按期浏览会议资料](events/README.md)
 - [当前活动信息](current.md)：只有经过确认的信息才用于新的邀请与发布文案。
 - [AI 工作流](.agents/skills/)：公众号文章、金句卡片、小红书/视频号图文和封面。
-- [迁移说明](MIGRATION.md)
 
 ## 文件结构
 
@@ -27,7 +26,7 @@ events/{year}/{YYYYMMDD}-epXX/
 scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HTML 模板生成渠道封面；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）
 ```
 
-文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md`，不追溯改名。
+文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
 
 每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the shared archive's local links, card JSON and skill paths."""
+"""Check the shared archive's local links, card JSON, skill paths and episode transcripts."""
 from pathlib import Path
 import json
 import re
@@ -36,10 +36,10 @@ for p in skills.glob('*/SKILL.md'):
     text = p.read_text()
     if not text.startswith('---\n') or f'name: {p.parent.name}\n' not in text or '\ndescription: ' not in text:
         errors.append(f'{p.relative_to(ROOT)}: invalid skill metadata')
-manifest = json.loads((ROOT / 'migration-manifest.json').read_text())
-for entry in manifest['files']:
-    if not (ROOT / entry['target_path']).is_file():
-        errors.append(f"missing migrated file: {entry['target_path']}")
+episodes = [p for p in (ROOT / 'events').glob('*/*-ep*') if p.is_dir()]
+for d in episodes:
+    if not (d / 'transcript.txt').is_file():
+        errors.append(f'{d.relative_to(ROOT)}: missing transcript.txt')
 if errors:
     raise SystemExit('\n'.join(errors))
-print(f"Content check passed: {len(manifest['files'])} migrated files, {len(list(skills.glob('*/SKILL.md')))} skills.")
+print(f"Content check passed: {len(episodes)} episodes, {len(list(skills.glob('*/SKILL.md')))} skills.")
