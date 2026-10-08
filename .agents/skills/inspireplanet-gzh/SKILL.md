@@ -95,7 +95,8 @@ events/{year}/{YYYYMMDD}-epXX/
 ## 横版封面
 
 - 每篇一张，约 `2.35:1`，宽 ≥1920px；
-- 副标题 6–14 字，取自本篇的核心变化或动作；
+- 只放 6–14 字短副标题，取自本篇核心变化或动作，不重复发布标题；
+- 默认 HTML/CSS 渲染，`collage` 主题；在「发布信息」附 `cover-config` JSON 块，配置与本篇一起维护；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`；
 - 成品路径、副标题和视觉命题写进本篇「发布信息」的封面一行。
 
