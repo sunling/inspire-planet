@@ -49,7 +49,7 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成小红书图文” → `inspireplanet-xhs`
 - “生成视频号内容” → `inspireplanet-sph`
-- 封面随渠道走：公众号横版 → `inspireplanet-gzh`；小红书竖版 → `inspireplanet-xhs`。默认从 [5 套 HTML 封面主题](scripts/covers/README.md) 中随机均衡选择，确认配置后固定主题渲染，可扩展主题和接入真实照片。
+- 封面随渠道走：公众号横版 → `inspireplanet-gzh`；小红书竖版 → `inspireplanet-xhs`。默认从 [3 种布局 × 5 套配色](scripts/covers/README.md) 中独立随机均衡选择，确认配置后固定主题渲染，可扩展主题和接入真实照片。
 
 工作流：
 

@@ -81,6 +81,10 @@ def document(cfg, source, font, theme=None):
     theme_file = HERE / 'themes' / f'{name}.css'
     if not theme_file.is_file():
         raise ValueError(f'unknown theme: {name}')
+    layout = cfg.get('layout', 'collage')
+    if layout not in ('collage', 'editorial', 'signal'):
+        raise ValueError('layout must be collage, editorial or signal; resolve random selections before review')
+    layout_css = '' if layout == 'collage' else (HERE / 'layouts' / f'{layout}.css').read_text()
     form = cfg.get('format')
     if form not in ('wide', 'portrait'):
         raise ValueError('format must be wide or portrait')
@@ -105,8 +109,8 @@ def document(cfg, source, font, theme=None):
     font_data = base64.b64encode(font.read_bytes()).decode('ascii')
     return Template((HERE / 'template.html').read_text()).substitute(
         font_css=f'@font-face{{font-family:CoverChinese;src:url(data:font/ttf;base64,{font_data})}}',
-        base_css=(HERE / 'base.css').read_text(), theme_css=theme_file.read_text()+photo_css,
-        form=form, speaker=esc(cfg['speaker']), episode=esc(cfg['episode']), date=esc(cfg['date']),
+        base_css=(HERE / 'base.css').read_text(), theme_css=theme_file.read_text()+layout_css+photo_css,
+        form=f'{form} {layout}', speaker=esc(cfg['speaker']), episode=esc(cfg['episode']), date=esc(cfg['date']),
         headline=''.join(f'<span>{esc(s)}</span>' for s in cfg['headline']),
         subtitle=f'<p class="subtitle">{esc(cfg["subtitle"])}</p>' if cfg.get('subtitle') else '',
         tile_one=tiles[0], tile_two=tiles[1])
@@ -169,7 +173,7 @@ def render(sources, out_dir=None, preview_dir=None, browser_path=None, font=None
                         preview=Path(preview_dir)/f'{target.stem}.html'
                         preview.parent.mkdir(parents=True,exist_ok=True)
                         preview.write_text(doc)
-                    result={'source':source.name,'output':str(target),'theme':theme or cfg.get('theme','collage'),'width':w,'height':h,'bytes':len(data),'checks':checks}
+                    result={'source':source.name,'output':str(target),'theme':theme or cfg.get('theme','collage'),'layout':cfg.get('layout','collage'),'width':w,'height':h,'bytes':len(data),'checks':checks}
                     results.append(result)
                     print(json.dumps({k:v for k,v in result.items() if k!='checks'},ensure_ascii=False),flush=True)
                 finally:

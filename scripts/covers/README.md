@@ -1,6 +1,6 @@
 # HTML 封面渲染
 
-从封面配置 Markdown 生成 HTML，用 Chromium 截图并保存 JPEG。提供 5 套主题；配置生成时随机均衡选择，确认后按选定主题渲染，不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
+从封面配置 Markdown 生成 HTML，用 Chromium 截图并保存 JPEG。提供 3 种布局与 5 套配色；配置生成时独立随机均衡选择，确认后按选定组合渲染，不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
 
 ## 配置位置
 
@@ -15,6 +15,7 @@
 <!-- cover-config -->
 ```json
 {
+  "layout": "random",
   "theme": "random",
   "format": "portrait",
   "asset": "assets/xiaohongshu-cover-example.jpg",
@@ -34,7 +35,7 @@
 - `format`: `wide` 为 1920×817；`portrait` 为 1080×1440，独立构图。
 - 公众号：`headline` 只放 6–14 字的短副标题，按语义断成 1–2 行，`subtitle` 留空。
 - 图集首图：`headline` 放具体的核心标题，按语义断成 2–3 行（建议每行不超过 7 个中文字），`subtitle` 可以放补充短句，避免重复。
-- 两张纸卡表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
+- 两组信息表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
 - `cover/cover-configs.md` 中的 `asset` 和本地照片 `photo` 路径相对本期目录，例如 `assets/recap-cover-liying.jpg`；Markdown 稿件链接相对 `cover/`，例如 `../gzh-liying.md`。历史稿中的配置路径仍相对稿件目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
 
 ## 随机选择主题
@@ -45,7 +46,7 @@
 python3 scripts/covers/assign_themes.py events/{year}/{event}/cover/cover-configs.md
 ```
 
-脚本将缺失的 `theme` 或 `"random"` 替换为具体主题，均衡分配并尽量避免相邻重复；保留已选主题。`--seed 42` 可重现同一批选择；`--reshuffle` 重新抽选全部配置，更新后需重新确认。渲染时不会重新随机，历史稿未指定主题时仍用 `collage`。
+脚本分别将缺失或为 `"random"` 的 `layout`、`theme` 替换为具体布局和配色，两项独立均衡分配并尽量避免相邻重复；保留已选值。可以只固定其中一项、随机另一项。`--seed 42` 可重现同一批组合；`--reshuffle` 重新抽选全部配置的两项，更新后需重新确认。渲染时不会重新随机，历史稿未指定布局或配色时仍用 `collage`。
 
 ## 运行
 
@@ -71,9 +72,18 @@ python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md \
 }
 ```
 
-这两个字段是对完整配置的补充，不能单独作为配置。照片替换第一张纸卡，保持原图内容，用 `photo_position`（横、纵焦点百分比）控制裁切。输出后需检查是否裁掉人脸、主体或必须保留的细节；不以占位图冒充真实照片。照片能否入库按参与者授权与隐私要求判断。
+这两个字段是对完整配置的补充，不能单独作为配置。照片替换第一组信息区域，保持原图内容，用 `photo_position`（横、纵焦点百分比）控制裁切。输出后需检查是否裁掉人脸、主体或必须保留的细节；不以占位图冒充真实照片。照片能否入库按参与者授权与隐私要求判断。
 
-## 新主题
+## 布局与配色
+
+| `layout` | 构图 |
+|---|---|
+| `collage` | 倾斜的双纸卡，标题与纸卡并置 |
+| `editorial` | 杂志分栏，信息以分隔线与段落组织 |
+| `signal` | 居中大标题，底部横向注解，通栏分隔 |
+
+布局决定信息结构，`theme` 决定配色及视觉装饰，3 × 5 共 15 种组合。新布局会覆盖配色中的纸卡造型，避免每种风格都出现同一组浮动卡片。
+
 
 | 主题 | 风格 |
 |---|---|
@@ -83,9 +93,9 @@ python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md \
 | `blueprint` | 蓝色网格、直角卡片与虚线连接 |
 | `night` | 深蓝夜空、轨道圆弧与亮色圆点 |
 
-每套都有横版和竖版，随机变化包括配色、卡片形状、倾斜、连接线和背景装饰；核心文字与内容关系仍来自文章。
+每种组合都有横版和竖版；核心文字与内容关系仍来自文章。
 
-以后新增 `themes/{name}.css`，通过配置或 `--theme {name}` 选择；字体、配色、纸卡质感等视觉规则放在主题文件。尺寸、检查、截图和压缩逻辑共享。若新主题确实需要不同结构，再增加对应布局，不提前堆积未使用的模板。
+新增配色使用 `themes/{name}.css`，新增布局使用 `layouts/{name}.css`；同时更新选择池与渲染检查。通过配置中的 `layout`、`theme` 选择组合，`--theme` 可覆盖配色。尺寸、检查、截图和压缩逻辑共享。
 
 视频号同题图集可复用小红书竖版封面；正文与内页继续使用文字卡渲染器。图集成品存仓库外，封面按本篇配置存入 `assets/`。
 

@@ -87,7 +87,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 图集封面
 
-- 首图用精简核心标题，可另加短副标题；默认从可用主题中随机均衡选择的 HTML 封面，具体主题写入配置后确认，见 `../inspireplanet/references/cover-design.md`。
+- 首图用精简核心标题，可另加短副标题；默认独立随机均衡选择布局 `layout` 与配色 `theme` 的 HTML 封面，具体组合写入配置后确认，见 `../inspireplanet/references/cover-design.md`。
 - 与小红书选题和首图文字相同时，复用对应 `assets/xiaohongshu-cover-{slug}.jpg`，替换仓库外图集的 `01.jpg`；内页继续用文字卡渲染器。
 - 选题或首图文字不同才在本期 `cover/cover-configs.md` 增加独立 `cover-config` 配置；复用时在该文件记录对应篇目和成品路径，不为同一张封面重复维护配置。
 

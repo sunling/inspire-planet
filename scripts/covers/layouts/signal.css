@@ -1,0 +1,16 @@
+/* 大字海报：居中标题，底部横向注解与通栏分隔。 */
+.signal::before, .signal::after, .signal .thread { display: none; }
+.signal main { top: 270px; text-align: center; }
+.signal h1 { font-weight: bold; letter-spacing: 0; line-height: 1.35; }
+.signal .paper { background: transparent; color: inherit; border: 0; border-radius: 0; box-shadow: none; transform: none; bottom: 220px; width: 420px; height: 230px; padding: 30px 12px 0; border-top: 8px solid var(--thread); }
+.signal .one { left: 76px; }
+.signal .two { right: 76px; }
+.signal .paper .value { font-size: 66px; font-weight: bold; }
+.signal header { border-bottom: 2px solid currentColor; padding-bottom: 20px; }
+.signal.wide main { top: 192px; left: 96px; right: 96px; }
+.signal.wide .paper { bottom: 120px; height: 155px; width: 800px; display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-content: center; padding: 20px 0 0; }
+.signal.wide .paper small:last-child { grid-column: 2; }
+.signal.wide .paper .value { font-size: 58px; line-height: 1.15; }
+.signal.wide .one { left: 96px; right: auto; }
+.signal.wide .two { right: 96px; }
+.signal .one:has(img) { display: block; overflow: hidden; }

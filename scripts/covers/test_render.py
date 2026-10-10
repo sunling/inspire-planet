@@ -92,21 +92,27 @@ def run(font, browser, samples_dir=None):
         assert all(a!=b for a,b in zip(selected,selected[1:]))
         assert max(selected.count(t) for t in assign_themes.THEMES)-min(selected.count(t) for t in assign_themes.THEMES)<=1
         saved=choices.read_text()
+        layouts=[c['layout'] for c in render.read_configs(choices)]
+        assert set(layouts)==set(assign_themes.LAYOUTS)
+        assert all(a!=b for a,b in zip(layouts,layouts[1:]))
         assert assign_themes.assign(choices,seed=7)==selected
         assert choices.read_text()==saved
         choices.write_text(''.join(block(dict(cfg,theme='random',asset=f'cover-{i}.jpg')) for i in range(10)))
         assert assign_themes.assign(choices,seed=42)==selected
-        for name in assign_themes.THEMES:
-            for form in ('wide','portrait'):
-                cfg.update(theme=name,format=form,asset=f'{name}-{form}.jpg',headline=['保留一点好奇'] if form=='wide' else ['一个具体场景','一个真实问题'],subtitle='' if form=='wide' else '保留一点好奇')
-                write()
-                with contextlib.redirect_stdout(io.StringIO()):
-                    render.render([source],root/'themes',font=font,browser_path=browser)
-                if samples_dir:
-                    samples_dir.mkdir(parents=True,exist_ok=True)
-                    shutil.copy(root/'themes'/cfg['asset'],samples_dir/cfg['asset'])
+        variants=[]
+        for layout in assign_themes.LAYOUTS:
+            for name in assign_themes.THEMES:
+                for form in ('wide','portrait'):
+                    variants.append(dict(cfg,layout=layout,theme=name,format=form,asset=f'{layout}-{name}-{form}.jpg',headline=['保留一点好奇'] if form=='wide' else ['一个具体场景','一个真实问题'],subtitle='' if form=='wide' else '保留一点好奇'))
+        choices.write_text(''.join(block(config) for config in variants))
+        with contextlib.redirect_stdout(io.StringIO()):
+            render.render([choices],root/'themes',font=font,browser_path=browser)
+        if samples_dir:
+            samples_dir.mkdir(parents=True,exist_ok=True)
+            for config in variants:
+                shutil.copy(root/'themes'/config['asset'],samples_dir/config['asset'])
         print('Passed: portrait/wide JPEG, multi-config rendering and previews, duplicate path rejection, photo rendering, overflow rejection, CSS theme extension.')
-        print('Passed: balanced random selection, fixed selections after review, reproducible seed, all five themes in both formats.')
+        print('Passed: independent balanced layout/palette selection, fixed selections after review, reproducible seed, all 15 combinations in both formats.')
 
 
 if __name__=='__main__':

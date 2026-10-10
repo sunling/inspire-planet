@@ -100,7 +100,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - `3:4`，1080×1440；
 - 角落放期数 `{year}EP{episode}`，主体放精简的核心标题，可另加 5–8 字补充副标题；
-- 默认 HTML/CSS 渲染；生成配置时在 `collage`、`pop`、`garden`、`blueprint`、`night` 中随机均衡选择主题，写入具体 `theme` 后交用户确认；完整的 `cover-config` JSON、选定的封面文字与视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不在本篇附配置块；
+- 默认 HTML/CSS 渲染；生成配置时独立选择布局 `layout`（`collage` 拼贴、`editorial` 杂志排版、`signal` 大字海报）与配色 `theme`（`collage`、`pop`、`garden`、`blueprint`、`night`），随机均衡分配后把具体组合写入配置，再交用户确认；完整的 `cover-config` JSON、选定的封面文字与视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不在本篇附配置块；
 - 单独构图，不从横版封面裁切；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`。
 
