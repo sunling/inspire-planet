@@ -21,6 +21,7 @@ events/{year}/{YYYYMMDD}-epXX/
   sph-{slug}.md        视频号图文（一位分享者一篇）
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
+  cover-configs.md     本期所有封面的配置、设计信息与复用关系
   assets/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HTML 模板生成渠道封面；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）

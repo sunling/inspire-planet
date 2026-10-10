@@ -24,6 +24,27 @@ def run(font, browser):
         with Image.open(root/'portrait/cover.jpg') as im:
             assert im.size==(1080,1440) and im.mode=='RGB' and im.info['progressive']==1
         assert result[0]['bytes']<400*1024
+        # An episode file renders every block and keeps distinct previews.
+        batch=root/'cover-configs.md'
+        wide=dict(cfg,format='wide',asset='assets/wide.jpg',headline=['保留一点好奇'],subtitle='')
+        portrait=dict(cfg,asset='assets/portrait.jpg')
+        def block(config):
+            return '<!-- cover-config -->\n```json\n'+json.dumps(config,ensure_ascii=False)+'\n```\n'
+        batch.write_text(block(wide)+block(portrait))
+        with contextlib.redirect_stdout(io.StringIO()):
+            results=render.render([batch],preview_dir=root/'previews',font=font,browser_path=browser)
+        assert len(results)==2
+        for name,size in [('wide',(1920,817)),('portrait',(1080,1440))]:
+            with Image.open(root/f'assets/{name}.jpg') as im:
+                assert im.size==size
+            assert (root/f'previews/{name}.html').is_file()
+        batch.write_text(block(wide)+block(wide))
+        try:
+            render.render([batch],out_dir=root/'duplicate',font=font,browser_path=browser)
+        except ValueError as exc:
+            assert 'duplicate output paths' in str(exc)
+        else:
+            raise AssertionError('duplicate output paths unexpectedly accepted')
         cfg['format']='wide';cfg['headline']=['保留一点好奇'];cfg['subtitle']=''
         # Distinct color blocks allow a local photo to be rendered without external requests.
         photo=Image.new('RGB',(600,800),'#1474ac');photo.paste('#e85930',(300,0,600,800));photo.save(root/'photo.jpg')
@@ -55,7 +76,7 @@ def run(font, browser):
                 assert im.getpixel((10,10))[1]>im.getpixel((10,10))[0]
         finally:
             render.HERE=original
-        print('Passed: portrait/wide JPEG, photo rendering, overflow rejection, CSS theme extension.')
+        print('Passed: portrait/wide JPEG, multi-config rendering and previews, duplicate path rejection, photo rendering, overflow rejection, CSS theme extension.')
 
 
 if __name__=='__main__':

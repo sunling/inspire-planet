@@ -21,6 +21,7 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md                  优先输入
   transcript.txt                 没有 gzh 时的输入
   xhs-{slug}.md                  输出，一位分享者一个文件
+  cover-configs.md               本期所有封面的配置与设计信息
   assets/xiaohongshu-cover.jpg   竖版封面；多篇时用 xiaohongshu-cover-{slug}.jpg
 ```
 
@@ -99,7 +100,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - `3:4`，1080×1440；
 - 角落放期数 `{year}EP{episode}`，主体放精简的核心标题，可另加 5–8 字补充副标题；
-- 默认 HTML/CSS 渲染，`collage` 主题；在封面配置处附 `cover-config` JSON 块，与本篇一起维护；
+- 默认 HTML/CSS 渲染，`collage` 主题；完整的 `cover-config` JSON、选定的封面文字与视觉命题统一写入本期 `cover-configs.md`，按篇目与渠道分节，不在本篇附配置块；
 - 单独构图，不从横版封面裁切；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`。
 

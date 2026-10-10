@@ -1,10 +1,12 @@
 # HTML 封面渲染
 
-从渠道稿的封面配置生成 HTML，用 Chromium 截图并保存 JPEG。默认 `collage`（C 版纸张拼贴），不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
+从封面配置 Markdown 生成 HTML，用 Chromium 截图并保存 JPEG。默认 `collage`（C 版纸张拼贴），不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
 
-## 配置随稿维护
+## 配置位置
 
-每个 `gzh-*.md` / `xhs-*.md` 在发布信息或封面配置处放一个带标记的 JSON 块，不另存一份篇目配置：
+每期用 `events/{year}/{event}/cover-configs.md` 集中保存所有封面的配置与设计信息，按篇目和渠道分节。每节记录对应稿件、成品路径、选定的封面文字、视觉命题，以及一个完整的 `cover-config` JSON 块。配置只在此维护，不在渠道稿中重复保存；复用同一张封面时只记录对应关系。
+
+渲染器按文件内的配置顺序生成全部封面。历史稿中的单个配置块仍可直接读取，无需迁移所有历史期。
 
 <!-- 示例放在四重代码块中，避免与真实配置混淆。 -->
 ````md
@@ -31,18 +33,18 @@
 - 公众号：`headline` 只放 6–14 字的短副标题，按语义断成 1–2 行，`subtitle` 留空。
 - 图集首图：`headline` 放具体的核心标题，按语义断成 2–3 行（建议每行不超过 7 个中文字），`subtitle` 可以放补充短句，避免重复。
 - 两张纸卡表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
-- `asset` 相对稿件目录，文件名沿用原渠道规范。单张已有文件时须显式 `--force`。
+- `asset` 和本地照片路径相对配置 Markdown 的目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
 
 ## 运行
 
 ```bash
 python3 -m pip install -r scripts/text-cards/requirements.txt
-python3 scripts/covers/render.py events/{year}/{event}/gzh-{slug}.md \
+python3 scripts/covers/render.py events/{year}/{event}/cover-configs.md \
   --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --font /path/to/LXGWWenKai-Regular.ttf
 ```
 
-可传多篇；`--out-dir` 把成品输出到其他目录，`--preview-dir` 保存可独立打开的 HTML，`--theme` 覆盖配置。字体只读本机文件，不自动下载。预览 HTML 含嵌入字体与照片，放在仓库外。
+可传多个配置文件；`--out-dir` 把成品输出到其他目录，`--preview-dir` 按成品文件名保存可独立打开的 HTML，`--theme` 覆盖配置。字体只读本机文件，不自动下载。预览 HTML 含嵌入字体与照片，放在仓库外。
 
 输出前检查文字溢出、标题与纸卡碰撞和页眉重叠；出现问题调整断行或精简文字，不自动缩小字号。JPEG 转 RGB，q88、optimize、progressive；超 400 KB 依次尝试 q85 / 4:2:0，超 500 KB 报错，不缩小规定尺寸。
 

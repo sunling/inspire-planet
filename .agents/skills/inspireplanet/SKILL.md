@@ -14,10 +14,11 @@ description: 启发星球对外内容总控：从某期会议转写一次生成�
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt                会议原始转写
-  gzh-{slug}.md                 公众号文章（文末附标题、摘要、封面配置）
+  gzh-{slug}.md                 公众号文章（文末附标题、摘要、封面成品路径）
   xhs-{slug}.md                 小红书图文
   sph-{slug}.md                 视频号图文
   quote-cards.json              金句卡片
+  cover-configs.md              本期所有封面的配置、设计信息与复用关系
   assets/recap-cover.jpg        公众号横版封面（多篇时加 -{slug}）
   assets/xiaohongshu-cover.jpg  小红书竖版封面（多篇时加 -{slug}）
   README.md                     本期索引与发布状态
@@ -65,6 +66,7 @@ events/{year}/{YYYYMMDD}-epXX/
 | `xhs-{slug}.md` | 小红书图文：{名字} | 小红书 | 待发 |
 | `sph-{slug}.md` | 视频号图文：{名字} | 视频号 | 待发 |
 | `quote-cards.json` | 金句卡片数据 | 渲染后发 | 待发 |
+| `cover-configs.md` | 封面配置与设计信息 | 否 | 已配置 |
 
 ## 这一期有谁
 - {名字}：[{这件事}](gzh-{slug}.md) · [小红书](xhs-{slug}.md) · [视频号](sph-{slug}.md)
