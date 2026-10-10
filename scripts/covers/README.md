@@ -49,6 +49,10 @@ python3 scripts/covers/assign_themes.py events/{year}/{event}/assets/cover-confi
 
 脚本分别将缺失或为 `"random"` 的 `layout`、`theme` 替换为具体布局和配色，两项独立均衡分配并尽量避免相邻重复；保留已选值。可以只固定其中一项、随机另一项。`--seed 42` 可重现同一批组合；`--reshuffle` 重新抽选全部配置的两项，更新后需重新确认。渲染时不会重新随机，历史稿未指定布局或配色时仍用 `collage`。
 
+## 固定发布入口
+
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，固定输出到仓库旁 `inspire-planet-publish/{期目录}/ready/`；检查成功后更新预览和 ZIP，旧版存 `history/`。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+
 ## 运行
 
 ```bash

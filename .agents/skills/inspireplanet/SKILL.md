@@ -44,7 +44,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 已有渲染确认在脚本未变时继续有效；用户明确确认已有脚本并要求渲染时直接执行。改动图中文字或视觉命题后重新确认受影响部分。
 
-封面出图方法见 `scripts/covers/README.md`；文字卡见 `scripts/text-cards/README.md`。公众号封面成品存本期 `assets/`。小红书与视频号按平台分别编排首图、叙事节奏、内页和互动收尾，各自选择主题、审阅并渲染，不能直接复制另一平台的整套脚本或复用其图片。两平台可选同一主题，各自首图与内页一次生成，不再替换首图。仓库外同批输出按 `xhs/{slug}/`、`sph/{slug}/` 分目录保存，总览和 ZIP 保留渠道分类。渲染后核对裁切、溢出、重叠及文字，结果在交付回复中说明。发布授权事项记入发布备注，不回写制作进度。
+封面与文字卡仍分别使用原渲染器，确认后统一通过 `scripts/render-publish.py` 更新仓库旁固定目录 `inspire-planet-publish/{期目录}/`。先临时渲染并检查，成功后更新 `ready/`、`preview.html` 和各渠道 ZIP；旧版存入 `history/`，发布只从 `ready/gzh/`、`ready/xhs/{slug}/`、`ready/sph/{slug}/` 取图。更新单篇用 `--channel xhs|sph --slug {slug}`，其他篇目保留。失败保留原待发布版本，具体命令见 `scripts/publish.md`。公众号若需入库，将 `ready/gzh/` 的必要 JPEG 复制到本期 `assets/`；图卡、预览、ZIP 和历史不入库。小红书与视频号分别编排、审阅和渲染，各自首图随内页生成且主题一致，不跨平台复用成品。制作与检查结果在交付回复中说明，不回写 README 进度；发布授权事项记入发布备注。
 
 ## README.md
 
@@ -57,7 +57,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 制作流程
 
-命令在仓库根目录、已安装依赖的渲染环境中执行。
+命令在仓库根目录、已安装依赖的渲染环境中执行。固定发布入口为仓库旁的 `inspire-planet-publish/{期目录}/`，发布只使用 `ready/`；预览打开 `preview.html`，下载使用 `gzh.zip`、`xhs.zip`、`sph.zip` 或 `all.zip`。
 
 ### 1. 下载转写稿（暂由孙玲完成）
 
@@ -78,12 +78,10 @@ Prompt：基于 {本期目录}/transcript.txt，使用 inspireplanet 生成本�
 审阅 [assets/cover-configs.md](assets/cover-configs.md) 中的文字、布局、配色和对应文章。确认后执行：
 
 ```bash
-cover_output=$(mktemp -d /tmp/inspireplanet-covers.XXXXXX)
-python3 scripts/covers/render.py {本期目录}/assets/cover-configs.md \
-  --preview-dir "$cover_output"
+python3 scripts/render-publish.py {本期目录} --channel gzh
 ```
 
-成品写入本期 `assets/`，预览留在仓库外。已有成品需覆盖时加 `--force`。
+成品固定写入仓库旁 `inspire-planet-publish/{期目录}/ready/gzh/`，预览固定为该目录的 `preview.html`；检查成功后替换当前版本，旧版进入 `history/`。
 
 Prompt：本期公众号文章及 assets/cover-configs.md 已确认，请按保存的布局与配色渲染封面，检查排版并提供成品链接。
 
@@ -92,18 +90,14 @@ Prompt：本期公众号文章及 assets/cover-configs.md 已确认，请按保�
 打开下方稿件导航中的各篇脚本，确认首图、每页文字、署名和主题。分别执行（按本期实际篇目展开）：
 
 ```bash
-card_output=$(mktemp -d /tmp/inspireplanet-cards.XXXXXX)
-python3 scripts/text-cards/render.py {本期目录}/xhs-{slug}.md \
-  "$card_output/xhs/{slug}" --jpeg \
-  --contact-sheet "$card_output/previews/xhs-{slug}.jpg"
-python3 scripts/text-cards/render.py {本期目录}/sph-{slug}.md \
-  "$card_output/sph/{slug}" --jpeg \
-  --contact-sheet "$card_output/previews/sph-{slug}.jpg"
+python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph
+# 只更新一篇时：
+python3 scripts/render-publish.py {本期目录} --channel xhs --slug {slug}
 ```
 
-每次用新输出目录；各篇首图与内页一次生成，按脚本选定主题。成品按平台分别交付，图卡不提交 GitHub。
+发布只使用固定的 `ready/xhs/{slug}/`、`ready/sph/{slug}/`；脚本内部用临时目录检查，成功后更新当前图片、预览与 ZIP。各篇首图随内页生成，主题按脚本选择；图卡不提交 GitHub。
 
-Prompt：本期小红书与视频号图文脚本已确认，请按各篇保存的主题分别渲染，首图随内页生成；成品、预览与 ZIP 存仓库外，按平台和分享者分目录，检查并提供成品链接。
+Prompt：本期小红书与视频号图文脚本已确认，请按各篇保存的主题分别渲染，首图随内页生成；通过 scripts/render-publish.py 更新仓库外固定发布目录，旧版存 history/，按平台和分享者分目录，检查并提供成品链接。
 
 ### 5. 发布
 
