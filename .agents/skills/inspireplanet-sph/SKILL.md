@@ -111,7 +111,7 @@ python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md
 
 选项、字段与主题见 `scripts/text-cards/README.md`。
 
-生成或修改稿件后，同步更新本期 README：在稿件索引提供本篇链接，在制作流程第 4 步提供使用本期真实路径、仓库外 `sph/{slug}/` 输出目录的渲染命令，以及确认脚本后出图的 prompt。分别更新制作与发布状态，README 结构遵循 `../inspireplanet/SKILL.md`，不重复文章正文或追加出图流水账。
+生成或修改稿件后，同步更新本期 README：在稿件导航提供本篇链接，在制作流程第 4 步提供使用本期真实路径、仓库外 `sph/{slug}/` 输出目录的渲染命令，以及确认脚本后出图的 prompt。制作结果在交付回复中说明，不回写 README 的生成、审稿或渲染状态；发布注意事项记入发布备注。README 结构遵循 `../inspireplanet/SKILL.md`，不重复文章正文或追加出图流水账。
 
 ## 完成后的回复
 
