@@ -74,6 +74,8 @@ def font_path(explicit):
 
 def document(cfg, source, font, theme=None):
     name = theme or cfg.get('theme', 'collage')
+    if name == 'random':
+        raise ValueError('choose themes with assign_themes.py and review the saved selections before rendering')
     if not re.fullmatch(r'[a-z0-9-]+', name):
         raise ValueError('invalid theme name')
     theme_file = HERE / 'themes' / f'{name}.css'

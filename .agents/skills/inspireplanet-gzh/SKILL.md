@@ -102,7 +102,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 每篇一张，约 `2.35:1`，宽 ≥1920px；
 - 只放 6–14 字短副标题，取自本篇核心变化或动作，不重复发布标题；
-- 默认 HTML/CSS 渲染，`collage` 主题；完整的 `cover-config` JSON、副标题和视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不写入文章；渲染方法见 `scripts/covers/README.md`；
+- 默认 HTML/CSS 渲染；生成配置时在 `collage`、`pop`、`garden`、`blueprint`、`night` 中随机均衡选择主题，写入具体 `theme` 后交用户确认；完整的 `cover-config` JSON、副标题和视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不写入文章；渲染方法见 `scripts/covers/README.md`；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`；
 - 本篇「发布信息」的封面一行只保留成品路径，不附副标题、视觉命题或封面配置。修改已有稿件时先把封面配置及设计信息移入 `cover/cover-configs.md`，再移除稿件中的配置块。
 

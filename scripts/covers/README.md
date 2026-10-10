@@ -1,6 +1,6 @@
 # HTML 封面渲染
 
-从封面配置 Markdown 生成 HTML，用 Chromium 截图并保存 JPEG。默认 `collage`（C 版纸张拼贴），不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
+从封面配置 Markdown 生成 HTML，用 Chromium 截图并保存 JPEG。提供 5 套主题；配置生成时随机均衡选择，确认后按选定主题渲染，不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
 
 ## 配置位置
 
@@ -15,7 +15,7 @@
 <!-- cover-config -->
 ```json
 {
-  "theme": "collage",
+  "theme": "random",
   "format": "portrait",
   "asset": "assets/xiaohongshu-cover-example.jpg",
   "speaker": "分享者",
@@ -36,6 +36,16 @@
 - 图集首图：`headline` 放具体的核心标题，按语义断成 2–3 行（建议每行不超过 7 个中文字），`subtitle` 可以放补充短句，避免重复。
 - 两张纸卡表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
 - `cover/cover-configs.md` 中的 `asset` 和本地照片 `photo` 路径相对本期目录，例如 `assets/recap-cover-liying.jpg`；Markdown 稿件链接相对 `cover/`，例如 `../gzh-liying.md`。历史稿中的配置路径仍相对稿件目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
+
+## 随机选择主题
+
+配置生成后、交用户确认前运行：
+
+```bash
+python3 scripts/covers/assign_themes.py events/{year}/{event}/cover/cover-configs.md
+```
+
+脚本将缺失的 `theme` 或 `"random"` 替换为具体主题，均衡分配并尽量避免相邻重复；保留已选主题。`--seed 42` 可重现同一批选择；`--reshuffle` 重新抽选全部配置，更新后需重新确认。渲染时不会重新随机，历史稿未指定主题时仍用 `collage`。
 
 ## 运行
 
@@ -65,7 +75,17 @@ python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md \
 
 ## 新主题
 
-当前实现 `collage`。以后新增 `themes/{name}.css`，通过配置或 `--theme {name}` 选择；字体、配色、纸卡质感等视觉规则放在主题文件。尺寸、检查、截图和压缩逻辑共享。若新主题确实需要不同结构，再增加对应布局，不提前堆积未使用的模板。
+| 主题 | 风格 |
+|---|---|
+| `collage` | 暖色纸张拼贴、倾斜纸卡 |
+| `pop` | 黄、珊瑚、青色撞色，几何色块与卡片硬阴影 |
+| `garden` | 草木绿与暖黄，有机弧线与不对称圆角 |
+| `blueprint` | 蓝色网格、直角卡片与虚线连接 |
+| `night` | 深蓝夜空、轨道圆弧与亮色圆点 |
+
+每套都有横版和竖版，随机变化包括配色、卡片形状、倾斜、连接线和背景装饰；核心文字与内容关系仍来自文章。
+
+以后新增 `themes/{name}.css`，通过配置或 `--theme {name}` 选择；字体、配色、纸卡质感等视觉规则放在主题文件。尺寸、检查、截图和压缩逻辑共享。若新主题确实需要不同结构，再增加对应布局，不提前堆积未使用的模板。
 
 视频号同题图集可复用小红书竖版封面；正文与内页继续使用文字卡渲染器。图集成品存仓库外，封面按本篇配置存入 `assets/`。
 

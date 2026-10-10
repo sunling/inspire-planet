@@ -16,9 +16,9 @@
 
 - 先完成内容与配置，用户明确确认相关脚本后才出图；脚本文字或视觉命题改动后重新确认受影响部分。
 - 配置中的 `asset` 和 `photo` 路径相对本期目录，Markdown 稿件链接相对 `cover/`（如 `../gzh-liying.md`）。
-- 默认使用 HTML/CSS + 浏览器截图，主题为 `collage`（C 版纸张拼贴），不默认调用图像生成模型。
+- 默认使用 HTML/CSS + 浏览器截图，主题在纸张拼贴、明亮撞色、草木生长、蓝色网格、夜空探索中随机均衡选择，不默认调用图像生成模型。
 - 渲染器和配置格式见仓库根目录 `scripts/covers/README.md`；执行 `python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md`。所有渠道的完整配置、选定的封面文字、视觉命题和复用关系统一放入本期 `cover/cover-configs.md`，按篇目与渠道分节；不在渠道稿中重复保存配置。
-- 主题通过 `theme` 或 `--theme` 选择；当前只实现 `collage`，以后按实际需求新增主题 CSS。
+- 主题为 `collage`、`pop`、`garden`、`blueprint`、`night`；生成配置时先用 `theme: "random"`，运行 `scripts/covers/assign_themes.py` 写入具体主题，再交用户确认。随机选择尽量均衡分布且避免相邻重复；已有主题保留，用户指定时按指定选择。确认后渲染使用已保存的主题，不重新随机；重新抽选用 `--reshuffle`，需确认更新后的封面脚本。
 - 真实照片由用户提供并确认使用范围，支持本地照片路径和裁切焦点；先做样张再核对主体是否保留，不用生成图冒充现场。
 - 仅用户明确需要插画等位图视觉时，再使用 imagegen；保留 HTML 文字排版与渠道分工。
 

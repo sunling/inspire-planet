@@ -1,0 +1,10 @@
+/* 明亮撞色：几何色块与平直卡片。 */
+:root { --thread: #253a96; }
+.cover { background: #ffed8b; color: #242548; }
+.cover::before { content: ''; position: absolute; width: 420px; height: 420px; border-radius: 50%; background: #ff765b; right: -220px; top: 180px; }
+.cover::after { content: ''; position: absolute; width: 260px; height: 130px; border-radius: 100px; background: #64d8d1; left: -150px; bottom: 60px; }
+header, footer, .subtitle { color: #494665; }
+.paper { border: 3px solid #242548; box-shadow: 12px 12px 0 #242548; border-radius: 18px; }
+.one { background: #75e0d3; color: #1c4849; transform: rotate(-3deg); }
+.two { background: #ff967e; color: #552d2b; transform: rotate(3deg); }
+.thread { border-radius: 0; border-bottom-style: dashed; }

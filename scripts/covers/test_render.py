@@ -9,9 +9,10 @@ import tempfile
 from pathlib import Path
 from PIL import Image
 import render
+import assign_themes
 
 
-def run(font, browser):
+def run(font, browser, samples_dir=None):
     with tempfile.TemporaryDirectory(prefix='inspire-cover-test-') as tmp:
         root=Path(tmp)
         cfg={'speaker':'分享者','episode':'EP38','date':'2026-09-26','theme':'collage','format':'portrait','asset':'cover.jpg','headline':['一个具体场景','一个真实问题'],'subtitle':'保留一点好奇','tiles':[{'label':'起点','value':'片段','note':'具体经历'},{'label':'变化','value':'行动','note':'仍在尝试'}]}
@@ -83,12 +84,35 @@ def run(font, browser):
                 assert im.getpixel((10,10))[1]>im.getpixel((10,10))[0]
         finally:
             render.HERE=original
+        # Random selection happens before review and stays fixed on rerender.
+        choices=root/'choices.md'
+        choices.write_text(''.join(block(dict(cfg,theme='random',asset=f'cover-{i}.jpg')) for i in range(10)))
+        selected=assign_themes.assign(choices,seed=42)
+        assert set(selected)==set(assign_themes.THEMES)
+        assert all(a!=b for a,b in zip(selected,selected[1:]))
+        assert max(selected.count(t) for t in assign_themes.THEMES)-min(selected.count(t) for t in assign_themes.THEMES)<=1
+        saved=choices.read_text()
+        assert assign_themes.assign(choices,seed=7)==selected
+        assert choices.read_text()==saved
+        choices.write_text(''.join(block(dict(cfg,theme='random',asset=f'cover-{i}.jpg')) for i in range(10)))
+        assert assign_themes.assign(choices,seed=42)==selected
+        for name in assign_themes.THEMES:
+            for form in ('wide','portrait'):
+                cfg.update(theme=name,format=form,asset=f'{name}-{form}.jpg',headline=['保留一点好奇'] if form=='wide' else ['一个具体场景','一个真实问题'],subtitle='' if form=='wide' else '保留一点好奇')
+                write()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    render.render([source],root/'themes',font=font,browser_path=browser)
+                if samples_dir:
+                    samples_dir.mkdir(parents=True,exist_ok=True)
+                    shutil.copy(root/'themes'/cfg['asset'],samples_dir/cfg['asset'])
         print('Passed: portrait/wide JPEG, multi-config rendering and previews, duplicate path rejection, photo rendering, overflow rejection, CSS theme extension.')
+        print('Passed: balanced random selection, fixed selections after review, reproducible seed, all five themes in both formats.')
 
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser()
     ap.add_argument('--font',required=True,type=Path)
     ap.add_argument('--browser',type=Path)
+    ap.add_argument('--samples-dir',type=Path,help='keep generic theme samples outside the repo')
     args=ap.parse_args()
-    run(args.font,args.browser)
+    run(args.font,args.browser,args.samples_dir)
