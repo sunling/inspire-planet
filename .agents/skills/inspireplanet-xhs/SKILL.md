@@ -112,15 +112,15 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 渲染成图
 
-完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。整套图卡、预览和 ZIP 放在仓库外同一批输出目录：
+完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。通过固定发布工具先临时渲染与检查，成功后更新仓库旁 `inspire-planet-publish/{期目录}/ready/xhs/{slug}/`、固定预览与 ZIP，旧版存 `history/`。发布只从 `ready/` 取图：
 
 ```bash
-python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/xhs/{slug}/ [--theme paper|inspire]
+python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX --channel xhs --slug {slug}
 ```
 
-选项、字段与主题见 `scripts/text-cards/README.md`。
+固定发布命令与导入规则见 `scripts/publish.md`；主题仍写在脚本中，选项与字段见 `scripts/text-cards/README.md`。
 
-生成或修改稿件后，同步更新本期 README：在稿件导航提供本篇链接，在制作流程第 4 步提供使用本期真实路径、仓库外 `xhs/{slug}/` 输出目录的渲染命令，以及确认脚本后出图的 prompt。制作结果在交付回复中说明，不回写 README 的生成、审稿或渲染状态；发布注意事项记入发布备注。README 结构遵循 `../inspireplanet/SKILL.md`，不重复文章正文或追加出图流水账。
+生成或修改稿件后，同步更新本期 README：在稿件导航提供本篇链接，在制作流程第 4 步提供使用本期真实路径、仓库外固定 `ready/xhs/{slug}/` 输出目录的渲染命令，以及确认脚本后出图的 prompt。制作结果在交付回复中说明，不回写 README 的生成、审稿或渲染状态；发布注意事项记入发布备注。README 结构遵循 `../inspireplanet/SKILL.md`，不重复文章正文或追加出图流水账。
 
 ## 完成后的回复
 

@@ -90,6 +90,10 @@ speaker: 孙玲
 
 新增主题：复制 `theme-paper.css` 为 `theme-{name}.css`，改 `:root` 里的变量（`--accent --background --cover-background --ink --muted --muted-strong --rule`）和少量规则即可，`theme.css` 只负责版式结构，不要改它来换色。主题名只用小写字母、数字和连字符。临时微调用 `--accent`、`--background`、`--cover-background`。
 
+## 固定发布入口
+
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph`，固定输出到仓库旁 `inspire-planet-publish/{期目录}/ready/`；检查成功后更新预览和 ZIP，旧版存 `history/`。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+
 ## 运行
 
 ```bash
