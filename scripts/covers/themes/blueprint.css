@@ -1,0 +1,8 @@
+/* 蓝色网格：直角卡片与连接线。 */
+:root { --thread: #244a93; }
+.cover { background-color: #e6f0ff; background-image: linear-gradient(#4067aa12 1px, transparent 1px), linear-gradient(90deg, #4067aa12 1px, transparent 1px); background-size: 48px 48px; color: #203e76; }
+header, footer, .subtitle { color: #486184; }
+.paper { border: 3px solid #365b96; box-shadow: 10px 10px 0 #b9cceb; border-radius: 0; }
+.one { background: #fcfdff; color: #244779; transform: none; }
+.two { background: #bfd8ff; color: #244779; transform: none; }
+.thread { border-radius: 0; transform: none; border-bottom: 4px dashed var(--thread); }

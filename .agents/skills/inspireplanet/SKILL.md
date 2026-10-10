@@ -14,10 +14,11 @@ description: 启发星球对外内容总控：从某期会议转写一次生成�
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt                会议原始转写
-  gzh-{slug}.md                 公众号文章（文末附标题、摘要、封面配置）
+  gzh-{slug}.md                 公众号文章（文末附标题、摘要、封面成品路径）
   xhs-{slug}.md                 小红书图文
   sph-{slug}.md                 视频号图文
   quote-cards.json              金句卡片
+  cover/cover-configs.md              本期所有封面的配置、设计信息与复用关系
   assets/recap-cover.jpg        公众号横版封面（多篇时加 -{slug}）
   assets/xiaohongshu-cover.jpg  小红书竖版封面（多篇时加 -{slug}）
   README.md                     本期索引与发布状态
@@ -34,18 +35,14 @@ events/{year}/{YYYYMMDD}-epXX/
 - 金句 / 卡片 JSON → `inspireplanet-cards`
 - 本期索引 / 发布状态 → 本 Skill
 
-## 整期生成
+## 工作流程
 
-用户要“生成这一期的内容 / 全套内容”时，按顺序做完：
+1. **取得转写**：可用 `inspireplanet-transcript` 调用拉取脚本，也可使用用户手动下载的转写稿，原样保存为本期 `transcript.txt`；已有稿件不重复拉取。
+2. **生成内容**：用户要全套时，依次生成公众号、小红书、视频号、金句卡片 JSON；用户只要某个渠道或单个交付物时只生成对应内容。此阶段不渲染图片。
+3. **生成封面脚本**：依据已生成的文章和图文首图，把对应的封面文字、视觉命题、完整配置和复用关系集中写入 `cover/cover-configs.md`。整期生成时先完成全部内容，再统一汇总配置；单独生成渠道内容时只更新相关配置，保留其他小节。只生成金句 JSON 时无需新建封面配置。运行 `scripts/covers/assign_themes.py {本期目录}/cover/cover-configs.md`，把未指定的布局 `layout` 与配色 `theme` 分别随机均衡分配为具体组合，再更新本期 `README.md`，标记脚本待确认。确认后按已保存的布局与配色渲染，不重新抽选。
+4. **确认后渲染**：向用户交付具体稿件和封面脚本，等待用户明确确认相关脚本后再渲染文字卡及封面。已有确认在脚本未变时继续有效；用户在同一请求中明确确认已有脚本并要求渲染时可直接执行。改动图中文字或视觉命题后重新确认受影响部分。
 
-1. 缺 `transcript.txt` 时 → `inspireplanet-transcript`；
-2. `inspireplanet-gzh`；
-3. `inspireplanet-xhs`；
-4. `inspireplanet-sph`；
-5. `inspireplanet-cards`；
-6. 最后写 `README.md`。
-
-卡片图渲染由人手动触发，不在这条链里做。
+封面出图方法见 `scripts/covers/README.md`；文字卡见 `scripts/text-cards/README.md`。封面成品存本期 `assets/`，文字卡图集存仓库外；图集首图按已确认的复用关系替换为对应竖版封面，再刷新总览与打包文件。渲染后核对裁切、溢出、重叠及文字，并更新本期状态。渲染确认与对外发布授权分别记录。
 
 ## README.md
 
@@ -62,9 +59,10 @@ events/{year}/{YYYYMMDD}-epXX/
 |---|---|---|---|
 | `transcript.txt` | 会议原始转写 | 否 | — |
 | `gzh-{slug}.md` | 公众号文章：{名字} | 公众号 | 待本人过目 |
-| `xhs-{slug}.md` | 小红书图文：{名字} | 小红书 | 待发 |
-| `sph-{slug}.md` | 视频号图文：{名字} | 视频号 | 待发 |
-| `quote-cards.json` | 金句卡片数据 | 渲染后发 | 待发 |
+| `xhs-{slug}.md` | 小红书图文：{名字} | 小红书 | 待确认 |
+| `sph-{slug}.md` | 视频号图文：{名字} | 视频号 | 待确认 |
+| `quote-cards.json` | 金句卡片数据 | 渲染后发 | 待确认 |
+| `cover/cover-configs.md` | 封面配置与设计信息 | 否 | 待确认 |
 
 ## 这一期有谁
 - {名字}：[{这件事}](gzh-{slug}.md) · [小红书](xhs-{slug}.md) · [视频号](sph-{slug}.md)
@@ -81,4 +79,4 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 只列真实存在的文件和篇目，不补空小节；
 - 不放文章正文和摘要；
-- 状态用 `待确认` / `待本人过目` / `待发` / `已发 YYYY-MM-DD`。
+- 制作状态记录 `待确认` / `待渲染` / `已渲染`；发布状态记录 `待本人过目` / `待发` / `已发 YYYY-MM-DD`，在表格或备注中分别注明。

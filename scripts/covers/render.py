@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read a cover-config JSON block from each channel Markdown and render HTML to JPEG."""
+"""Read cover-config JSON blocks from Markdown and render HTML to JPEG."""
 import argparse
 import base64
 import html
@@ -15,12 +15,34 @@ from playwright.sync_api import sync_playwright
 HERE = Path(__file__).resolve().parent
 
 
-def read_config(source):
+def config_base(source):
+    """Episode-wide configs in cover/ keep asset and photo paths event-relative."""
+    if source.name == 'cover-configs.md' and source.parent.name == 'cover':
+        return source.parent.parent
+    return source.parent
+
+
+def read_configs(source):
     text = source.read_text(encoding='utf-8')
     found = re.findall(r'<!-- cover-config -->\s*```json\s*\n(.*?)\n```', text, re.S)
-    if len(found) != 1:
+    if not found:
+        raise ValueError(f'{source.name}: expected at least one cover-config JSON block')
+    configs = [json.loads(block) for block in found]
+    for cfg in configs:
+        validate_config(cfg)
+    return configs
+
+
+def read_config(source):
+    configs = read_configs(source)
+    if len(configs) != 1:
         raise ValueError(f'{source.name}: expected one cover-config JSON block')
-    cfg = json.loads(found[0])
+    return configs[0]
+
+
+def validate_config(cfg):
+    if not isinstance(cfg, dict):
+        raise ValueError('cover config must be an object')
     for field in ('speaker', 'episode', 'date', 'asset'):
         if not isinstance(cfg.get(field), str) or not cfg[field].strip():
             raise ValueError(f'missing {field}')
@@ -52,11 +74,17 @@ def font_path(explicit):
 
 def document(cfg, source, font, theme=None):
     name = theme or cfg.get('theme', 'collage')
+    if name == 'random':
+        raise ValueError('choose themes with assign_themes.py and review the saved selections before rendering')
     if not re.fullmatch(r'[a-z0-9-]+', name):
         raise ValueError('invalid theme name')
     theme_file = HERE / 'themes' / f'{name}.css'
     if not theme_file.is_file():
         raise ValueError(f'unknown theme: {name}')
+    layout = cfg.get('layout', 'collage')
+    if layout not in ('collage', 'editorial', 'signal'):
+        raise ValueError('layout must be collage, editorial or signal; resolve random selections before review')
+    layout_css = '' if layout == 'collage' else (HERE / 'layouts' / f'{layout}.css').read_text()
     form = cfg.get('format')
     if form not in ('wide', 'portrait'):
         raise ValueError('format must be wide or portrait')
@@ -66,7 +94,7 @@ def document(cfg, source, font, theme=None):
     tiles = [tile_markup(t) for t in cfg['tiles']]
     photo_css = ''
     if cfg.get('photo'):
-        path = (source.parent / cfg['photo']).resolve()
+        path = (config_base(source) / cfg['photo']).resolve()
         with Image.open(path) as im:
             im.verify()
         mime = mimetypes.guess_type(path.name)[0]
@@ -81,8 +109,8 @@ def document(cfg, source, font, theme=None):
     font_data = base64.b64encode(font.read_bytes()).decode('ascii')
     return Template((HERE / 'template.html').read_text()).substitute(
         font_css=f'@font-face{{font-family:CoverChinese;src:url(data:font/ttf;base64,{font_data})}}',
-        base_css=(HERE / 'base.css').read_text(), theme_css=theme_file.read_text()+photo_css,
-        form=form, speaker=esc(cfg['speaker']), episode=esc(cfg['episode']), date=esc(cfg['date']),
+        base_css=(HERE / 'base.css').read_text(), theme_css=theme_file.read_text()+layout_css+photo_css,
+        form=f'{form} {layout}', speaker=esc(cfg['speaker']), episode=esc(cfg['episode']), date=esc(cfg['date']),
         headline=''.join(f'<span>{esc(s)}</span>' for s in cfg['headline']),
         subtitle=f'<p class="subtitle">{esc(cfg["subtitle"])}</p>' if cfg.get('subtitle') else '',
         tile_one=tiles[0], tile_two=tiles[1])
@@ -104,11 +132,11 @@ def render(sources, out_dir=None, preview_dir=None, browser_path=None, font=None
     jobs=[]
     for source in sources:
         source=Path(source).resolve()
-        cfg=read_config(source)
-        target=(Path(out_dir)/Path(cfg['asset']).name) if out_dir else source.parent/cfg['asset']
-        if target.exists() and not force:
-            raise ValueError(f'{target} exists; use --force to replace it')
-        jobs.append((source,cfg,target))
+        for cfg in read_configs(source):
+            target=(Path(out_dir)/Path(cfg['asset']).name) if out_dir else config_base(source)/cfg['asset']
+            if target.exists() and not force:
+                raise ValueError(f'{target} exists; use --force to replace it')
+            jobs.append((source,cfg,target))
     if len({p.resolve() for _,_,p in jobs})!=len(jobs):
         raise ValueError('duplicate output paths')
     font=font_path(font)
@@ -142,10 +170,10 @@ def render(sources, out_dir=None, preview_dir=None, browser_path=None, font=None
                     target.parent.mkdir(parents=True,exist_ok=True)
                     target.write_bytes(data)
                     if preview_dir:
-                        preview=Path(preview_dir)/f'{source.stem}.html'
+                        preview=Path(preview_dir)/f'{target.stem}.html'
                         preview.parent.mkdir(parents=True,exist_ok=True)
                         preview.write_text(doc)
-                    result={'source':source.name,'output':str(target),'theme':theme or cfg.get('theme','collage'),'width':w,'height':h,'bytes':len(data),'checks':checks}
+                    result={'source':source.name,'output':str(target),'theme':theme or cfg.get('theme','collage'),'layout':cfg.get('layout','collage'),'width':w,'height':h,'bytes':len(data),'checks':checks}
                     results.append(result)
                     print(json.dumps({k:v for k,v in result.items() if k!='checks'},ensure_ascii=False),flush=True)
                 finally:

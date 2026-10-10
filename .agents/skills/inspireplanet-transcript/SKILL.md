@@ -7,7 +7,7 @@ description: 从腾讯会议拉取某一期会议的逐字稿（文字转写）�
 
 ## 目标
 
-把每周线上会议的逐字稿从腾讯会议取下来，存为对应 event 的 `transcript.txt`，作为本期所有内容的事实来源。
+把每周线上会议的逐字稿存为对应 event 的 `transcript.txt`，作为本期所有内容的事实来源。可调用脚本从腾讯会议拉取，也可接收用户手动下载的原稿；手动稿原样保存并确认对应日期与期数，无需 CLI 授权。
 
 ## 路径
 
@@ -18,6 +18,8 @@ events/{year}/{YYYYMMDD}-epXX/transcript.txt
 目录日期取腾讯会议返回的**会议时间戳日期（UTC）**，例如 `2026-09-26T00:00:00Z` → `20260926`。
 
 ## 前置条件
+
+以下条件仅适用于脚本拉取：
 
 - 腾讯会议官方 CLI `tmeet` 已安装并在 PATH 中（可用环境变量 `TMEET_BIN` 覆盖路径）；
 - 已授权：`tmeet auth login`。过期需重新登录（access token 约 6 小时，refresh token 约 30 天）；

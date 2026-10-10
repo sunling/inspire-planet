@@ -1,6 +1,8 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 .cover { width: 1080px; height: 1440px; position: relative; overflow: hidden; font-family: CoverChinese, serif; }
+.cover::before, .cover::after { z-index: 0; pointer-events: none; }
+header, footer, main, .paper, .thread { z-index: 1; }
 header, footer { position: absolute; left: 76px; right: 76px; display: flex; justify-content: space-between; gap: 32px; font-size: 26px; line-height: 1.6; letter-spacing: 1px; }
 header { top: 60px; }
 footer { bottom: 60px; }

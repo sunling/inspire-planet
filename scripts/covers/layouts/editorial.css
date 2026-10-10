@@ -1,0 +1,16 @@
+/* 杂志排版：标题与信息分栏，细线与段落替代浮动纸卡。 */
+.editorial::before, .editorial::after, .editorial .thread { display: none; }
+.editorial main { border-top: 5px solid currentColor; padding-top: 26px; top: 235px; }
+.editorial h1 { line-height: 1.3; }
+.editorial .paper { background: transparent; color: inherit; border: 0; border-top: 2px solid currentColor; border-radius: 0; box-shadow: none; transform: none; left: 76px; right: 76px; width: auto; height: 180px; padding: 20px 0; display: grid; grid-template-columns: 145px 1fr; gap: 12px; align-content: center; }
+.editorial .paper small:last-child { grid-column: 2; }
+.editorial .one { bottom: 370px; }
+.editorial .two { bottom: 185px; }
+.editorial .paper .value { font-size: 66px; line-height: 1.2; }
+.editorial.wide main { left: 96px; right: 645px; top: 215px; }
+.editorial.wide .paper { left: auto; right: 96px; width: 450px; height: 175px; grid-template-columns: 100px 1fr; }
+.editorial.wide .one { bottom: 390px; }
+.editorial.wide .two { bottom: 190px; }
+.editorial.wide .paper .value { font-size: 58px; }
+/* 有授权的照片替代第一组信息，保留裁切容器。 */
+.editorial .one:has(img) { display: block; overflow: hidden; }
