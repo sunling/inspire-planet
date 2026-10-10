@@ -13,6 +13,7 @@ description: 为启发星球某一期能自成一件事的分享生成小红书�
 
 - 只写能自成一件事、有具体场景、脱离上下文也读得懂的分享；
 - 几篇是几篇，不要求覆盖每一位分享者。
+- 按小红书的标题、图集叙事和评论邀请独立编排；同一分享可以用于视频号，但两平台分别维护脚本、审阅和渲染，不直接复制整套脚本或复用成品图片。
 
 ## 路径
 
@@ -113,7 +114,7 @@ events/{year}/{YYYYMMDD}-epXX/
 完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。整套图卡、预览和 ZIP 放在仓库外同一批输出目录：
 
 ```bash
-python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire]
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/xhs/{slug}/ [--theme paper|inspire]
 ```
 
 选项、字段与主题见 `scripts/text-cards/README.md`。

@@ -15,6 +15,7 @@ description: 为启发星球某一期能自成一件事的分享生成视频号�
 
 - 只写能自成一件事、有具体场景、脱离上下文也读得懂的分享；
 - 几条是几条，不要求覆盖每一位分享者。
+- 按视频号的正文开头、图片叙事和互动收尾独立编排；同一分享可以用于小红书，但两平台分别维护脚本、审阅和渲染，不直接复制整套脚本或复用成品图片。
 
 ## 平台规格
 
@@ -88,7 +89,7 @@ events/{year}/{YYYYMMDD}-epXX/
 ## 图集主题与首图
 
 - 首图内容写在图片脚本第 1 页；主题在篇目级设置中写 `- 主题：paper` 或 `inspire`。首图与内页由同一文字卡渲染器一次生成，保持标题字体、正文字体与配色一致，不调用公众号封面渲染器或替换首图。
-- 字体与主题对应关系见 `../inspireplanet-xhs/SKILL.md` 的“图集主题与首图”。两渠道的完整图片脚本与主题相同时可复用整套图片；不单独维护一张封面，发布正文仍各自维护。
+- 字体与主题对应关系见 `../inspireplanet-xhs/SKILL.md` 的“图集主题与首图”。主题按本篇视频号脚本选择，可与小红书相同；首图与内页保持一致，整套图片独立渲染和交付。
 
 ## 话题
 
@@ -104,7 +105,7 @@ events/{year}/{YYYYMMDD}-epXX/
 完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。整套图卡、预览和 ZIP 放在仓库外同一批输出目录：
 
 ```bash
-python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/ [--theme paper|inspire]
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/sph/{slug}/ [--theme paper|inspire]
 ```
 
 选项、字段与主题见 `scripts/text-cards/README.md`。
