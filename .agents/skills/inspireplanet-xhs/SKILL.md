@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-xhs
-description: 为启发星球某一期能自成一件事的分享生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词）与竖版封面，保存到 `xhs-{slug}.md`；一期可以多篇。
+description: 为启发星球某一期能自成一件事的分享生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词）与同主题首图，确认后整套渲染；内容保存到 `xhs-{slug}.md`；一期可以多篇。
 ---
 
 # Inspire Planet 小红书
@@ -13,6 +13,7 @@ description: 为启发星球某一期能自成一件事的分享生成小红书�
 
 - 只写能自成一件事、有具体场景、脱离上下文也读得懂的分享；
 - 几篇是几篇，不要求覆盖每一位分享者。
+- 按小红书的标题、图集叙事和评论邀请独立编排；同一分享可以用于视频号，但两平台分别维护脚本、审阅和渲染，不直接复制整套脚本或复用成品图片。
 
 ## 路径
 
@@ -21,7 +22,6 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md                  优先输入
   transcript.txt                 没有 gzh 时的输入
   xhs-{slug}.md                  输出，一位分享者一个文件
-  assets/xiaohongshu-cover.jpg   竖版封面；多篇时用 xiaohongshu-cover-{slug}.jpg
 ```
 
 - 没有 `transcript.txt` 时先用 `inspireplanet-transcript` 取逐字稿；
@@ -45,6 +45,7 @@ events/{year}/{YYYYMMDD}-epXX/
 - 分享者：{分享人}
 - 日期：{YYYY-MM-DD}
 - 期数：第 {episode} 期
+- 主题：paper
 
 ### 第 1 页（封面）
 - 左上署名：{year}EP{episode} · {分享人}的分享
@@ -81,6 +82,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 默认 6–10 页：第 1 页封面，末页邀请；
 - 每页只有图上大字、小字、图片建议，一屏读得完；
+- 图上大字、小字、主标题、副标题与署名只写面向读者的内容；不夹带转写时间戳、出处定位或“删去口头重复”“补充标点”等编辑说明。引语保留分享者归属，核对信息写在文件顶部出处附近，位于图集脚本之外，不参与渲染。
 - 首图落在具体的人和事上（时间、动作、场景），不放抽象金句；
 - 内页走一条叙事弧：处境 → 细节 → 转折 → 一句原声收尾；页标题含「原声」的页渲染为深色；
 - 末页用一个问题作邀请；
@@ -95,13 +97,12 @@ events/{year}/{YYYYMMDD}-epXX/
 - 结尾留一个真实的问题，不喊口号；
 - 不用“这一期，某某分享了……”这类纪要式开头。
 
-## 竖版封面
+## 图集主题与首图
 
-- `3:4`，1080×1440；
-- 角落放期数 `{year}EP{episode}`，主体放精简的核心标题，可另加 5–8 字补充副标题；
-- 默认 HTML/CSS 渲染，`collage` 主题；在封面配置处附 `cover-config` JSON 块，与本篇一起维护；
-- 单独构图，不从横版封面裁切；
-- 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`。
+- 首图是图集脚本的第 1 页，与内页由 `scripts/text-cards/render.py` 一次渲染，`3:4`，1080×1440；不调用公众号封面渲染器，不用其他图片替换 `01.jpg`。
+- 在篇目级设置中写明 `- 主题：paper` 或 `inspire`，整套采用同一主题的标题字体、正文字体和配色；首图允许字号、留白与信息层级不同，原声页可用同主题深色页。
+- `paper` 的标题用马善政、正文用霞鹜文楷；`inspire` 标题和正文都用霞鹜文楷。用户选字体时据此选择主题；需要其他字体时先扩展对应图卡主题，使首图与内页共同生效。
+- 首图的主标题、短副标题与署名直接写在第 1 页，主题设置和首图内容随稿维护，不另建封面配置或单独保存首图。
 
 ## 署名与边界
 
@@ -111,10 +112,10 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 渲染成图
 
-定稿后由人手动出图，卡片图不进仓库：
+完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。整套图卡、预览和 ZIP 放在仓库外同一批输出目录：
 
 ```bash
-python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire]
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/xhs/{slug}/ [--theme paper|inspire]
 ```
 
 选项、字段与主题见 `scripts/text-cards/README.md`。

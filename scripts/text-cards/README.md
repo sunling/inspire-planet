@@ -1,5 +1,7 @@
 # 文字卡渲染器
 
+首图内容和整套主题都写在图文脚本中，用户确认后一次生成首图与内页。`assets/cover-configs.md` 仅用于公众号封面，本工具的首图不再由独立封面图片替换。
+
 把文字稿渲染为小红书 / 视频号竖版（1080 × 1440）卡片图。HTML/CSS 排版、浏览器截图，文字精确、可复现；主题是纯 CSS，不同分享者、不同栏目可以用不同主题。
 
 ## 两种输入
@@ -84,6 +86,8 @@ speaker: 孙玲
 
 选择方式：frontmatter `theme: paper` 或命令行 `--theme paper`；都不写时按输入类型取默认。
 
+整套主题决定封面和内页的标题／正文字体与配色。`paper`：马善政标题 + 霞鹜文楷正文；`inspire`：标题与正文都用霞鹜文楷。首图只调整字号与版式，原声页可使用同主题深色版本。用户指定字体时先选对应主题；`--font` 只覆盖正文字体，不能据此声称已更换 `paper` 的毛笔标题字体。
+
 新增主题：复制 `theme-paper.css` 为 `theme-{name}.css`，改 `:root` 里的变量（`--accent --background --cover-background --ink --muted --muted-strong --rule`）和少量规则即可，`theme.css` 只负责版式结构，不要改它来换色。主题名只用小写字母、数字和连字符。临时微调用 `--accent`、`--background`、`--cover-background`。
 
 ## 运行
@@ -92,7 +96,7 @@ speaker: 孙玲
 python3 -m pip install -r scripts/text-cards/requirements.txt
 python3 -m playwright install chromium          # 或用 --browser 指定本机 Chrome
 
-python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ \
+python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/xhs/{slug}/ \
   --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --contact-sheet /tmp/sheet.png                 # 临时总览图，便于检查
 # 可选：--theme inspire|paper   --jpeg（输出 JPEG q88 而非 PNG）
@@ -100,7 +104,8 @@ python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md
 
 - 字体首次运行自动下载到 `~/.cache/inspireplanet-fonts/`（`INSPIRE_FONTS_DIR` 可改；也会查 `~/Library/Fonts/`、`~/.local/share/fonts/`）；离线时用 `--font` 指定霞鹜文楷。
 - 输出目录必须为空。渲染器会拒绝溢出和页眉重叠的页面；遇到溢出先拆页或删重复，不缩字号。
-- 卡片图是产物，不提交进仓库；仓库只保留文字稿。
+- 整套图卡包含 `01.jpg` 首图，不单独复制首图到本期 `assets/`。小红书与视频号分别使用各自审阅通过的脚本渲染，同批输出按仓库外 `out_dir/xhs/{slug}/`、`out_dir/sph/{slug}/` 分目录保存；总览和 ZIP 保留渠道分类，不跨平台复用整套成品。
+- 卡片图是产物，不提交进仓库；仓库只保留文字稿及其主题设置。
 
 改动渲染器或主题后运行：
 

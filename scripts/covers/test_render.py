@@ -9,9 +9,10 @@ import tempfile
 from pathlib import Path
 from PIL import Image
 import render
+import assign_themes
 
 
-def run(font, browser):
+def run(font, browser, samples_dir=None):
     with tempfile.TemporaryDirectory(prefix='inspire-cover-test-') as tmp:
         root=Path(tmp)
         cfg={'speaker':'分享者','episode':'EP38','date':'2026-09-26','theme':'collage','format':'portrait','asset':'cover.jpg','headline':['一个具体场景','一个真实问题'],'subtitle':'保留一点好奇','tiles':[{'label':'起点','value':'片段','note':'具体经历'},{'label':'变化','value':'行动','note':'仍在尝试'}]}
@@ -24,6 +25,34 @@ def run(font, browser):
         with Image.open(root/'portrait/cover.jpg') as im:
             assert im.size==(1080,1440) and im.mode=='RGB' and im.info['progressive']==1
         assert result[0]['bytes']<400*1024
+        # An episode file renders every block and keeps distinct previews.
+        batch=root/'assets/cover-configs.md'
+        batch.parent.mkdir()
+        batch_photo=Image.new('RGB',(600,800),'#1474ac')
+        batch_photo.save(root/'batch-photo.jpg')
+        wide=dict(cfg,format='wide',asset='assets/wide.jpg',headline=['保留一点好奇'],subtitle='')
+        wide['photo']='batch-photo.jpg'
+        portrait=dict(cfg,asset='assets/portrait.jpg')
+        def block(config):
+            return '<!-- cover-config -->\n```json\n'+json.dumps(config,ensure_ascii=False)+'\n```\n'
+        batch.write_text(block(wide)+block(portrait))
+        with contextlib.redirect_stdout(io.StringIO()):
+            results=render.render([batch],preview_dir=root/'previews',font=font,browser_path=browser)
+        assert len(results)==2
+        assert not (root/'assets/assets').exists()
+        for name,size in [('wide',(1920,817)),('portrait',(1080,1440))]:
+            with Image.open(root/f'assets/{name}.jpg') as im:
+                assert im.size==size
+                if name=='wide':
+                    assert any(b>r+50 and b>g+20 for r,g,b in im.resize((192,82)).getdata())
+            assert (root/f'previews/{name}.html').is_file()
+        batch.write_text(block(wide)+block(wide))
+        try:
+            render.render([batch],out_dir=root/'duplicate',font=font,browser_path=browser)
+        except ValueError as exc:
+            assert 'duplicate output paths' in str(exc)
+        else:
+            raise AssertionError('duplicate output paths unexpectedly accepted')
         cfg['format']='wide';cfg['headline']=['保留一点好奇'];cfg['subtitle']=''
         # Distinct color blocks allow a local photo to be rendered without external requests.
         photo=Image.new('RGB',(600,800),'#1474ac');photo.paste('#e85930',(300,0,600,800));photo.save(root/'photo.jpg')
@@ -55,12 +84,41 @@ def run(font, browser):
                 assert im.getpixel((10,10))[1]>im.getpixel((10,10))[0]
         finally:
             render.HERE=original
-        print('Passed: portrait/wide JPEG, photo rendering, overflow rejection, CSS theme extension.')
+        # Random selection happens before review and stays fixed on rerender.
+        choices=root/'choices.md'
+        choices.write_text(''.join(block(dict(cfg,theme='random',asset=f'cover-{i}.jpg')) for i in range(10)))
+        selected=assign_themes.assign(choices,seed=42)
+        assert set(selected)==set(assign_themes.THEMES)
+        assert all(a!=b for a,b in zip(selected,selected[1:]))
+        assert max(selected.count(t) for t in assign_themes.THEMES)-min(selected.count(t) for t in assign_themes.THEMES)<=1
+        saved=choices.read_text()
+        layouts=[c['layout'] for c in render.read_configs(choices)]
+        assert set(layouts)==set(assign_themes.LAYOUTS)
+        assert all(a!=b for a,b in zip(layouts,layouts[1:]))
+        assert assign_themes.assign(choices,seed=7)==selected
+        assert choices.read_text()==saved
+        choices.write_text(''.join(block(dict(cfg,theme='random',asset=f'cover-{i}.jpg')) for i in range(10)))
+        assert assign_themes.assign(choices,seed=42)==selected
+        variants=[]
+        for layout in assign_themes.LAYOUTS:
+            for name in assign_themes.THEMES:
+                for form in ('wide','portrait'):
+                    variants.append(dict(cfg,layout=layout,theme=name,format=form,asset=f'{layout}-{name}-{form}.jpg',headline=['保留一点好奇'] if form=='wide' else ['一个具体场景','一个真实问题'],subtitle='' if form=='wide' else '保留一点好奇'))
+        choices.write_text(''.join(block(config) for config in variants))
+        with contextlib.redirect_stdout(io.StringIO()):
+            render.render([choices],root/'themes',font=font,browser_path=browser)
+        if samples_dir:
+            samples_dir.mkdir(parents=True,exist_ok=True)
+            for config in variants:
+                shutil.copy(root/'themes'/config['asset'],samples_dir/config['asset'])
+        print('Passed: portrait/wide JPEG, multi-config rendering and previews, duplicate path rejection, photo rendering, overflow rejection, CSS theme extension.')
+        print('Passed: independent balanced layout/palette selection, fixed selections after review, reproducible seed, all 15 combinations in both formats.')
 
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser()
     ap.add_argument('--font',required=True,type=Path)
     ap.add_argument('--browser',type=Path)
+    ap.add_argument('--samples-dir',type=Path,help='keep generic theme samples outside the repo')
     args=ap.parse_args()
-    run(args.font,args.browser)
+    run(args.font,args.browser,args.samples_dir)

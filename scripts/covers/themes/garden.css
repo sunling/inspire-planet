@@ -1,0 +1,9 @@
+/* 草木生长：柔和绿底、圆角与有机弧线。 */
+:root { --thread: #55784b; }
+.cover { background: #edf4cf; color: #244536; }
+.cover::before { content: ''; position: absolute; width: 420px; height: 720px; border: 36px solid #cbdba7; border-radius: 50%; right: -290px; top: 40px; transform: rotate(-25deg); }
+header, footer, .subtitle { color: #526348; }
+.paper { border-radius: 55px 15px 55px 15px; border: 2px solid #52734855; box-shadow: 0 14px 0 #33542c12; }
+.one { background: #b5d5a8; color: #294b35; transform: rotate(-5deg); }
+.two { background: #f4d894; color: #654b23; transform: rotate(5deg); }
+.thread { border-bottom-width: 6px; }

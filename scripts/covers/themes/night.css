@@ -1,0 +1,10 @@
+/* 夜空探索：深蓝底、亮色圆点与圆角卡片。 */
+:root { --thread: #e0bf70; }
+.cover { background: #192b44; color: #f8eed2; }
+.cover::before { content: ''; position: absolute; width: 460px; height: 460px; border: 2px solid #9eb3d64d; border-radius: 50%; right: -220px; top: 130px; box-shadow: 0 0 0 60px #9eb3d60b, 0 0 0 120px #9eb3d607; }
+.cover::after { content: ''; position: absolute; width: 16px; height: 16px; background: #f3c567; border-radius: 50%; left: 28px; top: 160px; box-shadow: 45px 740px 0 #78cac4, 920px 1090px 0 #f3c567; }
+header, footer, .subtitle { color: #c1cee0; }
+.paper { border: 2px solid #e8e1cf66; border-radius: 28px; box-shadow: 0 16px 30px #07101f44; }
+.one { background: #94c9c2; color: #183e40; transform: rotate(-4deg); }
+.two { background: #ecd295; color: #584428; transform: rotate(4deg); }
+.thread { border-bottom-width: 5px; }

@@ -21,14 +21,16 @@ events/{year}/{YYYYMMDD}-epXX/
   sph-{slug}.md        视频号图文（一位分享者一篇）
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
-  assets/              会议及社交平台封面
+  assets/             只保存必要原图、配置与公众号封面
+    cover-configs.md   公众号横版封面的配置与设计信息
+    recap-cover-{slug}.jpg  公众号封面成品
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HTML 模板生成渠道封面；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）
 ```
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
 
-每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
+每期根目录放来源、稿件和索引，`assets/` 放必要原图、公众号封面配置与成品。小红书与视频号按平台分别编排图文脚本、选择主题、审阅并渲染整套图卡（含首图）。图卡、预览、临时 HTML 和 ZIP 统一输出到仓库外，同批输出按 `xhs/{slug}/`、`sph/{slug}/` 分目录保存，两平台分别交付图片。每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
 
 ## 参与整理
 
@@ -48,6 +50,13 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成小红书图文” → `inspireplanet-xhs`
 - “生成视频号内容” → `inspireplanet-sph`
-- 封面随渠道走：公众号横版 → `inspireplanet-gzh`；小红书竖版 → `inspireplanet-xhs`。默认 [HTML 纸张拼贴模板](scripts/covers/README.md)，可扩展主题和接入真实照片。
+- 公众号封面 → `inspireplanet-gzh`，从 [3 种布局 × 5 套配色](scripts/covers/README.md) 中独立选择；小红书／视频号封面 → 与内页一起由 [图卡渲染器](scripts/text-cards/README.md) 生成，使用脚本中选定的主题与字体。
+
+工作流：
+
+1. 用 `scripts/pull-transcript.py` 拉取，或手动下载转写稿，保存为本期 `transcript.txt`。
+2. 生成全部内容（公众号、小红书／视频号图文脚本、金句卡片 JSON），也可只生成指定渠道或单个交付物。
+3. 根据已生成的内容，在本期 `assets/cover-configs.md` 汇总公众号封面脚本与完整配置；小红书／视频号封面内容与主题留在各自图文脚本中；只生成金句 JSON 时无需新建封面配置。
+4. 用户确认图文脚本和封面脚本后，再渲染文字卡与封面；确认前交付可审阅的稿件和配置。
 
 生成内容与真实发布分开；只有明确要求发布时才操作外部平台。
