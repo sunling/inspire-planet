@@ -22,7 +22,7 @@ description: 把启发星球某一期里能独立成篇的分享写成公众号�
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt           输入
   gzh-{slug}.md            输出，一位分享者一个文件
-  cover/cover-configs.md         本期所有封面的配置与设计信息
+  assets/cover-configs.md         公众号横版封面的配置与设计信息
   assets/recap-cover.jpg   横版封面；一期多篇时用 recap-cover-{slug}.jpg
 ```
 
@@ -102,9 +102,9 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 每篇一张，约 `2.35:1`，宽 ≥1920px；
 - 只放 6–14 字短副标题，取自本篇核心变化或动作，不重复发布标题；
-- 默认 HTML/CSS 渲染；生成配置时独立选择布局 `layout`（`collage` 拼贴、`editorial` 杂志排版、`signal` 大字海报）与配色 `theme`（`collage`、`pop`、`garden`、`blueprint`、`night`），随机均衡分配后把具体组合写入配置，再交用户确认；完整的 `cover-config` JSON、副标题和视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不写入文章；渲染方法见 `scripts/covers/README.md`；
+- 默认 HTML/CSS 渲染；生成配置时独立选择布局 `layout`（`collage` 拼贴、`editorial` 杂志排版、`signal` 大字海报）与配色 `theme`（`collage`、`pop`、`garden`、`blueprint`、`night`），随机均衡分配后把具体组合写入配置，再交用户确认；完整的 `cover-config` JSON、副标题和视觉命题统一写入本期 `assets/cover-configs.md`，按公众号篇目分节，不写入文章；渲染方法见 `scripts/covers/README.md`；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`；
-- 本篇「发布信息」的封面一行只保留成品路径，不附副标题、视觉命题或封面配置。修改已有稿件时先把封面配置及设计信息移入 `cover/cover-configs.md`，再移除稿件中的配置块。
+- 本篇「发布信息」的封面一行只保留成品路径，不附副标题、视觉命题或封面配置。修改已有稿件时先把封面配置及设计信息移入 `assets/cover-configs.md`，再移除稿件中的配置块。
 
 ## 工作流程
 
@@ -113,7 +113,7 @@ events/{year}/{YYYYMMDD}-epXX/
 3. 逐篇用口述体写正文，在自然转折处加 1–2 个简短小标题，再加文末邀请；
 4. 通读查代词：每个“她/他”只能指向一个人，不能就改成名字或省略主语；
 5. 写「发布信息」；
-6. 内容完成后更新 `cover/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。发布信息中标明计划封面路径及待确认、待渲染状态；检查文章未保留封面配置；
+6. 内容完成后更新 `assets/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。发布信息中标明计划封面路径及待确认、待渲染状态；检查文章未保留封面配置；
 7. 交付文章与封面脚本，用户明确确认后才渲染封面、存 JPEG，再更新成品状态；
 8. 修改已有文章时局部改，并回到转写核对。
 

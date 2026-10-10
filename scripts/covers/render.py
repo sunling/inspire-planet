@@ -16,8 +16,8 @@ HERE = Path(__file__).resolve().parent
 
 
 def config_base(source):
-    """Episode-wide configs in cover/ keep asset and photo paths event-relative."""
-    if source.name == 'cover-configs.md' and source.parent.name == 'cover':
+    """Episode configs in assets/ keep asset and photo paths event-relative."""
+    if source.name == 'cover-configs.md' and source.parent.name in ('assets', 'cover'):
         return source.parent.parent
     return source.parent
 

@@ -29,7 +29,6 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md    优先输入
   transcript.txt   没有 gzh 时的输入
   sph-{slug}.md    输出，一位分享者一个文件
-  cover/cover-configs.md  本期所有封面的配置与设计信息
 ```
 
 - 没有 `transcript.txt` 时先用 `inspireplanet-transcript` 取逐字稿；
@@ -53,6 +52,7 @@ events/{year}/{YYYYMMDD}-epXX/
 - 分享者：...
 - 日期：...
 - 期数：...
+- 主题：paper
 
 ### 第 1 页（封面）
 - 左上署名：...
@@ -85,11 +85,10 @@ events/{year}/{YYYYMMDD}-epXX/
 - 每页一句图上大字 + 一段小字，细节放进小字；
 - 按事情经过排；原声页在页标题里写「原声」（渲染为深色）；末页用一个问题收尾。
 
-## 图集封面
+## 图集主题与首图
 
-- 首图用精简核心标题，可另加短副标题；默认独立随机均衡选择布局 `layout` 与配色 `theme` 的 HTML 封面，具体组合写入配置后确认，见 `../inspireplanet/references/cover-design.md`。
-- 与小红书选题和首图文字相同时，复用对应 `assets/xiaohongshu-cover-{slug}.jpg`，替换仓库外图集的 `01.jpg`；内页继续用文字卡渲染器。
-- 选题或首图文字不同才在本期 `cover/cover-configs.md` 增加独立 `cover-config` 配置；复用时在该文件记录对应篇目和成品路径，不为同一张封面重复维护配置。
+- 首图内容写在图片脚本第 1 页；主题在篇目级设置中写 `- 主题：paper` 或 `inspire`。首图与内页由同一文字卡渲染器一次生成，保持标题字体、正文字体与配色一致，不调用公众号封面渲染器或替换首图。
+- 字体与主题对应关系见 `../inspireplanet-xhs/SKILL.md` 的“图集主题与首图”。两渠道的完整图片脚本与主题相同时可复用整套图片；不单独维护一张封面，发布正文仍各自维护。
 
 ## 话题
 
@@ -102,7 +101,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 渲染成图
 
-先完成图文脚本，再将封面脚本与完整配置汇总到 `cover/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。交付两类脚本供用户审阅，用户明确确认后再渲染文字卡及封面。脚本文字或视觉命题改动后重新确认受影响部分。文字卡图集存仓库外：
+完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。整套图卡、预览和 ZIP 放在仓库外同一批输出目录：
 
 ```bash
 python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/ [--theme paper|inspire]
