@@ -1,12 +1,14 @@
-# HTML 封面渲染
+# 公众号 HTML 封面渲染
+
+用于公众号横版封面；小红书／视频号首图由 `scripts/text-cards/render.py` 与内页同主题生成，不使用本工具替换首图。
 
 从封面配置 Markdown 生成 HTML，用 Chromium 截图并保存 JPEG。提供 3 种布局与 5 套配色；配置生成时独立随机均衡选择，确认后按选定组合渲染，不调用图像生成模型。复用 `scripts/text-cards/requirements.txt` 的依赖。
 
 ## 配置位置
 
-每期用 `events/{year}/{event}/cover/cover-configs.md` 集中保存所有封面的配置与设计信息，按篇目和渠道分节。每节记录对应稿件、成品路径、选定的封面文字、视觉命题，以及一个完整的 `cover-config` JSON 块。配置只在此维护，不在渠道稿中重复保存；复用同一张封面时只记录对应关系。
+每期用 `events/{year}/{event}/assets/cover-configs.md` 保存公众号封面的配置与设计信息，按公众号篇目分节。每节记录对应稿件、成品路径、选定的封面文字、视觉命题，以及一个完整的 `cover-config` JSON 块。配置只在此维护，不在渠道稿中重复保存。
 
-先生成内容与此配置文件，用户明确确认图文脚本和封面脚本后，再运行渲染命令。
+先生成内容与此配置文件，用户明确确认公众号文章和封面脚本后，再运行渲染命令。
 
 渲染器按文件内的配置顺序生成全部封面。历史稿中的单个配置块仍可直接读取，无需迁移所有历史期。
 
@@ -17,13 +19,13 @@
 {
   "layout": "random",
   "theme": "random",
-  "format": "portrait",
-  "asset": "assets/xiaohongshu-cover-example.jpg",
+  "format": "wide",
+  "asset": "assets/recap-cover-example.jpg",
   "speaker": "分享者",
   "episode": "2026EP38",
   "date": "2026-09-26",
-  "headline": ["一个具体场景", "一个真实问题"],
-  "subtitle": "保留一点好奇",
+  "headline": ["保留一点好奇"],
+  "subtitle": "",
   "tiles": [
     {"label": "起点", "value": "片段一", "note": "源于分享的细节"},
     {"label": "变化", "value": "片段二", "note": "源于分享的动作"}
@@ -34,16 +36,15 @@
 
 - `format`: `wide` 为 1920×817；`portrait` 为 1080×1440，独立构图。
 - 公众号：`headline` 只放 6–14 字的短副标题，按语义断成 1–2 行，`subtitle` 留空。
-- 图集首图：`headline` 放具体的核心标题，按语义断成 2–3 行（建议每行不超过 7 个中文字），`subtitle` 可以放补充短句，避免重复。
 - 两组信息表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
-- `cover/cover-configs.md` 中的 `asset` 和本地照片 `photo` 路径相对本期目录，例如 `assets/recap-cover-liying.jpg`；Markdown 稿件链接相对 `cover/`，例如 `../gzh-liying.md`。历史稿中的配置路径仍相对稿件目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
+- `assets/cover-configs.md` 中的 `asset` 和本地照片 `photo` 路径相对本期目录，例如 `assets/recap-cover-liying.jpg`；Markdown 稿件链接相对 `assets/`，例如 `../gzh-liying.md`。历史稿中的配置路径仍相对稿件目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
 
 ## 随机选择主题
 
 配置生成后、交用户确认前运行：
 
 ```bash
-python3 scripts/covers/assign_themes.py events/{year}/{event}/cover/cover-configs.md
+python3 scripts/covers/assign_themes.py events/{year}/{event}/assets/cover-configs.md
 ```
 
 脚本分别将缺失或为 `"random"` 的 `layout`、`theme` 替换为具体布局和配色，两项独立均衡分配并尽量避免相邻重复；保留已选值。可以只固定其中一项、随机另一项。`--seed 42` 可重现同一批组合；`--reshuffle` 重新抽选全部配置的两项，更新后需重新确认。渲染时不会重新随机，历史稿未指定布局或配色时仍用 `collage`。
@@ -52,7 +53,7 @@ python3 scripts/covers/assign_themes.py events/{year}/{event}/cover/cover-config
 
 ```bash
 python3 -m pip install -r scripts/text-cards/requirements.txt
-python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md \
+python3 scripts/covers/render.py events/{year}/{event}/assets/cover-configs.md \
   --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --font /path/to/LXGWWenKai-Regular.ttf
 ```
@@ -97,7 +98,7 @@ python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md \
 
 新增配色使用 `themes/{name}.css`，新增布局使用 `layouts/{name}.css`；同时更新选择池与渲染检查。通过配置中的 `layout`、`theme` 选择组合，`--theme` 可覆盖配色。尺寸、检查、截图和压缩逻辑共享。
 
-视频号同题图集可复用小红书竖版封面；正文与内页继续使用文字卡渲染器。图集成品存仓库外，封面按本篇配置存入 `assets/`。
+仅配置和公众号封面成品存入本期 `assets/`；预览 HTML、总览和 ZIP 输出到仓库外同一批目录。横竖版兼容能力保留用于历史配置与测试，新的小红书／视频号首图由图卡工具生成。
 
 ## 验证
 

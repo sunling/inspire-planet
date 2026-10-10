@@ -26,7 +26,7 @@ def run(font, browser, samples_dir=None):
             assert im.size==(1080,1440) and im.mode=='RGB' and im.info['progressive']==1
         assert result[0]['bytes']<400*1024
         # An episode file renders every block and keeps distinct previews.
-        batch=root/'cover/cover-configs.md'
+        batch=root/'assets/cover-configs.md'
         batch.parent.mkdir()
         batch_photo=Image.new('RGB',(600,800),'#1474ac')
         batch_photo.save(root/'batch-photo.jpg')
@@ -39,7 +39,7 @@ def run(font, browser, samples_dir=None):
         with contextlib.redirect_stdout(io.StringIO()):
             results=render.render([batch],preview_dir=root/'previews',font=font,browser_path=browser)
         assert len(results)==2
-        assert not (root/'cover/assets').exists()
+        assert not (root/'assets/assets').exists()
         for name,size in [('wide',(1920,817)),('portrait',(1080,1440))]:
             with Image.open(root/f'assets/{name}.jpg') as im:
                 assert im.size==size

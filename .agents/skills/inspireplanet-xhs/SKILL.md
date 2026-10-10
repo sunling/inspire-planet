@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-xhs
-description: 为启发星球某一期能自成一件事的分享生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词）与竖版封面配置，确认后渲染；内容保存到 `xhs-{slug}.md`；一期可以多篇。
+description: 为启发星球某一期能自成一件事的分享生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词）与同主题首图，确认后整套渲染；内容保存到 `xhs-{slug}.md`；一期可以多篇。
 ---
 
 # Inspire Planet 小红书
@@ -21,8 +21,6 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md                  优先输入
   transcript.txt                 没有 gzh 时的输入
   xhs-{slug}.md                  输出，一位分享者一个文件
-  cover/cover-configs.md               本期所有封面的配置与设计信息
-  assets/xiaohongshu-cover.jpg   竖版封面；多篇时用 xiaohongshu-cover-{slug}.jpg
 ```
 
 - 没有 `transcript.txt` 时先用 `inspireplanet-transcript` 取逐字稿；
@@ -46,6 +44,7 @@ events/{year}/{YYYYMMDD}-epXX/
 - 分享者：{分享人}
 - 日期：{YYYY-MM-DD}
 - 期数：第 {episode} 期
+- 主题：paper
 
 ### 第 1 页（封面）
 - 左上署名：{year}EP{episode} · {分享人}的分享
@@ -96,13 +95,12 @@ events/{year}/{YYYYMMDD}-epXX/
 - 结尾留一个真实的问题，不喊口号；
 - 不用“这一期，某某分享了……”这类纪要式开头。
 
-## 竖版封面
+## 图集主题与首图
 
-- `3:4`，1080×1440；
-- 角落放期数 `{year}EP{episode}`，主体放精简的核心标题，可另加 5–8 字补充副标题；
-- 默认 HTML/CSS 渲染；生成配置时独立选择布局 `layout`（`collage` 拼贴、`editorial` 杂志排版、`signal` 大字海报）与配色 `theme`（`collage`、`pop`、`garden`、`blueprint`、`night`），随机均衡分配后把具体组合写入配置，再交用户确认；完整的 `cover-config` JSON、选定的封面文字与视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不在本篇附配置块；
-- 单独构图，不从横版封面裁切；
-- 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`。
+- 首图是图集脚本的第 1 页，与内页由 `scripts/text-cards/render.py` 一次渲染，`3:4`，1080×1440；不调用公众号封面渲染器，不用其他图片替换 `01.jpg`。
+- 在篇目级设置中写明 `- 主题：paper` 或 `inspire`，整套采用同一主题的标题字体、正文字体和配色；首图允许字号、留白与信息层级不同，原声页可用同主题深色页。
+- `paper` 的标题用马善政、正文用霞鹜文楷；`inspire` 标题和正文都用霞鹜文楷。用户选字体时据此选择主题；需要其他字体时先扩展对应图卡主题，使首图与内页共同生效。
+- 首图的主标题、短副标题与署名直接写在第 1 页，主题设置和首图内容随稿维护，不另建封面配置或单独保存首图。
 
 ## 署名与边界
 
@@ -112,7 +110,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 渲染成图
 
-先完成图文脚本，再将封面脚本与完整配置汇总到 `cover/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。交付两类脚本供用户审阅，用户明确确认后再渲染文字卡及封面。脚本文字或视觉命题改动后重新确认受影响部分。文字卡图集存仓库外：
+完成图文脚本时选定整套主题，将首图内容与主题设置一起交用户审阅；确认后一次渲染首图和内页。已有渲染确认在脚本文字未变时继续有效，用户要求统一主题或字体时直接执行该调整；改动图中文字后重新确认受影响部分。整套图卡、预览和 ZIP 放在仓库外同一批输出目录：
 
 ```bash
 python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire]
