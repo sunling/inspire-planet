@@ -78,6 +78,8 @@ python3 scripts/pull-transcript.py --date {YYYY-MM-DD} --episode {NN}
 
 ### 2. 生成发布包
 
+准备文章、图文脚本和金句 JSON，同时生成 `assets/cover-configs.md`：这是本期公众号封面的设计稿，按文章记录封面文字、布局、配色、设计意图和图片输出路径，供出图前审阅；确认后渲染工具读取它生成图片。小红书／视频号首图的文字和主题放在各自图文脚本中。本步骤只生成文字与配置，不出图。
+
 Prompt：基于 {本期目录}/transcript.txt，使用 inspireplanet 生成本期公众号、小红书、视频号、金句 JSON 与公众号封面配置，更新本期 README，先不要渲染。
 
 ### 3. 确认
