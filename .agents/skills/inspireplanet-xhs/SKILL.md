@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-xhs
-description: 为启发星球某一期能自成一件事的分享生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词）与竖版封面，保存到 `xhs-{slug}.md`；一期可以多篇。
+description: 为启发星球某一期能自成一件事的分享生成小红书图文材料（标题、封面副标题、图集脚本、正文、话题词）与竖版封面配置，确认后渲染；内容保存到 `xhs-{slug}.md`；一期可以多篇。
 ---
 
 # Inspire Planet 小红书
@@ -21,7 +21,7 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md                  优先输入
   transcript.txt                 没有 gzh 时的输入
   xhs-{slug}.md                  输出，一位分享者一个文件
-  cover-configs.md               本期所有封面的配置与设计信息
+  cover/cover-configs.md               本期所有封面的配置与设计信息
   assets/xiaohongshu-cover.jpg   竖版封面；多篇时用 xiaohongshu-cover-{slug}.jpg
 ```
 
@@ -100,7 +100,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - `3:4`，1080×1440；
 - 角落放期数 `{year}EP{episode}`，主体放精简的核心标题，可另加 5–8 字补充副标题；
-- 默认 HTML/CSS 渲染，`collage` 主题；完整的 `cover-config` JSON、选定的封面文字与视觉命题统一写入本期 `cover-configs.md`，按篇目与渠道分节，不在本篇附配置块；
+- 默认 HTML/CSS 渲染，`collage` 主题；完整的 `cover-config` JSON、选定的封面文字与视觉命题统一写入本期 `cover/cover-configs.md`，按篇目与渠道分节，不在本篇附配置块；
 - 单独构图，不从横版封面裁切；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`。
 
@@ -112,7 +112,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 渲染成图
 
-定稿后由人手动出图，卡片图不进仓库：
+先完成图文脚本，再将封面脚本与完整配置汇总到 `cover/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。交付两类脚本供用户审阅，用户明确确认后再渲染文字卡及封面。脚本文字或视觉命题改动后重新确认受影响部分。文字卡图集存仓库外：
 
 ```bash
 python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md out_dir/ [--theme paper|inspire]

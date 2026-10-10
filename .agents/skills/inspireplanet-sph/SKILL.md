@@ -29,6 +29,7 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md    优先输入
   transcript.txt   没有 gzh 时的输入
   sph-{slug}.md    输出，一位分享者一个文件
+  cover/cover-configs.md  本期所有封面的配置与设计信息
 ```
 
 - 没有 `transcript.txt` 时先用 `inspireplanet-transcript` 取逐字稿；
@@ -88,7 +89,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 首图用精简核心标题，可另加短副标题；默认 `collage` HTML 封面，见 `../inspireplanet/references/cover-design.md`。
 - 与小红书选题和首图文字相同时，复用对应 `assets/xiaohongshu-cover-{slug}.jpg`，替换仓库外图集的 `01.jpg`；内页继续用文字卡渲染器。
-- 选题或首图文字不同才在本期 `cover-configs.md` 增加独立 `cover-config` 配置；复用时在该文件记录对应篇目和成品路径，不为同一张封面重复维护配置。
+- 选题或首图文字不同才在本期 `cover/cover-configs.md` 增加独立 `cover-config` 配置；复用时在该文件记录对应篇目和成品路径，不为同一张封面重复维护配置。
 
 ## 话题
 
@@ -101,7 +102,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 渲染成图
 
-定稿后由人手动出图，卡片图不进仓库：
+先完成图文脚本，再将封面脚本与完整配置汇总到 `cover/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。交付两类脚本供用户审阅，用户明确确认后再渲染文字卡及封面。脚本文字或视觉命题改动后重新确认受影响部分。文字卡图集存仓库外：
 
 ```bash
 python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/sph-{slug}.md out_dir/ [--theme paper|inspire]

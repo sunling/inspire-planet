@@ -15,6 +15,13 @@ from playwright.sync_api import sync_playwright
 HERE = Path(__file__).resolve().parent
 
 
+def config_base(source):
+    """Episode-wide configs in cover/ keep asset and photo paths event-relative."""
+    if source.name == 'cover-configs.md' and source.parent.name == 'cover':
+        return source.parent.parent
+    return source.parent
+
+
 def read_configs(source):
     text = source.read_text(encoding='utf-8')
     found = re.findall(r'<!-- cover-config -->\s*```json\s*\n(.*?)\n```', text, re.S)
@@ -81,7 +88,7 @@ def document(cfg, source, font, theme=None):
     tiles = [tile_markup(t) for t in cfg['tiles']]
     photo_css = ''
     if cfg.get('photo'):
-        path = (source.parent / cfg['photo']).resolve()
+        path = (config_base(source) / cfg['photo']).resolve()
         with Image.open(path) as im:
             im.verify()
         mime = mimetypes.guess_type(path.name)[0]
@@ -120,7 +127,7 @@ def render(sources, out_dir=None, preview_dir=None, browser_path=None, font=None
     for source in sources:
         source=Path(source).resolve()
         for cfg in read_configs(source):
-            target=(Path(out_dir)/Path(cfg['asset']).name) if out_dir else source.parent/cfg['asset']
+            target=(Path(out_dir)/Path(cfg['asset']).name) if out_dir else config_base(source)/cfg['asset']
             if target.exists() and not force:
                 raise ValueError(f'{target} exists; use --force to replace it')
             jobs.append((source,cfg,target))

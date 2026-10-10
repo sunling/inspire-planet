@@ -25,8 +25,12 @@ def run(font, browser):
             assert im.size==(1080,1440) and im.mode=='RGB' and im.info['progressive']==1
         assert result[0]['bytes']<400*1024
         # An episode file renders every block and keeps distinct previews.
-        batch=root/'cover-configs.md'
+        batch=root/'cover/cover-configs.md'
+        batch.parent.mkdir()
+        batch_photo=Image.new('RGB',(600,800),'#1474ac')
+        batch_photo.save(root/'batch-photo.jpg')
         wide=dict(cfg,format='wide',asset='assets/wide.jpg',headline=['保留一点好奇'],subtitle='')
+        wide['photo']='batch-photo.jpg'
         portrait=dict(cfg,asset='assets/portrait.jpg')
         def block(config):
             return '<!-- cover-config -->\n```json\n'+json.dumps(config,ensure_ascii=False)+'\n```\n'
@@ -34,9 +38,12 @@ def run(font, browser):
         with contextlib.redirect_stdout(io.StringIO()):
             results=render.render([batch],preview_dir=root/'previews',font=font,browser_path=browser)
         assert len(results)==2
+        assert not (root/'cover/assets').exists()
         for name,size in [('wide',(1920,817)),('portrait',(1080,1440))]:
             with Image.open(root/f'assets/{name}.jpg') as im:
                 assert im.size==size
+                if name=='wide':
+                    assert any(b>r+50 and b>g+20 for r,g,b in im.resize((192,82)).getdata())
             assert (root/f'previews/{name}.html').is_file()
         batch.write_text(block(wide)+block(wide))
         try:

@@ -21,7 +21,7 @@ events/{year}/{YYYYMMDD}-epXX/
   sph-{slug}.md        视频号图文（一位分享者一篇）
   quote-notes.md       历史金句与语境笔记
   quote-cards.json     金句卡片数据
-  cover-configs.md     本期所有封面的配置、设计信息与复用关系
+  cover/cover-configs.md     本期所有封面的配置、设计信息与复用关系
   assets/              会议及社交平台封面
 .agents/skills/          生成上述内容的工作流
 scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HTML 模板生成渠道封面；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）
@@ -50,5 +50,12 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 - “生成小红书图文” → `inspireplanet-xhs`
 - “生成视频号内容” → `inspireplanet-sph`
 - 封面随渠道走：公众号横版 → `inspireplanet-gzh`；小红书竖版 → `inspireplanet-xhs`。默认 [HTML 纸张拼贴模板](scripts/covers/README.md)，可扩展主题和接入真实照片。
+
+工作流：
+
+1. 用 `scripts/pull-transcript.py` 拉取，或手动下载转写稿，保存为本期 `transcript.txt`。
+2. 生成全部内容（公众号、小红书／视频号图文脚本、金句卡片 JSON），也可只生成指定渠道或单个交付物。
+3. 根据已生成的内容，在本期 `cover/cover-configs.md` 汇总对应封面脚本与完整配置；只生成金句 JSON 时无需新建封面配置。
+4. 用户确认图文脚本和封面脚本后，再渲染文字卡与封面；确认前交付可审阅的稿件和配置。
 
 生成内容与真实发布分开；只有明确要求发布时才操作外部平台。

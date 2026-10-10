@@ -4,7 +4,9 @@
 
 ## 配置位置
 
-每期用 `events/{year}/{event}/cover-configs.md` 集中保存所有封面的配置与设计信息，按篇目和渠道分节。每节记录对应稿件、成品路径、选定的封面文字、视觉命题，以及一个完整的 `cover-config` JSON 块。配置只在此维护，不在渠道稿中重复保存；复用同一张封面时只记录对应关系。
+每期用 `events/{year}/{event}/cover/cover-configs.md` 集中保存所有封面的配置与设计信息，按篇目和渠道分节。每节记录对应稿件、成品路径、选定的封面文字、视觉命题，以及一个完整的 `cover-config` JSON 块。配置只在此维护，不在渠道稿中重复保存；复用同一张封面时只记录对应关系。
+
+先生成内容与此配置文件，用户明确确认图文脚本和封面脚本后，再运行渲染命令。
 
 渲染器按文件内的配置顺序生成全部封面。历史稿中的单个配置块仍可直接读取，无需迁移所有历史期。
 
@@ -33,13 +35,13 @@
 - 公众号：`headline` 只放 6–14 字的短副标题，按语义断成 1–2 行，`subtitle` 留空。
 - 图集首图：`headline` 放具体的核心标题，按语义断成 2–3 行（建议每行不超过 7 个中文字），`subtitle` 可以放补充短句，避免重复。
 - 两张纸卡表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
-- `asset` 和本地照片路径相对配置 Markdown 的目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
+- `cover/cover-configs.md` 中的 `asset` 和本地照片 `photo` 路径相对本期目录，例如 `assets/recap-cover-liying.jpg`；Markdown 稿件链接相对 `cover/`，例如 `../gzh-liying.md`。历史稿中的配置路径仍相对稿件目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
 
 ## 运行
 
 ```bash
 python3 -m pip install -r scripts/text-cards/requirements.txt
-python3 scripts/covers/render.py events/{year}/{event}/cover-configs.md \
+python3 scripts/covers/render.py events/{year}/{event}/cover/cover-configs.md \
   --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --font /path/to/LXGWWenKai-Regular.ttf
 ```
