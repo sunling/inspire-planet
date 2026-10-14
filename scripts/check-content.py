@@ -3,10 +3,34 @@
 from pathlib import Path
 import json
 import re
+from datetime import datetime
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 errors = []
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def nonempty_string(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def string_list(value, nonempty=False):
+    return (isinstance(value, list) and (bool(value) or not nonempty)
+            and all(nonempty_string(item) for item in value))
+
+
+def check_episode(value, path):
+    match = re.fullmatch(r'EP(\d+)', value) if isinstance(value, str) else None
+    expected = int(path.parent.name.rsplit('-ep', 1)[1])
+    require(match is not None and int(match[1]) == expected,
+            'episode must match directory episode')
+
+
 for p in ROOT.rglob('*.md'):
     if '.git' in p.parts:
         continue
@@ -27,9 +51,16 @@ for p in ROOT.rglob('*.md'):
 for p in (ROOT / 'events').rglob('quote-cards.json'):
     try:
         data = json.loads(p.read_text())
-        assert isinstance(data, list)
-        assert all(isinstance(row, dict) and set(row) == {'name', 'title', 'quote', 'detail', 'episode'} for row in data)
-    except (ValueError, AssertionError) as exc:
+        require(isinstance(data, list), 'expected card array')
+        for index, row in enumerate(data):
+            require(isinstance(row, dict) and set(row) == {'name', 'title', 'quote', 'detail', 'episode'},
+                    f'card {index + 1}: incorrect fields')
+            require(all(nonempty_string(value) for value in row.values()),
+                    f'card {index + 1}: fields must be nonempty strings')
+            check_episode(row['episode'], p)
+            require(not re.search(r'出处\s*[：:]|\b\d{1,2}:\d{2}:\d{2}\b', row['detail']),
+                    f'card {index + 1}: detail contains source note or transcript timestamp')
+    except ValueError as exc:
         errors.append(f'{p.relative_to(ROOT)}: invalid card data {exc}')
 skills = ROOT / '.agents/skills'
 for p in skills.glob('*/SKILL.md'):
@@ -39,12 +70,27 @@ for p in skills.glob('*/SKILL.md'):
 for p in (ROOT / 'events').rglob('summary.json'):
     try:
         data = json.loads(p.read_text())
-        assert isinstance(data, dict)
-        assert {'episode', 'date', 'title', 'overview', 'topics'} <= set(data)
-        assert isinstance(data['topics'], list) and len(data['topics']) > 0
-        for topic in data['topics']:
-            assert isinstance(topic, dict) and {'speaker', 'title'} <= set(topic) and ('summary' in topic or 'keyPoints' in topic)
-    except (ValueError, AssertionError) as exc:
+        require(isinstance(data, dict), 'expected summary object')
+        require({'episode', 'date', 'title', 'overview', 'topics'} <= set(data), 'missing summary fields')
+        require(all(nonempty_string(data[key]) for key in ('episode', 'date', 'title', 'overview')),
+                'summary text fields must be nonempty strings')
+        check_episode(data['episode'], p)
+        expected_date = datetime.strptime(p.parent.name.split('-')[0], '%Y%m%d').strftime('%Y-%m-%d')
+        require(data['date'] == expected_date, 'date must match directory date (YYYY-MM-DD)')
+        require(isinstance(data['topics'], list) and bool(data['topics']), 'topics must be a nonempty array')
+        for index, topic in enumerate(data['topics']):
+            require(isinstance(topic, dict) and all(nonempty_string(topic.get(key)) for key in ('speaker', 'title')),
+                    f'topic {index + 1}: missing speaker or title')
+            if 'keyPoints' in topic:
+                require(string_list(topic['keyPoints'], nonempty=True), f'topic {index + 1}: invalid keyPoints')
+                require(all(nonempty_string(topic.get(key)) for key in ('context', 'quote')),
+                        f'topic {index + 1}: missing context or quote')
+                require(isinstance(topic.get('discussion'), str), f'topic {index + 1}: discussion must be a string')
+            else:
+                require(nonempty_string(topic.get('summary')), f'topic {index + 1}: missing historical summary')
+        if 'highlights' in data:
+            require(string_list(data['highlights']), 'highlights must be an array of nonempty strings')
+    except ValueError as exc:
         errors.append(f'{p.relative_to(ROOT)}: invalid summary data {exc}')
 episodes = [p for p in (ROOT / 'events').glob('*/*-ep*') if p.is_dir()]
 for d in episodes:

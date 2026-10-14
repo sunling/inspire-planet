@@ -28,13 +28,13 @@ CLI 需要孙玲的腾讯会议授权；不共享或提交凭据。手动下载�
 
 ### 2. 生成发布包
 
-使用本期转写生成公众号文章、小红书与视频号各自的图文脚本、金句 JSON，以及 `assets/cover-configs.md`。需要时也可只生成某个渠道。此时先审稿，不出图。
+使用本期转写生成公众号文章、小红书与视频号各自的图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json`，以及 `assets/cover-configs.md`。需要时也可只生成某个渠道。此时先审稿，不出图。
 
 `assets/cover-configs.md` 是本期公众号封面的设计稿：按文章记录封面文字、布局、配色、设计意图和图片输出路径，供出图前审阅；确认后渲染工具读取它生成封面图片。小红书／视频号首图的文字和主题放在各自图文脚本中。
 
 Prompt：
 
-> 使用 inspireplanet，基于 events/2026/20261010-ep40/transcript.txt 生成 EP40 发布包：公众号、小红书、视频号、金句 JSON 和公众号封面配置。小红书与视频号分别编排；更新本期 README 的导航与制作流程，先不要渲染。
+> 使用 inspireplanet，基于 events/2026/20261010-ep40/transcript.txt 生成 EP40 发布包：公众号、小红书、视频号、网站纪要 summary.json、金句 quote-cards.json 和公众号封面配置。小红书与视频号分别编排；更新本期 README 的导航与制作流程，先不要渲染。
 
 ### 3. 确认
 

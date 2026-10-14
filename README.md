@@ -21,7 +21,7 @@ flowchart LR
 ```
 
 1. **下载**：孙玲手动下载或通过已授权的 CLI 获取转写稿，原样保存为本期 `transcript.txt`；已有转写无需重复下载。
-2. **生成**：准备公众号文章、小红书／视频号图文脚本、金句 JSON 和 `assets/cover-configs.md`，也可只生成指定内容。`cover-configs.md` 是本期公众号封面的设计稿，按文章记录封面文字、布局、配色、设计意图和图片输出路径，供出图前审阅；确认后渲染工具按它生成图片。小红书／视频号首图的文字和主题放在各自图文脚本中。此阶段只交付文字与配置。
+2. **生成**：准备公众号文章、小红书／视频号图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json` 和 `assets/cover-configs.md`，也可只生成指定内容。`cover-configs.md` 是本期公众号封面的设计稿，按文章记录封面文字、布局、配色、设计意图和图片输出路径，供出图前审阅；确认后渲染工具按它生成图片。小红书／视频号首图的文字和主题放在各自图文脚本中。此阶段只交付文字与配置。
 3. **确认**：审阅文章、公众号封面配置及小红书／视频号脚本；确认对应内容后再生成封面、渲染图卡并检查。命令与 prompt 放在本期 README 的这一步，成品统一更新到固定 `ready/`。
 4. **发布**：当事人确认具体稿件与公开范围后，从 `ready/` 取对应平台的成品发布；发布日期和平台链接可记入发布备注。
 
@@ -37,7 +37,8 @@ events/{year}/{YYYYMMDD}-epXX/
   xhs-{slug}.md        小红书图文（一位分享者一篇）
   sph-{slug}.md        视频号图文（一位分享者一篇）
   quote-notes.md       历史金句与语境笔记
-  quote-cards.json     金句卡片数据
+  summary.json         网站单期详情页的结构化分享纪要
+  quote-cards.json     金句卡片与周刊数据
   assets/             只保存必要原图、配置与公众号封面
     cover-configs.md   公众号横版封面的配置与设计信息
     recap-cover-{slug}.jpg  公众号封面成品
@@ -48,6 +49,12 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
 
 每期根目录放来源、稿件和索引，`assets/` 放必要原图、公众号封面配置与成品。小红书与视频号按平台分别编排图文脚本、选择主题、审阅并渲染整套图卡（含首图）。渲染成品统一使用仓库旁固定目录 `inspire-planet-publish/{YYYYMMDD}-epXX/ready/`，按 `gzh/`、`xhs/{slug}/`、`sph/{slug}/` 分目录交付；固定预览、ZIP 和旧版历史也在仓库外，规则与命令见 [固定发布目录](scripts/publish.md)。每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
+
+## 网站与周刊数据
+
+本仓库维护内容，网站仓库 `sunling/inspireplanet.cc` 负责读取与展示。每期 `summary.json` 用于单期详情页，`quote-cards.json` 用于金句卡片和周刊；两者独立编辑，事实都回查本期转写。完整发布包包含这两份 JSON；历史期缺少纪要时不补空文件。
+
+字段、期次身份、溯源与审核后同步方式见 [内容数据约定](events/data-contract.md)。JSON 生成不等于获准公开；合并到 `main` 前完成内容与授权检查，网站会读取该分支的数据。
 
 ## 参与整理
 
