@@ -64,6 +64,7 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 - “下载本期逐字稿” → `inspireplanet-transcript`
 - “整理某期会议的完整发布包” → `inspireplanet`
 - “写公众号文章 / 起标题 / 写摘要” → `inspireplanet-gzh`
+- “提炼单期分享纪要” → `inspireplanet-summary`
 - “提炼金句卡片” → `inspireplanet-cards`
 - “生成小红书图文” → `inspireplanet-xhs`
 - “生成视频号内容” → `inspireplanet-sph`

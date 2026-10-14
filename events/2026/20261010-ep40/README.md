@@ -86,7 +86,7 @@ Prompt：
 | 抹茶：回看记录与工作协作 | [文章](gzh-mocha.md) | [图文脚本](xhs-mocha.md) | [图文脚本](sph-mocha.md) |
 | 孙玲：妈妈的微信助手 | [文章](gzh-sunling.md) | [图文脚本](xhs-sunling.md) | [图文脚本](sph-sunling.md) |
 
-来源：[会议转写](transcript.txt)。公众号封面：[配置](assets/cover-configs.md) · [成品](assets/)。金句：[6 条卡片 JSON](quote-cards.json)。
+来源：[会议转写](transcript.txt)。公众号封面：[配置](assets/cover-configs.md) · [成品](assets/)。纪要：[分享脉络 JSON](summary.json)。金句：[6 条卡片 JSON](quote-cards.json)。
 
 ## 发布备注
 

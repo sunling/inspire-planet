@@ -1,0 +1,4 @@
+interface:
+  display_name: "启发星球单期纪要"
+  short_description: "生成每期页面展示的结构化分享纪要 summary.json"
+  default_prompt: "Use $inspireplanet-summary to generate summary.json for this Inspire Planet episode."

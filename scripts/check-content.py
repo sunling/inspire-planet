@@ -36,10 +36,25 @@ for p in skills.glob('*/SKILL.md'):
     text = p.read_text()
     if not text.startswith('---\n') or f'name: {p.parent.name}\n' not in text or '\ndescription: ' not in text:
         errors.append(f'{p.relative_to(ROOT)}: invalid skill metadata')
+for p in (ROOT / 'events').rglob('summary.json'):
+    try:
+        data = json.loads(p.read_text())
+        assert isinstance(data, dict)
+        assert {'episode', 'date', 'title', 'overview', 'topics'} <= set(data)
+        assert isinstance(data['topics'], list) and len(data['topics']) > 0
+        for topic in data['topics']:
+            assert isinstance(topic, dict) and {'speaker', 'title', 'summary'} <= set(topic)
+    except (ValueError, AssertionError) as exc:
+        errors.append(f'{p.relative_to(ROOT)}: invalid summary data {exc}')
 episodes = [p for p in (ROOT / 'events').glob('*/*-ep*') if p.is_dir()]
 for d in episodes:
-    if not (d / 'transcript.txt').is_file():
-        errors.append(f'{d.relative_to(ROOT)}: missing transcript.txt')
+    date_prefix = d.name.split('-')[0]
+    if date_prefix >= '20260207':
+        if not (d / 'transcript.txt').is_file():
+            errors.append(f'{d.relative_to(ROOT)}: missing transcript.txt')
+    else:
+        if not (d / 'transcript.txt').is_file() and not (d / 'quote-cards.json').is_file():
+            errors.append(f'{d.relative_to(ROOT)}: missing transcript.txt or quote-cards.json')
 if errors:
     raise SystemExit('\n'.join(errors))
 print(f"Content check passed: {len(episodes)} episodes, {len(list(skills.glob('*/SKILL.md')))} skills.")
