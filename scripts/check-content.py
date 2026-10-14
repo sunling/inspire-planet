@@ -43,7 +43,7 @@ for p in (ROOT / 'events').rglob('summary.json'):
         assert {'episode', 'date', 'title', 'overview', 'topics'} <= set(data)
         assert isinstance(data['topics'], list) and len(data['topics']) > 0
         for topic in data['topics']:
-            assert isinstance(topic, dict) and {'speaker', 'title', 'summary'} <= set(topic)
+            assert isinstance(topic, dict) and {'speaker', 'title'} <= set(topic) and ('summary' in topic or 'keyPoints' in topic)
     except (ValueError, AssertionError) as exc:
         errors.append(f'{p.relative_to(ROOT)}: invalid summary data {exc}')
 episodes = [p for p in (ROOT / 'events').glob('*/*-ep*') if p.is_dir()]
