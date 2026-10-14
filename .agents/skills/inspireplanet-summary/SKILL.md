@@ -10,7 +10,7 @@ description: 从启发星球某期会议转写与当期稿件中提炼结构化�
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt   输入（必读）
-  README.md        输入（参考本期选题概览与从转写整理出的关键脉络）
+  README.md        输入（如有，只参考导航、发布备注与授权边界）
   gzh-*.md         输入（参考已整理的分享脉络，如有）
   quote-cards.json 输入（参考代表金句，如有）
   summary.json     输出
@@ -21,6 +21,8 @@ events/{year}/{YYYYMMDD}-epXX/
 - 所有人物、经历、问题与现场回应必须来自本期真实转写，不补造事实、不替分享者下结论。
 - 以结构化纪要呈现每位分享者的【分享缘起】、【关键脉络要点】、【代表金句】与【现场追问与碰撞】，让未参会的人也能快速看清这场分享聊了什么。
 - 遵守本期 `README.md` 发布备注中的隐私与匿名边界。
+
+字段与同步规则见 [内容数据约定](../../../events/data-contract.md)。保持现有字段兼容；年份由目录确定，`episode` 与目录期数一致，`date` 与目录日期一致。代表金句可以与卡片重复，但两份 JSON 不要求一一对应。
 
 ## JSON 格式
 
@@ -54,8 +56,8 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 工作流程
 
-1. 阅读目标期 `transcript.txt`、`README.md` 以及已有的 `gzh-*.md`、`quote-cards.json`。
-2. 对照 `README.md` 的「选题概览」与「从转写整理出的关键脉络」，梳理本期 2–5 个核心分享话题。
+1. 阅读目标期 `transcript.txt`，以及已有的 `README.md`、`gzh-*.md`、`quote-cards.json`。
+2. 从转写梳理本期 2–5 个核心分享话题，已有稿件仅辅助理解，不要求 README 保存会议内容或固定栏目。
 3. 为每个话题提炼 `speaker`、`title`、`context`（分享缘起）、3–4 条结构化的 `keyPoints`（关键脉络）、`quote`（代表金句）以及 `discussion`（现场问答碰撞）。
-4. 将未单独成篇但有温度的现场互动归入 `highlights`。
+4. 将未单独成篇但有温度的现场互动归入 `highlights`，没有时用空数组；没有现场追问与回应时 `discussion` 用空字符串，不补造问答。
 5. 写入 `events/{year}/{YYYYMMDD}-epXX/summary.json`，并运行 `python3 scripts/check-content.py` 验证格式。
