@@ -41,9 +41,10 @@ def main():
             content = response.get('result', {}).get('content', [])
             if len(content) == 1:
                 envelope = json.loads(content[0]['text'])
-                if isinstance(envelope.get('data', {}).get('body'), str):
+                wrapper = envelope.get('data', envelope)
+                if isinstance(wrapper.get('body'), str):
                     print('body-structure')
-                    shape(json.loads(envelope['data']['body']))
+                    shape(json.loads(wrapper['body']))
         else:
             for tool in response.get('result', {}).get('tools', []):
                 if tool.get('name') in TOOL_FIELDS:
@@ -54,6 +55,18 @@ def main():
                         shape(tool['outputSchema'])
         return response
     client = MCP(transport)
+    original_call = client.call
+    def probe_call(name, args):
+        # The live schema advertises is_compact; false preserves paging metadata.
+        if client.schemas[name]['properties'].get('is_compact', {}).get('type') != 'boolean':
+            raise RuntimeError('schema')
+        client.rpc('tools/call', {'name': name, 'arguments': dict(args, is_compact=False)})
+    for name, schema in client.schemas.items():
+        for field, prop in schema.get('properties', {}).items():
+            if field in TOOL_FIELDS[name]:
+                desc = prop.get('description', '')
+                print('schema-numeric-hints', name, field, re.findall(r'\b\d{1,5}\b', desc))
+                print('schema-time-unit-hints', field, '毫秒' in desc or 'millisecond' in desc.lower(), '秒' in desc or 'second' in desc.lower())
     for name, args in [
         ('get_user_ended_meetings', {'start_time': '2026-10-10T00:00:00Z', 'end_time': '2026-10-10T23:59:59Z', 'page_size': 100, 'page_token': ''}),
         ('get_records_list', {'meeting_id': '13319006708380765410', 'page_size': 100, 'page_token': ''}),
@@ -72,7 +85,7 @@ def main():
                 return h * 3600 + minute * 60 + second
             records.sort(key=duration, reverse=True)
             if records:
-                client.call('get_transcripts_details', {'meeting_id': '13319006708380765410', 'record_file_id': records[0]['record_file_id'], 'pid': '0', 'limit': 100})
+                probe_call('get_transcripts_details', {'meeting_id': '13319006708380765410', 'record_file_id': records[0]['record_file_id'], 'pid': '0', 'limit': 100})
 
 
 if __name__ == '__main__':
