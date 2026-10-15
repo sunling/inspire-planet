@@ -34,29 +34,6 @@ jobs:
       - name: Remove runner-only transcript cache
         if: always()
         run: rm -f .git/meeting-content-fetch-check.txt
-  history-ep48-readonly:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: EP48 real readonly fetch-check via repository episode mapping (explicit dispatch)
-        env:
-          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/latest_transcript.py fetch-check --episode 48
-      - name: Verify public files unchanged
-        run: test -z "$(git status --porcelain)"
-      - name: Remove runner-only transcript cache
-        if: always()
-        run: rm -f .git/meeting-content-fetch-check.txt
   history-scan-readonly:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest

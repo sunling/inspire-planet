@@ -76,81 +76,56 @@ class LatestTests(unittest.TestCase):
                     l.main(['fetch-check', '--date', day], root=root, client_factory=lambda c=client: c,
                            run=lambda args: self.fail('must not need GitHub'))
 
-    def test_history_episode_resolves_unique_archive_date_and_fails_closed(self):
-        l = self.latest()
-        import tempfile
-        def base(root):
-            (root / '.git').mkdir(); (root / 'scripts').mkdir()
-            (root / 'scripts/meeting-project.json').write_text('{}')
-        # Unique single episode directory; bare EP unambiguous across years.
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); base(root)
-            d = root / 'events/2025/20251213-ep48'; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
-            self.assertEqual(l.resolve_episode_date(root, '48'), ('2025-12-13', '48', 2025))
-            self.assertEqual(l.resolve_episode_date(root, 'EP48'), ('2025-12-13', '48', 2025))
-            self.assertEqual(l.resolve_episode_date(root, '2025-48'), ('2025-12-13', '48', 2025))
-            self.assertEqual(l.resolve_episode_date(root, '2025-EP48'), ('2025-12-13', '48', 2025))
-            self.assertEqual(l.resolve_episode_date(root, '48', year='2025'), ('2025-12-13', '48', 2025))
-            self.assertEqual(l.resolve_episode_date(root, '48', year=2025), ('2025-12-13', '48', 2025))
-            for bad in ('99', '0', 'abc', '1000'):
-                with self.subTest(bad=bad), self.assertRaises(m.SafeError):
-                    l.resolve_episode_date(root, bad)
-        # Same UTC date mapped to several legacy episode directories -> ambiguous.
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); base(root)
-            for ep in ('02', '03'):
-                d = root / f'events/2025/20250428-ep{ep}'; d.mkdir(parents=True)
-                (d / 'README.md').write_text('x')
-            with self.assertRaises(m.SafeError) as ctx:
-                l.resolve_episode_date(root, '2')
-            self.assertIn('2025-04-28', str(ctx.exception))
-
-    def test_history_episode_resets_each_year_and_requires_year_when_ambiguous(self):
-        l = self.latest()
-        import tempfile
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
-            (root / 'scripts/meeting-project.json').write_text('{}')
-            for path in ('events/2025/20251018-ep40', 'events/2026/20261010-ep40'):
-                d = root / path; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
-            # Bare EP exists in both years -> fail closed, listing both years.
-            with self.assertRaises(m.SafeError) as ctx:
-                l.resolve_episode_date(root, '40')
-            self.assertIn('2025', str(ctx.exception)); self.assertIn('2026', str(ctx.exception))
-            # Year-qualified forms resolve unambiguously; year never chosen silently.
-            self.assertEqual(l.resolve_episode_date(root, '2025-40'), ('2025-10-18', '40', 2025))
-            self.assertEqual(l.resolve_episode_date(root, '2026-40'), ('2026-10-10', '40', 2026))
-            self.assertEqual(l.resolve_episode_date(root, '2026-EP40'), ('2026-10-10', '40', 2026))
-            self.assertEqual(l.resolve_episode_date(root, '40', year='2026'), ('2026-10-10', '40', 2026))
-            # Conflicting embedded vs separate year fails closed.
-            with self.assertRaises(m.SafeError):
-                l.resolve_episode_date(root, '2026-40', year='2025')
-            # Unmatched EP -> clear message.
-            with self.assertRaises(m.SafeError) as ctx:
-                l.resolve_episode_date(root, '48')
-            self.assertIn('EP48', str(ctx.exception))
-            with self.assertRaises(m.SafeError) as ctx:
-                l.resolve_episode_date(root, '2026-48')
-            self.assertIn('EP48', str(ctx.exception))
-            with self.assertRaises(m.SafeError):
-                l.resolve_episode_date(root, '40', year='2024')
-
-    def test_history_episode_prepare_uses_directory_mapping_only(self):
+    def test_history_pick_selects_numbered_unarchived_occurrence(self):
         l = self.latest()
         import tempfile, json
-        from unittest.mock import patch
-        day = '2025-12-13'
-        row = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day,
-                   start_time=day + 'T02:00:00Z',
-                   records=[{'record_file_id': 'f', 'meeting_record_id': 'r', 'type': '转写', 'duration': '01:00'}])
+        day1, day2 = '2026-07-25', '2026-08-15'
+        row1 = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day1,
+                    start_time=day1 + 'T02:00:00Z',
+                    records=[{'record_file_id': 'f', 'meeting_record_id': 'r', 'type': '转写', 'duration': '01:00'}])
+        row2 = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day2,
+                    start_time=day2 + 'T02:00:00Z',
+                    records=[{'record_file_id': 'g', 'meeting_record_id': 'r2', 'type': '转写', 'duration': '01:00'}])
+        for mapped in (False, True):
+            with self.subTest(mapped=mapped), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir(); (root / 'events').mkdir()
+                (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row1['subject']}))
+                def run(args):
+                    if args[:2] in (['git', 'fetch'], ['git', 'ls-remote']): return ''
+                    if args[:3] == ['gh', 'api', '--paginate']: return '[[]]'
+                    if args[:2] == ['git', 'ls-tree']:
+                        return 'events/2026/20260815-ep33/recap.md\n' if mapped else ''
+                    if args[:3] == ['git', 'branch', '--show-current']: return 'main'
+                    if args[:2] == ['git', 'rev-parse']: return 'a' * 40
+                    if args[:3] == ['git', 'status', '--porcelain']: return ''
+                    raise AssertionError(args)
+                class Client:
+                    def call(self, name, args):
+                        if name == 'get_user_ended_meetings':
+                            return {'meeting_info_list': [row1, row2], 'has_more': False}
+                        raise AssertionError('discovery only')
+                # pick=2 selects the second numbered occurrence (2026-08-15), never the latest.
+                l.main(['prepare', '--pick', '2'], root=root, run=run, client_factory=Client,
+                       now=datetime(2026, 10, 15, 12, tzinfo=timezone.utc))
+                plan = json.loads((root / '.git/latest-plan.json').read_text())
+                self.assertFalse(plan['skip'])
+                self.assertEqual(plan['date'], day2)
+                self.assertEqual(plan['episode'], '33' if mapped else None)
+                expected = 'events/2026/20260815-ep33' if mapped else 'incoming/meetings/' + l.instance(row2)['instance_key']
+                self.assertEqual(plan['event'], expected)
+
+    def test_history_pick_invalid_index_and_inputs_fail_closed(self):
+        l = self.latest()
+        import tempfile, json
+        row = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='2026-08-15',
+                   start_time='2026-08-15T02:00:00Z', records=[])
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir(); (root / 'events').mkdir()
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
             (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
-            d = root / 'events/2025/20251213-ep48'; d.mkdir(parents=True); (d / 'README.md').write_text('# x\n')
             def run(args):
                 if args[:2] in (['git', 'fetch'], ['git', 'ls-remote']): return ''
                 if args[:3] == ['gh', 'api', '--paginate']: return '[[]]'
-                if args[:2] == ['git', 'ls-tree']: return 'events/2025/20251213-ep48/README.md\n'
+                if args[:2] == ['git', 'ls-tree']: return ''
                 if args[:3] == ['git', 'branch', '--show-current']: return 'main'
                 if args[:2] == ['git', 'rev-parse']: return 'a' * 40
                 if args[:3] == ['git', 'status', '--porcelain']: return ''
@@ -160,33 +135,29 @@ class LatestTests(unittest.TestCase):
                     if name == 'get_user_ended_meetings':
                         return {'meeting_info_list': [row], 'has_more': False}
                     raise AssertionError('discovery only')
-            with patch.object(l, 'discover', side_effect=AssertionError('EP must not run cadence discovery')):
-                l.main(['prepare', '--episode', '48'], root=root, run=run, client_factory=Client)
-            plan = json.loads((root / '.git/latest-plan.json').read_text())
-            self.assertFalse(plan['skip'])
-            self.assertEqual(plan['episode'], '48')
-            self.assertEqual(plan['date'], '2025-12-13')
-            self.assertEqual(plan['event'], 'events/2025/20251213-ep48')
-            # Unmapped episode fails closed before any remote read.
-            with self.assertRaises(m.SafeError):
-                l.main(['prepare', '--episode', '99'], root=root,
-                       run=lambda args: self.fail('unmapped EP must not run Git/GitHub'),
-                       client_factory=lambda: self.fail('unmapped EP must not read remote'))
-
-    def test_history_episode_and_date_mutually_exclusive_and_blank_requires_input(self):
-        l = self.latest()
-        import tempfile, json
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
-            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': 't'}))
-            for argv in (['fetch-check', '--episode', '48', '--date', '2025-12-13'],
-                         ['fetch-check', '--episode', '', '--date', ''],
-                         ['prepare', '--episode', '', '--date', ''],
-                         ['fetch-check', '--year', '2025'],
-                         ['scan', '--date', '2025-12-13']):
+            # Only one occurrence exists; pick=2 is out of range.
+            with self.assertRaises(m.SafeError) as ctx:
+                l.main(['prepare', '--pick', '2'], root=root, run=run, client_factory=Client,
+                       now=datetime(2026, 10, 15, 12, tzinfo=timezone.utc))
+            self.assertIn('序号', str(ctx.exception))
+            for argv in (['prepare', '--pick', '0'], ['prepare', '--pick', 'abc'],
+                         ['fetch-check', '--pick', '1'], ['prepare', '--pick', '1', '--date', '2026-08-15'],
+                         ['fetch-check', '--date', ''], ['scan', '--date', '2026-08-15']):
                 with self.subTest(argv=argv), self.assertRaises(m.SafeError):
                     l.main(argv, root=root, run=lambda args: self.fail('invalid input must not run Git/GitHub'),
                            client_factory=lambda: self.fail('invalid input must not read remote'))
+
+    def test_episode_hint_is_display_only_from_unambiguous_directories(self):
+        l = self.latest()
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            d = root / 'events/2026/20261010-ep40'; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
+            for ep in ('02', '03'):
+                e = root / f'events/2025/20250428-ep{ep}'; e.mkdir(parents=True); (e / 'README.md').write_text('x')
+            hints = l.episode_hints(root)
+            self.assertEqual(hints.get('2026-10-10'), '2026-ep40')
+            self.assertNotIn('2025-04-28', hints)
 
     def test_history_blank_scan_is_bounded_and_reports_counts_only(self):
         l = self.latest()
@@ -221,15 +192,24 @@ class LatestTests(unittest.TestCase):
                 raise AssertionError(name)
         now = datetime(2026, 10, 15, 12, tzinfo=timezone.utc)
         archive = {'keys': set(), 'dates': {'2026-01-01'}, 'mapping': {}}
-        out = io.StringIO()
-        with redirect_stdout(out):
-            summary = l.scan(Client(), config, archive, now)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            d = root / 'events/2026/20260725-ep29'; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
+            out = io.StringIO()
+            with redirect_stdout(out):
+                summary = l.scan(Client(), config, archive, now, root=root)
         text = out.getvalue()
         self.assertEqual(summary['unarchived'], 2)
         self.assertEqual(summary['probed'], 2)
         self.assertIn('unarchived=2', text)
-        self.assertIn('2025-12-13 readable=true', text)
-        self.assertIn('2026-07-25 readable=false', text)
+        # Numbered rows with real date and weekday; EP hint is display-only.
+        self.assertIn('[1] 2025-12-13', text)
+        self.assertIn('[2] 2026-07-25', text)
+        self.assertIn('周六', text)
+        self.assertIn('readable=true', text)
+        self.assertIn('readable=false', text)
+        self.assertIn('ep_hint=2026-ep29', text)
+        self.assertIn('pick=N', text)
         self.assertNotIn('其他会议', text)
         self.assertNotIn('2027-01-01', text)
         self.assertNotIn('2025-01-01', text)
@@ -321,23 +301,24 @@ class LatestTests(unittest.TestCase):
                         l.main(['prepare', '--date', day], root=root, run=lambda args: self.fail('invalid date must not run Git/GitHub'),
                                client_factory=lambda: self.fail('invalid date must not read remote'))
 
-    def test_history_ci_uses_episode_and_date_readonly_entries(self):
+    def test_history_ci_uses_date_and_scan_readonly_entries(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/content-ci.yml').read_text()
         self.assertNotIn('CONTENT_MEETING_ID', workflow)
+        self.assertNotIn('--episode', workflow)
         self.assertIn('scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"', workflow)
-        self.assertIn('scripts/latest_transcript.py fetch-check --episode 48', workflow)
         self.assertIn('scripts/latest_transcript.py scan', workflow)
 
-    def test_history_workflow_episode_date_or_blank_scan(self):
+    def test_history_workflow_date_or_blank_scan_no_episode_input(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
         for forbidden in ('inputs.subject', 'inputs.meeting_id', 'CONTENT_MEETING_SUBJECT', 'CONTENT_MEETING_ID',
+                          'inputs.episode', 'CONTENT_EPISODE', 'CONTENT_YEAR', '--episode', '--year',
                           'scripts/meeting_content.py prepare', 'scripts/meeting_content.py fetch-check',
                           'validate'):
             self.assertNotIn(forbidden, workflow)
-        for required in ('inputs.episode', 'inputs.year', 'inputs.date', 'default: draft',
+        for required in ('inputs.date', 'inputs.pick', 'default: draft',
                          'scripts/latest_transcript.py scan',
-                         'scripts/latest_transcript.py prepare --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"',
-                         'scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"',
+                         'scripts/latest_transcript.py prepare --pick "$CONTENT_PICK" --date "$CONTENT_DATE"',
+                         'scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
                          'scripts/latest_transcript.py publish', 'scripts/meeting_content.py connectivity',
                          "if: always()", 'rm -f .git/'):
