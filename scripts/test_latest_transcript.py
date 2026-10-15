@@ -35,7 +35,7 @@ class LatestTests(unittest.TestCase):
                         meeting_record_id='r', record_files=[{'record_file_id': 'f'}])], 'has_more': False}
                 return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0,
                     'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成全文'}]}]}]}, 'more': False}
-        with tempfile.TemporaryDirectory(dir='/data/cache/scratch') as tmp:
+        with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
             (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
             existing = root / 'events/2025/20251011-ep48/transcript.txt'
@@ -57,7 +57,7 @@ class LatestTests(unittest.TestCase):
         row = self.row(day, records=[{'record_file_id': 'f', 'meeting_record_id': 'r',
                                     'type': '转写', 'duration': '01:00'}])
         for mapped in (True, False):
-            with self.subTest(mapped=mapped), tempfile.TemporaryDirectory(dir='/data/cache/scratch') as tmp:
+            with self.subTest(mapped=mapped), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir(); (root / 'events').mkdir()
                 (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
                 (root / 'events/README.md').write_text('# Synthetic index\n')
@@ -94,7 +94,7 @@ class LatestTests(unittest.TestCase):
         l = self.latest()
         import tempfile, json
         from unittest.mock import patch
-        with tempfile.TemporaryDirectory(dir='/data/cache/scratch') as tmp:
+        with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
             (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': 'project'}))
             for day in ('', '2025-02-30', '2025-1-1'):
