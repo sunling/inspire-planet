@@ -3,8 +3,10 @@ name: Transcript draft
 on:
   workflow_dispatch:
   schedule:
-    # Safe-off: no recurring date/episode/filter variables.
-    - cron: '20 8 * * *'
+    # 启发星球会议：北京时间周六 08:00–10:00（UTC 周六 00:00–02:00，时长不超过 2 小时）。
+    # 会议结束后每小时重试到 UTC 08:20，覆盖转写生成延迟与 GitHub 定时延迟；
+    # 每天重复同一个窗口，用于当天未就绪时的兜底重试。已归档时安全跳过，不会重复拉取。
+    - cron: '20 2-8 * * *'
 
 permissions:
   contents: read
