@@ -10,6 +10,24 @@ permissions:
   contents: read
 
 jobs:
+  ep40-readonly:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: EP40 structure only (explicit dispatch)
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/diagnose_meeting_mcp.py
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10

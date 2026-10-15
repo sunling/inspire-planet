@@ -273,7 +273,14 @@ class WorkflowTests(unittest.TestCase):
         flow = (root / '.github/workflows/meeting-content.yml').read_text()
         self.assertIn('pull_request:', ci)
         self.assertIn('push:', ci)
-        self.assertNotIn('secrets.', ci)
+        check = ci.split('  check:', 1)[1]
+        self.assertNotIn('secrets.', check)
+        probe = ci.split('  ep40-readonly:', 1)[1].split('  check:', 1)[0]
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", probe)
+        self.assertIn('ref: ${{ github.sha }}', probe)
+        self.assertIn('contents: read', probe)
+        self.assertNotIn('write', probe)
+        self.assertNotIn('upload-artifact', ci)
         self.assertIn('check-content.py', ci)
         self.assertIn("vars.CONTENT_AUTOMATION_ENABLED == 'true'", flow)
         self.assertIn('name: Transcript draft', flow)
