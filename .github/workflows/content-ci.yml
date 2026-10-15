@@ -24,10 +24,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: EP40 structure only (explicit dispatch)
+      - name: EP40 real readonly fetch-check (explicit dispatch)
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/diagnose_meeting_mcp.py
+          CONTENT_DATE: '2026-10-10'
+          CONTENT_EPISODE: '40'
+          CONTENT_MEETING_ID: '13319006708380765410'
+        run: python3 scripts/meeting_content.py fetch-check
+      - name: Verify public files unchanged
+        run: test -z "$(git status --porcelain)"
+      - name: Remove runner-only transcript cache
+        if: always()
+        run: rm -f .git/meeting-content-fetch-check.txt
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10

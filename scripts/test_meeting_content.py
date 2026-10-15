@@ -23,6 +23,70 @@ class IdentityTests(unittest.TestCase):
 
 
 class TranscriptTests(unittest.TestCase):
+    def test_observed_http_body_envelopes_decode_and_check_inner_business_code(self):
+        # Sanitized structure from live runs 38784249250 / 38784551270;
+        # all values below are synthetic, never copied meeting content.
+        import json
+        for wrapped in (True, False):
+            for code in (0, 30002, 999):
+                with self.subTest(wrapped=wrapped, code=code):
+                    def transport(packet):
+                        if packet['method'] == 'tools/list':
+                            return {'id': 1, 'result': {'tools': [
+                                {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                                for n, f in m.TOOL_FIELDS.items()]}}
+                        body = {'code': code, 'more': False, 'minutes': {'paragraphs': []}}
+                        data = {'status_code': 200, 'headers': {}, 'body': json.dumps(body)}
+                        return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps({'_meta': {}, 'data': data} if wrapped else data)}]}}
+                    client = m.MCP(transport)
+                    args = {'meeting_id': 'synthetic', 'record_file_id': 'synthetic', 'pid': '0', 'limit': 100}
+                    if code == 999:
+                        with self.assertRaises(m.SafeError): client.call('get_transcripts_details', args)
+                    else:
+                        actual = client.call('get_transcripts_details', args)
+                        self.assertEqual(actual, {'empty_transcript': True} if code == 30002 else {'code': 0, 'more': False, 'minutes': {'paragraphs': []}})
+
+    def test_full_mode_is_requested_and_required_by_live_schema(self):
+        calls = []
+        def transport(packet):
+            if packet['method'] == 'tools/list':
+                tools = [{'name': n, 'inputSchema': {'type': 'object', 'properties': dict({k: {'type': t} for k, t in f.items()}, is_compact={'type': 'boolean'})}} for n, f in m.TOOL_FIELDS.items()]
+                return {'id': 1, 'result': {'tools': tools}}
+            calls.append(packet['params']['arguments'])
+            return {'id': 1, 'result': {'structuredContent': {'meeting_info_list': [], 'has_more': False}}}
+        client = m.MCP(transport)
+        client.call('get_user_ended_meetings', {'start_time': 'synthetic', 'end_time': 'synthetic', 'page_size': 100, 'page_token': ''})
+        self.assertIs(calls[0].get('is_compact'), False)
+        with self.assertRaises(m.SafeError):
+            client.call('get_user_ended_meetings', {'is_compact': True})
+
+    def test_observed_occurrence_records_full_transcript_pages_and_millisecond_times(self):
+        import json
+        calls = []
+        records = [{'record_file_id': 'short', 'type': '转写', 'duration': '00:01'},
+                   {'record_file_id': 'long', 'type': '转写', 'duration': '01:02:03'}]
+        def transport(packet):
+            if packet['method'] == 'tools/list':
+                return {'id': 1, 'result': {'tools': [
+                    {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                    for n, f in m.TOOL_FIELDS.items()]}}
+            name, args = packet['params']['name'], packet['params']['arguments']
+            calls.append((name, args))
+            self.assertIs(args['is_compact'], False)
+            if name == 'get_user_ended_meetings':
+                data = {'has_more': False, 'meeting_info_list': [{'meeting_id': 'recurring', 'subject': 'Synthetic', 'start_time': '2026-10-10T00:00:00Z', 'records': records, 'records_total_count': 2}]}
+                envelope = {'_meta': {}, 'data': {'status_code': 200, 'headers': {}, 'body': json.dumps(data)}}
+            else:
+                self.assertEqual(name, 'get_transcripts_details', 'Do not select from all recurring occurrences')
+                self.assertEqual(args['record_file_id'], 'long')
+                pid = int(args['pid'])
+                data = {'code': 0, 'more': pid == 0, 'minutes': {'paragraphs': [{'pid': str(pid), 'start_time': 4400 if pid == 0 else 3723999, 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成文本'}]}]}]}}
+                envelope = {'status_code': 200, 'headers': {}, 'body': json.dumps(data)}
+            return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps(envelope)}]}}
+        text = m.fetch_transcript(m.MCP(transport), '2026-10-10', 'Synthetic', 'recurring')
+        self.assertEqual(text, '合成甲(00:00:04):\n合成文本\n\n合成甲(01:02:03):\n合成文本\n')
+        self.assertEqual([a['pid'] for n, a in calls if n == 'get_transcripts_details'], ['0', '1'])
+
     def test_runtime_schema_changes_fail_before_any_tool_call(self):
         import copy
         tools = [{'name': name, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in fields.items()}, 'required': list(fields)}} for name, fields in m.TOOL_FIELDS.items()]
@@ -48,9 +112,9 @@ class TranscriptTests(unittest.TestCase):
                     for name, fields in m.TOOL_FIELDS.items()]}}
             name, args = payload['params']['name'], payload['params']['arguments']
             if name == 'get_user_ended_meetings':
-                data = {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'subject': 'Synthetic Planet', 'start_time': '2026-10-16T17:00:00-07:00'}], 'has_more': False}
+                data = {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'subject': 'Synthetic Planet', 'start_time': '2026-10-16T17:00:00-07:00', 'records': [{'record_file_id': 'empty', 'type': '转写', 'duration': '02:00:00'}, {'record_file_id': 'full', 'type': '转写', 'duration': '01:00:00'}], 'records_total_count': 2}], 'has_more': False}
             elif name == 'get_records_list':
-                data = {'records': [{'record_file_id': 'empty', 'type': '转写', 'duration': '02:00:00'}, {'record_file_id': 'full', 'type': '转写', 'duration': '01:00:00'}], 'has_more': False}
+                self.fail('must use occurrence-specific ended-meeting records')
             elif args['record_file_id'] == 'empty':
                 data = {'code': 30002}  # documented empty-shell recording, not transport failure
             else:
@@ -229,7 +293,7 @@ class CLITests(unittest.TestCase):
                 else:
                     name = packet['params']['name']
                     data = {
-                        'get_user_ended_meetings': {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'subject': 'Synthetic Planet', 'start_time': '2026-10-17T00:00:00Z'}], 'has_more': False},
+                        'get_user_ended_meetings': {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'subject': 'Synthetic Planet', 'start_time': '2026-10-17T00:00:00Z', 'records': [{'record_file_id': 'synthetic-file', 'type': '转写', 'duration': '01:00:00'}], 'records_total_count': 1}], 'has_more': False},
                         'get_records_list': {'records': [{'record_file_id': 'synthetic-file', 'type': '转写', 'duration': '01:00:00'}], 'has_more': False},
                         'get_transcripts_details': {'minutes': {'paragraphs': [{'pid': '0', 'start_time': '00:01', 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '仅合成远程正文'}]}]}]}, 'more': False},
                     }[name]
@@ -241,7 +305,7 @@ class CLITests(unittest.TestCase):
                 m.main(['fetch-check'], root=root)
             self.assertEqual(local.read_text(), '已有原稿，不得替换')
             self.assertEqual([p.name for p in target.iterdir()], ['transcript.txt'])
-            self.assertEqual({p['params']['name'] for p in calls if p['method'] == 'tools/call'}, set(m.TOOL_FIELDS))
+            self.assertEqual({p['params']['name'] for p in calls if p['method'] == 'tools/call'}, {'get_user_ended_meetings', 'get_transcripts_details'})
             self.assertIn('1 段', output.getvalue())
             self.assertNotIn('仅合成远程正文', output.getvalue())
             self.assertNotIn('合成甲', output.getvalue())
