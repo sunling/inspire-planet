@@ -55,7 +55,7 @@ CONTENT_DATE=2026-10-10 CONTENT_EPISODE=40 python3 scripts/meeting_content.py va
 - 只允许 `get_user_ended_meetings`、`get_records_list`、`get_transcripts_details`。固定 HTTPS endpoint 与请求头来自[腾讯官方 MCP 说明](https://meeting.tencent.com/support/topic/2233/index.html)及此前只读核对的官方 `@tencent-adm/tencent-meeting-mcp` 包；`X-Skill-Version` 固定为包内 config 的 `v1.0.15`，不声称最新版本。
 - 参数以运行时官方 `tools/list` 为准；字段名、类型、必填参数不兼容即停止。三个工具都显式设置经 schema 验证的 `is_compact=false`：实测默认 compact 转写会删掉 `more`，不能据此判定全文。
 - 实测工具结果为 `content[0].text` 中的 JSON，可含 `_meta` / `data`，其内或直接为 `{status_code, headers, body}`；`body` 是另一个 JSON 字符串。仅解已知包装、最多六层，每层检查业务码与上游 HTTP 状态；从不打印 body、headers 或原始错误。
-- 已结束会议使用 `meeting_info_list + has_more`；录制分页使用原生 `record_meetings[].record_files[] + has_more`，不再假设顶层 `records`。用唯一 UTC 会议的 `meeting_id + sub_meeting_id` 精确限定本次，再核对 `(meeting_record_id, record_file_id)` 集合与该次 `records` 元数据完全一致，拒绝缺项、重复或跨期混入。实测 `records_total_count` 不等于本次 records 长度，不能据它判断本次完整性；缺少子会议身份或元数据覆盖不完整时停止，不猜测回退。
+- 已结束会议使用 `meeting_info_list + has_more`；录制分页使用原生 `record_meetings[].record_files[] + has_more`，不再假设顶层 `records`。用唯一 UTC 会议的 `meeting_id + sub_meeting_id` 精确限定本次，再核对 `(meeting_record_id, record_file_id)` 集合与该次 `records` 元数据完全一致，拒绝缺项、重复或跨期混入。实测 `records_total_count` 不等于本次 records 长度，不能据它判断本次完整性；缺少子会议身份或元数据覆盖不完整时停止，不猜测回退。此规则在 EP40 通过，但历史 EP50 已证明同一子会议可含其他日期录制；当前严格集合检查因此会拒绝部分历史目标，详见下方诊断记录。
 - 候选仍按本次元数据的时长降序，仅在完整空稿或首屏明确 30002 时尝试下一份；转写必须有 `minutes.paragraphs + more`。原生段落时间为整数毫秒，按[腾讯转写详情说明](https://meeting.tencent.com/support/topic/797/index.html)转为 `HH:MM:SS`；保留 CLI 的字符串时间兼容。分页、上限和未知发言人检查不降级。
 - 测试中的正文与 GitHub PR 响应仍为合成数据；新增回归仅复现已观察的结构，不保存真实响应。独立集成测试实际执行临时本地 Git/bare 仓库的提交、推送与 SHA 回读，不写 GitHub、不把测试内容放进本仓库 events。
 
@@ -78,3 +78,18 @@ gh workflow run content-ci.yml --ref fix/mcp-transcript-response
 - [38784249250：安全结构诊断](https://github.com/sunling/inspire-planet/actions/runs/38784249250)识别 HTTP/JSON body 包装；[38784551270](https://github.com/sunling/inspire-planet/actions/runs/38784551270)确认 full 模式恢复 `more`；[38785307755](https://github.com/sunling/inspire-planet/actions/runs/38785307755)确认原生录制列表经子会议限定后与该次文件集合一致。仅结构、类型、计数及必要分页标志进入日志，没有原始响应或转写 artifact。
 - [38785641587：真实 EP40 fetch-check 成功](https://github.com/sunling/inspire-planet/actions/runs/38785641587)，代码 `79dbd6bf98f4811a9986c1c28b26e54a17e19b66`：**181 段**，会议/录制/转写实际远程分页路径通过、公开文件未变化、runner-only 缓存清理成功；同次 19 项本地逻辑测试及 `check-content`（87 期、7 skills）通过。这个数字来自真实运行，不是预设断言。
 - 本次未测试公开内容 Draft PR 的发布权限，不改 Actions 建 PR 设置，不启用排程，不合并修复 PR，也不覆盖已有 EP40。
+
+### 2025 历史场次诊断与真实只读样本（2026-10-15）
+
+- 可选维护输入 `historical_ep50=true` 仅在人工 dispatch 时运行固定 EP50（`2025-12-27`）结构诊断与原生产 `fetch-check`；不接受任意日期、工具或发布命令。与 EP40 一样检出 dispatched SHA、只读权限、无转写 artifact，最终检查公开文件未变并清理缓存。push/PR 的 `check` 不接收 Secret。
+- [38787666668](https://github.com/sunling/inspire-planet/actions/runs/38787666668)，代码 `00c22a9f8b973b53af6d7d5d6df09493c913510b`：EP40 再次实际拉取成功（181 段）；EP50 诊断成功但 `fetch-check` **仍按安全门禁失败**。EP50 元数据 5 个文件，原生列表同 `meeting_id + sub_meeting_id` 下 6 个文件；双方无重复，元数据全包含于原生列表，原生多 1 个。双方当天文件数均为 3。不是分页未走完或重复数据；不能把整个 run 写成成功。
+- 已授权本机 CLI 独立遍历该项目的 4 页录制（30+30+30+10），确认同一子会议下混入其他日期文件，额外文件来自其他日期；所以仅靠 meeting/sub-meeting ID 不足以确定历史场次归属。生产适配器保持原样，不把相等改为包含、不忽略额外文件、不跳过检查。
+- 一次性只读 CLI 探针同时限定唯一已结束会议日期、项目身份、子会议身份及两接口文件时间戳当天，**先核对当天 `(meeting_record_id, record_file_id)` 集合完全相等且无重复**，再按最长转写候选读取全部分页，直到 `more=false`，保留生产段落/姓名/上限检查。探针属于保守人工取样，不是已通过的通用历史归属算法；不能推广为跨午夜会议处理方案。
+- 实际取回 EP50（`2025-12-27`）197 段、32785 字符、末段 `01:54:38`；EP48（`2025-12-13`）206 段、32247 字符、末段 `01:46:47`。仅在私人 scratch 保存并回读验证完整文件；未写入 events、未上传正文或 artifact。EP49（`2025-12-20`）保守当天筛选只有云录制，没有当天起始的文字转写，因此本探针未取回；不据此宣称转写不存在，因为跨午夜转写需另行证明归属。
+- 下一步须为文件时间区间与场次归属建立合成 RED→GREEN 回归，再做真实 MCP 全文验收。不要删除或放宽原有安全门禁来获取绿色结果。样本可供已授权的本地审核，公开内容仍每期独立 Draft PR，不合并、不启用排程、不更改 Actions 仓库权限。
+
+手动复现固定历史诊断：
+
+```bash
+gh workflow run content-ci.yml --ref fix/historical-record-occurrence -f historical_ep50=true
+```
