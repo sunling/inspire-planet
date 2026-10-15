@@ -21,7 +21,7 @@ def shape(value, path='$', depth=0):
             shape(value[0], path + '[]', depth + 1)
     else:
         print(path, type(value).__name__, value if path.rsplit('.', 1)[-1] in {'code', 'has_more', 'more', 'maximum', 'maxItems'} and type(value) in (int, bool) else '')
-        if isinstance(value, str) and path.endswith('.text'):
+        if isinstance(value, str) and (path.endswith('.text') or path.endswith('.body')):
             try:
                 decoded = json.loads(value)
             except ValueError:
