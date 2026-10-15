@@ -269,8 +269,8 @@ def select_meeting(rows, day, subject, meeting_id):
 def fetch_transcript(client, day, subject, meeting_id):
     rows = token_pages(client, 'get_user_ended_meetings', {'start_time': day + 'T00:00:00Z', 'end_time': day + 'T23:59:59Z'}, 'meeting_info_list')
     meeting = select_meeting(rows, day, subject, meeting_id)
-    # Metadata is occurrence-specific, but records_total_count is series-wide
-    # in the live response. Verify its file coverage against the fully paged
+    # Metadata is occurrence-specific, but records_total_count does not equal
+    # the occurrence's file count in the live response. Verify coverage against
     # native record_meetings list, scoped by BOTH meeting and sub-meeting IDs.
     records = meeting.get('records')
     sub = meeting.get('sub_meeting_id')

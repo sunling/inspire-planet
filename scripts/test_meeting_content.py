@@ -46,6 +46,26 @@ class TranscriptTests(unittest.TestCase):
                         actual = client.call('get_transcripts_details', args)
                         self.assertEqual(actual, {'empty_transcript': True} if code == 30002 else {'code': 0, 'more': False, 'minutes': {'paragraphs': []}})
 
+    def test_http_body_envelopes_fail_closed_without_leaking_payload(self):
+        import json
+        for data in (
+            {'status_code': 403, 'body': 'private-server-error'},
+            {'status_code': 200, 'body': 'private-not-json'},
+            {'status_code': 200, 'body': '[]'},
+            {'status_code': 200, 'body': {'code': 0}},
+            {'data': {'data': {'data': {'data': {'data': {'data': {'code': 999}}}}}}},
+        ):
+            with self.subTest(shape=type(data).__name__):
+                def transport(packet):
+                    if packet['method'] == 'tools/list':
+                        return {'id': 1, 'result': {'tools': [
+                            {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                            for n, f in m.TOOL_FIELDS.items()]}}
+                    return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps(data)}]}}
+                with self.assertRaises(m.SafeError) as caught:
+                    m.MCP(transport).call('get_transcripts_details', {'meeting_id': 'synthetic', 'record_file_id': 'synthetic', 'pid': '0', 'limit': 100})
+                self.assertNotIn('private', str(caught.exception))
+
     def test_full_mode_is_requested_and_required_by_live_schema(self):
         calls = []
         def transport(packet):
@@ -380,6 +400,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('contents: read', probe)
         self.assertNotIn('write', probe)
         self.assertNotIn('upload-artifact', ci)
+        self.assertEqual(ci.count('secrets.'), 1)
+        self.assertIn('CONTENT_DATE: \'2026-10-10\'', probe)
+        self.assertIn('CONTENT_EPISODE: \'40\'', probe)
+        self.assertIn('run: python3 scripts/meeting_content.py fetch-check', probe)
+        self.assertIn('run: test -z "$(git status --porcelain)"', probe)
+        self.assertIn('if: always()', probe)
+        self.assertIn('rm -f .git/meeting-content-fetch-check.txt', probe)
+        self.assertNotIn('CONTENT_PUBLISH_ALLOWED', probe)
         self.assertIn('check-content.py', ci)
         self.assertIn("vars.CONTENT_AUTOMATION_ENABLED == 'true'", flow)
         self.assertIn('name: Transcript draft', flow)
