@@ -269,12 +269,25 @@ def select_meeting(rows, day, subject, meeting_id):
 def fetch_transcript(client, day, subject, meeting_id):
     rows = token_pages(client, 'get_user_ended_meetings', {'start_time': day + 'T00:00:00Z', 'end_time': day + 'T23:59:59Z'}, 'meeting_info_list')
     meeting = select_meeting(rows, day, subject, meeting_id)
-    # Ended-meeting records belong to the uniquely selected UTC occurrence.
-    # get_records_list instead returned record_meetings across recurring dates.
+    # Metadata is occurrence-specific, but records_total_count is series-wide
+    # in the live response. Verify its file coverage against the fully paged
+    # native record_meetings list, scoped by BOTH meeting and sub-meeting IDs.
     records = meeting.get('records')
-    total = meeting.get('records_total_count')
-    need(isinstance(records, list) and type(total) is int and total == len(records),
-         '本场录制列表缺失或不完整；拒绝跨期选择或截断')
+    sub = meeting.get('sub_meeting_id')
+    need(isinstance(records, list) and isinstance(sub, str) and bool(sub), '本场录制列表或子会议身份缺失')
+    groups = token_pages(client, 'get_records_list', {'meeting_id': meeting['meeting_id']}, 'record_meetings')
+    native = []
+    for group in groups:
+        if group.get('meeting_id') != meeting['meeting_id'] or group.get('sub_meeting_id') != sub:
+            continue
+        files = group.get('record_files')
+        need(isinstance(files, list) and bool(files) and bool(group.get('meeting_record_id')), '本场录制文件列表结构不支持')
+        for file in files:
+            need(isinstance(file.get('record_file_id'), str) and bool(file['record_file_id']), '录制文件缺少 ID')
+            native.append((group['meeting_record_id'], file['record_file_id']))
+    metadata = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records]
+    need(bool(native) and len(set(native)) == len(native) and len(set(metadata)) == len(metadata)
+         and set(native) == set(metadata), '本场录制列表不完整或重复；拒绝跨期选择或截断')
     candidates = [r for r in records if '转写' in r.get('type', '') and r.get('record_file_id')]
     def duration(r):
         value = r.get('duration')
