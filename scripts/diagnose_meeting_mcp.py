@@ -38,6 +38,12 @@ def main():
         if packet['method'] == 'tools/call':
             print('tool', packet['params']['name'])
             shape(response)
+            content = response.get('result', {}).get('content', [])
+            if len(content) == 1:
+                envelope = json.loads(content[0]['text'])
+                if isinstance(envelope.get('data', {}).get('body'), str):
+                    print('body-structure')
+                    shape(json.loads(envelope['data']['body']))
         else:
             for tool in response.get('result', {}).get('tools', []):
                 if tool.get('name') in TOOL_FIELDS:
@@ -52,7 +58,21 @@ def main():
         ('get_user_ended_meetings', {'start_time': '2026-10-10T00:00:00Z', 'end_time': '2026-10-10T23:59:59Z', 'page_size': 100, 'page_token': ''}),
         ('get_records_list', {'meeting_id': '13319006708380765410', 'page_size': 100, 'page_token': ''}),
     ]:
-        client.call(name, args)
+        result = client.call(name, args)
+        if name == 'get_user_ended_meetings':
+            body = json.loads(result['body'])
+            meetings = body['meeting_info_list']
+            selected = [r for r in meetings if r['meeting_id'] == '13319006708380765410']
+            if len(selected) != 1:
+                raise RuntimeError('nonunique')
+            records = [r for r in selected[0]['records'] if '转写' in r.get('type', '')]
+            from meeting_content import norm_time
+            def duration(r):
+                h, minute, second = map(int, norm_time(r['duration']).split(':'))
+                return h * 3600 + minute * 60 + second
+            records.sort(key=duration, reverse=True)
+            if records:
+                client.call('get_transcripts_details', {'meeting_id': '13319006708380765410', 'record_file_id': records[0]['record_file_id'], 'pid': '0', 'limit': 100})
 
 
 if __name__ == '__main__':
