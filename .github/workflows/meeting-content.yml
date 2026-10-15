@@ -1,9 +1,8 @@
-name: Meeting content draft
+name: Transcript draft
 
 on:
   schedule:
-    # UTC; weekly first attempt and daily retries. Safe-off until configured.
-    - cron: '20 6 * * 6'
+    # UTC; retry the same explicitly configured event. Safe-off by default.
     - cron: '20 8 * * *'
   workflow_dispatch:
     inputs:
@@ -15,22 +14,24 @@ on:
         description: '期数 1–999（connectivity 可留空）'
         type: string
         required: false
-      source:
-        description: 'local 使用目标期已有转写；mcp 获取指定日期唯一匹配会议'
-        type: choice
-        options: [local, mcp]
-        default: local
+      subject:
+        description: '精确会议标题（可用变量或 meeting_id 代替）'
+        type: string
+        required: false
+      meeting_id:
+        description: '会议 ID（与标题同时提供时须同时匹配）'
+        type: string
+        required: false
       mode:
-        description: 'validate 免费本地校验；connectivity 仅腾讯鉴权/schema；generate-check 会付费但不提交；draft 公开 PR'
+        description: 'validate 本地校验；connectivity 鉴权/schema；fetch-check 远程拉取不公开；draft 公开逐字稿 PR'
         type: choice
-        options: [validate, connectivity, generate-check, draft]
+        options: [validate, connectivity, fetch-check, draft]
         default: validate
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
-# Serialize all runs, including manual/scheduled attempts at the same event.
+# Serialize manual/scheduled attempts; never cancel an in-flight draft.
 concurrency:
   group: meeting-content-draft
   cancel-in-progress: false
@@ -40,16 +41,18 @@ jobs:
     if: >-
       github.ref_name == github.event.repository.default_branch &&
       (github.event_name == 'workflow_dispatch' || vars.CONTENT_AUTOMATION_ENABLED == 'true')
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      CONTENT_DATE: ${{ inputs.date || vars.CONTENT_EVENT_DATE }}
-      CONTENT_EPISODE: ${{ inputs.episode || vars.CONTENT_EPISODE }}
-      CONTENT_SOURCE: ${{ inputs.source || 'mcp' }}
+      CONTENT_DATE: ${{ github.event_name == 'schedule' && vars.CONTENT_EVENT_DATE || inputs.date }}
+      CONTENT_EPISODE: ${{ github.event_name == 'schedule' && vars.CONTENT_EPISODE || inputs.episode }}
       CONTENT_MODE: ${{ inputs.mode || 'draft' }}
       CONTENT_BASE_BRANCH: ${{ github.event.repository.default_branch }}
-      CONTENT_MEETING_SUBJECT: ${{ vars.CONTENT_MEETING_SUBJECT }}
-      CONTENT_MEETING_ID: ${{ vars.CONTENT_MEETING_ID }}
+      CONTENT_MEETING_SUBJECT: ${{ inputs.subject || vars.CONTENT_MEETING_SUBJECT }}
+      CONTENT_MEETING_ID: ${{ inputs.meeting_id || vars.CONTENT_MEETING_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,36 +62,37 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Local validation (no secrets or model)
+      - name: Local transcript validation (no secrets)
         if: env.CONTENT_MODE == 'validate'
         run: python3 scripts/meeting_content.py validate
-      - name: Tencent connectivity only (no model or content writes)
+      - name: Tencent connectivity only (no meeting reads)
         if: env.CONTENT_MODE == 'connectivity'
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/meeting_content.py connectivity
-      - name: Scope and remote idempotency checks before billing
+      - name: Force remote transcript check (cache only, no public writes)
+        if: env.CONTENT_MODE == 'fetch-check'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/meeting_content.py fetch-check
+      - name: Scope and remote idempotency checks
         id: plan
-        if: env.CONTENT_MODE == 'draft' || env.CONTENT_MODE == 'generate-check'
+        if: env.CONTENT_MODE == 'draft'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/meeting_content.py prepare
-      - name: Read complete transcript
-        if: steps.plan.outputs.skip == 'false'
+      - name: Read complete remote transcript
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/meeting_content.py fetch
-      - name: Generate and validate JSON only (one model call, no retry)
-        if: steps.plan.outputs.skip == 'false'
-        env:
-          CONTENT_LLM_BASE_URL: ${{ vars.CONTENT_LLM_BASE_URL }}
-          CONTENT_LLM_MODEL: ${{ vars.CONTENT_LLM_MODEL }}
-          CONTENT_LLM_API_KEY: ${{ secrets.CONTENT_LLM_API_KEY }}
-        run: python3 scripts/meeting_content.py generate
+      - name: Write transcript and index only
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
+        run: python3 scripts/meeting_content.py write
       - name: Check content before any commit
-        if: steps.plan.outputs.skip == 'false'
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         run: python3 scripts/check-content.py
-      - name: Create public Draft PR and verify scope (never merge)
+      - name: Create public transcript Draft PR and verify scope (never merge)
         if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         env:
           GH_TOKEN: ${{ github.token }}

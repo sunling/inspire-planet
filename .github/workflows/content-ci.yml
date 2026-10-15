@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Test meeting content automation (synthetic fixtures)
+      - name: Test transcript automation (synthetic fixtures)
         run: python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v
       - name: Check repository content
         run: python3 scripts/check-content.py
