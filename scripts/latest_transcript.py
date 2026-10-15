@@ -96,7 +96,11 @@ def historical_local(client, config, day):
 
 
 def episode_mapping(root):
-    """Repo EP -> UTC date mapping derived from committed events/ directories."""
+    """Repo (year, EP) -> UTC date from committed events/ directories.
+
+    Episode numbers RESET every year (2025 ep02..ep50, 2026 ep01..ep40), so an
+    EP number alone is ambiguous across years and must be year-qualified.
+    """
     mapping = {}
     base = root / 'events'
     if not base.is_dir():
@@ -112,26 +116,51 @@ def episode_mapping(root):
             if stamp[:4] != year_dir.name:
                 continue
             day = stamp[:4] + '-' + stamp[4:6] + '-' + stamp[6:]
-            mapping.setdefault(day, set()).add(str(int(match.group(2))))
+            mapping[(int(year_dir.name), str(int(match.group(2))))] = day
     return mapping
 
 
-def resolve_episode_date(root, episode):
-    """Resolve a repository EP number to its unique UTC date, else fail closed.
+def parse_episode(value):
+    """Parse '48', 'EP48', '2025-48' or '2025-EP48' into (optional year, EP)."""
+    text = value.strip() if isinstance(value, str) else ''
+    match = re.fullmatch(r'(?:(\d{4})-)?(?:[Ee][Pp])?(\d{1,3})', text)
+    m.need(bool(match), '期数格式须为 48、EP48 或 2025-48（年份可选；期数每年重置）')
+    ep = str(int(match.group(2)))
+    m.need(bool(re.fullmatch(r'[1-9]\d{0,2}', ep)), '期数须为 1–999')
+    return (int(match.group(1)) if match.group(1) else None), ep
+
+
+def resolve_episode_date(root, episode, year=None):
+    """Resolve a repository EP to its unique UTC date, else fail closed.
 
     Tencent exposes no episode concept: EP is purely a repository convention
-    (events/{year}/{YYYYMMDD}-epXX). It must be derived from the committed
-    directory mapping, never inferred from cadence, week counts or maxima.
+    (events/{year}/{YYYYMMDD}-epXX). Numbers reset every year, so a bare EP that
+    exists in more than one year is ambiguous and must be qualified (2025-48 or
+    a separate year). A year is never chosen silently and another year's mapping
+    is never used.
     """
-    m.need(bool(re.fullmatch(r'[1-9]\d{0,2}', episode)), '期数须为 1–999')
-    ep = str(int(episode))
+    if year is not None:
+        year = year if isinstance(year, str) else str(year)
+        m.need(bool(re.fullmatch(r'\d{4}', year)), '年份须为 4 位数字')
+        year = int(year)
+    embedded, ep = parse_episode(episode)
+    m.need(not (embedded is not None and year is not None and embedded != year), '期数与年份输入不一致')
+    wanted = year if year is not None else embedded
     mapping = episode_mapping(root)
-    days = sorted(d for d, eps in mapping.items() if ep in eps)
-    m.need(len(days) == 1, f'期数 EP{ep} 在仓库 events 目录中没有唯一日期映射；'
-                           '请在仓库中确认期数目录，或改用你的本地日期')
-    day = days[0]
-    m.need(mapping[day] == {ep}, f'日期 {day} 对应多个期次目录，无法用 EP 唯一定位；请改用本地日期')
-    return day, ep
+    years = sorted({y for (y, e) in mapping if e == ep})
+    available = '、'.join(str(y) for y in years) if years else '无'
+    matches = sorted((y, e) for (y, e) in mapping if e == ep and (wanted is None or y == wanted))
+    if not matches:
+        if wanted is None:
+            raise m.SafeError(f'期数 EP{ep} 在仓库 events 目录中没有匹配的年份；该期数可用年份：{available}')
+        raise m.SafeError(f'仓库 events 目录中 {wanted} 年没有 EP{ep}；该期数可用年份：{available}')
+    if len(matches) > 1:
+        raise m.SafeError(f'期数 EP{ep} 匹配多个年份（{available}）；请用 2025-{ep} 形式指定年份，不会自动选年')
+    y, e = matches[0]
+    day = mapping[(y, e)]
+    same_day = {(yy, ee) for (yy, ee), value_day in mapping.items() if value_day == day}
+    m.need(same_day == {(y, e)}, f'日期 {day} 对应多个期次目录，无法唯一定位；请改用本地日期')
+    return day, e, y
 
 
 def instance(row):
@@ -328,27 +357,31 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['readonly', 'scan', 'prepare', 'fetch-check', 'fetch', 'write', 'publish'])
     parser.add_argument('--date', help='你的本地日历日期 YYYY-MM-DD；自动匹配 UTC/北京/美西当天的项目会议')
-    parser.add_argument('--episode', help='仓库期数（events 目录概念），如 48；由仓库目录唯一映射出 UTC 日期')
+    parser.add_argument('--episode', help='仓库期数：48、EP48 或年份限定的 2025-48（期数每年重置）')
+    parser.add_argument('--year', help='4 位年份，配合 --episode 消除跨年期数歧义（也可直接写 2025-48）')
     args = parser.parse_args(argv)
     command = args.command
     date = args.date if args.date else None
     episode = args.episode if args.episode else None
-    historical_input = args.date is not None or args.episode is not None
+    year = args.year if args.year else None
+    historical_input = args.date is not None or args.episode is not None or args.year is not None
     if historical_input:
         m.need(command in ('prepare', 'fetch-check'), '日期或期数仅用于历史 prepare/fetch-check')
     if date is not None:
         m.need(bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', date)), '日期须为 YYYY-MM-DD')
         m.utc_day(date + 'T00:00:00Z')
-    if episode is not None:
-        m.need(bool(re.fullmatch(r'[1-9]\d{0,2}', episode)), '期数须为 1–999')
+    if year is not None:
+        m.need(bool(re.fullmatch(r'\d{4}', year)), '年份须为 4 位数字')
+        m.need(episode is not None, '年份需要同时提供期数')
     m.need(not (date and episode), '期数与日期只能二选一')
     m.need(not (command == 'scan' and historical_input), '扫描不接受日期或期数')
     m.need(command != 'fetch-check' or date or episode, '历史检查需要本地日期或期数')
     m.need(bool(date or episode) or not historical_input, '历史补录需要本地日期或仓库期数；留空请使用只读扫描')
     root = root or Path(__file__).resolve().parents[1]
     # Resolve a repository EP to its unique UTC date from local events/ directories
-    # before any Git/GitHub or remote work, so an unmapped episode fails closed early.
-    resolved_episode = resolve_episode_date(root, episode) if episode else None
+    # before any Git/GitHub or remote work, so an unmapped or ambiguous episode
+    # (numbers reset every year) fails closed early.
+    resolved_episode = resolve_episode_date(root, episode, year) if episode else None
     if run is None:
         def run(args):
             try:

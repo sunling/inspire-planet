@@ -426,7 +426,7 @@ class WorkflowTests(unittest.TestCase):
         history = (root / '.github/workflows/meeting-history.yml').read_text()
         self.assertIn('options: [draft, fetch-check, connectivity]', history)
         self.assertNotIn('schedule:', history)
-        self.assertIn('run: python3 scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --date "$CONTENT_DATE"', history)
+        self.assertIn('run: python3 scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"', history)
         self.assertIn('run: python3 scripts/latest_transcript.py scan', history)
         self.assertIn('run: python3 scripts/latest_transcript.py write', history)
         self.assertNotIn('CONTENT_LLM_', flow)

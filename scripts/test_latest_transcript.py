@@ -82,11 +82,16 @@ class LatestTests(unittest.TestCase):
         def base(root):
             (root / '.git').mkdir(); (root / 'scripts').mkdir()
             (root / 'scripts/meeting-project.json').write_text('{}')
-        # Unique single episode directory.
+        # Unique single episode directory; bare EP unambiguous across years.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); base(root)
             d = root / 'events/2025/20251213-ep48'; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
-            self.assertEqual(l.resolve_episode_date(root, '48'), ('2025-12-13', '48'))
+            self.assertEqual(l.resolve_episode_date(root, '48'), ('2025-12-13', '48', 2025))
+            self.assertEqual(l.resolve_episode_date(root, 'EP48'), ('2025-12-13', '48', 2025))
+            self.assertEqual(l.resolve_episode_date(root, '2025-48'), ('2025-12-13', '48', 2025))
+            self.assertEqual(l.resolve_episode_date(root, '2025-EP48'), ('2025-12-13', '48', 2025))
+            self.assertEqual(l.resolve_episode_date(root, '48', year='2025'), ('2025-12-13', '48', 2025))
+            self.assertEqual(l.resolve_episode_date(root, '48', year=2025), ('2025-12-13', '48', 2025))
             for bad in ('99', '0', 'abc', '1000'):
                 with self.subTest(bad=bad), self.assertRaises(m.SafeError):
                     l.resolve_episode_date(root, bad)
@@ -96,15 +101,39 @@ class LatestTests(unittest.TestCase):
             for ep in ('02', '03'):
                 d = root / f'events/2025/20250428-ep{ep}'; d.mkdir(parents=True)
                 (d / 'README.md').write_text('x')
-            with self.assertRaises(m.SafeError):
-                l.resolve_episode_date(root, '02')
-        # Same episode number repeated across years -> ambiguous.
+            with self.assertRaises(m.SafeError) as ctx:
+                l.resolve_episode_date(root, '2')
+            self.assertIn('2025-04-28', str(ctx.exception))
+
+    def test_history_episode_resets_each_year_and_requires_year_when_ambiguous(self):
+        l = self.latest()
+        import tempfile
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); base(root)
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text('{}')
             for path in ('events/2025/20251018-ep40', 'events/2026/20261010-ep40'):
                 d = root / path; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
-            with self.assertRaises(m.SafeError):
+            # Bare EP exists in both years -> fail closed, listing both years.
+            with self.assertRaises(m.SafeError) as ctx:
                 l.resolve_episode_date(root, '40')
+            self.assertIn('2025', str(ctx.exception)); self.assertIn('2026', str(ctx.exception))
+            # Year-qualified forms resolve unambiguously; year never chosen silently.
+            self.assertEqual(l.resolve_episode_date(root, '2025-40'), ('2025-10-18', '40', 2025))
+            self.assertEqual(l.resolve_episode_date(root, '2026-40'), ('2026-10-10', '40', 2026))
+            self.assertEqual(l.resolve_episode_date(root, '2026-EP40'), ('2026-10-10', '40', 2026))
+            self.assertEqual(l.resolve_episode_date(root, '40', year='2026'), ('2026-10-10', '40', 2026))
+            # Conflicting embedded vs separate year fails closed.
+            with self.assertRaises(m.SafeError):
+                l.resolve_episode_date(root, '2026-40', year='2025')
+            # Unmatched EP -> clear message.
+            with self.assertRaises(m.SafeError) as ctx:
+                l.resolve_episode_date(root, '48')
+            self.assertIn('EP48', str(ctx.exception))
+            with self.assertRaises(m.SafeError) as ctx:
+                l.resolve_episode_date(root, '2026-48')
+            self.assertIn('EP48', str(ctx.exception))
+            with self.assertRaises(m.SafeError):
+                l.resolve_episode_date(root, '40', year='2024')
 
     def test_history_episode_prepare_uses_directory_mapping_only(self):
         l = self.latest()
@@ -153,6 +182,7 @@ class LatestTests(unittest.TestCase):
             for argv in (['fetch-check', '--episode', '48', '--date', '2025-12-13'],
                          ['fetch-check', '--episode', '', '--date', ''],
                          ['prepare', '--episode', '', '--date', ''],
+                         ['fetch-check', '--year', '2025'],
                          ['scan', '--date', '2025-12-13']):
                 with self.subTest(argv=argv), self.assertRaises(m.SafeError):
                     l.main(argv, root=root, run=lambda args: self.fail('invalid input must not run Git/GitHub'),
@@ -304,10 +334,10 @@ class LatestTests(unittest.TestCase):
                           'scripts/meeting_content.py prepare', 'scripts/meeting_content.py fetch-check',
                           'validate'):
             self.assertNotIn(forbidden, workflow)
-        for required in ('inputs.episode', 'inputs.date', 'default: draft',
+        for required in ('inputs.episode', 'inputs.year', 'inputs.date', 'default: draft',
                          'scripts/latest_transcript.py scan',
-                         'scripts/latest_transcript.py prepare --episode',
-                         'scripts/latest_transcript.py fetch-check --episode',
+                         'scripts/latest_transcript.py prepare --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"',
+                         'scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
                          'scripts/latest_transcript.py publish', 'scripts/meeting_content.py connectivity',
                          "if: always()", 'rm -f .git/'):

@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       episode:
-        description: '仓库期数（events 目录概念，如 48）；与 date 二选一；都留空则做只读扫描'
+        description: '仓库期数（每年重置，如 48 / EP48 / 2025-48）；与 date 二选一；都留空则只读扫描'
+        type: string
+        required: false
+      year:
+        description: '4 位年份，配合 episode 消除跨年期数歧义（期数每年重置，如 2025）'
         type: string
         required: false
       date:
@@ -37,6 +41,7 @@ jobs:
     timeout-minutes: 45
     env:
       CONTENT_EPISODE: ${{ inputs.episode }}
+      CONTENT_YEAR: ${{ inputs.year }}
       CONTENT_DATE: ${{ inputs.date }}
       CONTENT_MODE: ${{ inputs.mode || 'draft' }}
     steps:
@@ -54,7 +59,7 @@ jobs:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/meeting_content.py connectivity
       - name: Bounded read-only scan when no episode or date is given
-        if: env.CONTENT_MODE == 'draft' && env.CONTENT_EPISODE == '' && env.CONTENT_DATE == ''
+        if: env.CONTENT_MODE == 'draft' && env.CONTENT_EPISODE == '' && env.CONTENT_YEAR == '' && env.CONTENT_DATE == ''
         env:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
@@ -63,14 +68,14 @@ jobs:
         if: env.CONTENT_MODE == 'fetch-check'
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --date "$CONTENT_DATE"
+        run: python3 scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"
       - name: Resolve historical occurrence by episode or local date and check archives
         id: plan
         if: env.CONTENT_MODE == 'draft' && (env.CONTENT_EPISODE != '' || env.CONTENT_DATE != '')
         env:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/latest_transcript.py prepare --episode "$CONTENT_EPISODE" --date "$CONTENT_DATE"
+        run: python3 scripts/latest_transcript.py prepare --episode "$CONTENT_EPISODE" --year "$CONTENT_YEAR" --date "$CONTENT_DATE"
       - name: Read complete remote transcript
         if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         env:
@@ -92,7 +97,7 @@ jobs:
       - name: Verify checks and scans did not change public files
         if: >-
           env.CONTENT_MODE != 'draft' ||
-          (env.CONTENT_EPISODE == '' && env.CONTENT_DATE == '')
+          (env.CONTENT_EPISODE == '' && env.CONTENT_YEAR == '' && env.CONTENT_DATE == '')
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only plans and transcript caches
         if: always()
