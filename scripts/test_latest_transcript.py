@@ -1,6 +1,6 @@
 """Synthetic fixtures; never real Tencent payloads."""
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import importlib
 import sys
@@ -17,37 +17,225 @@ class LatestTests(unittest.TestCase):
         return dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day,
                     start_time=day + 'T00:00:00Z', **kw)
 
-    def test_history_date_only_exact_config_filter_and_forced_remote_check(self):
+    def test_history_local_date_matches_utc_shanghai_and_la_zones(self):
         l = self.latest()
         import tempfile, json
         from unittest.mock import patch
-        day = '2025-10-11'
-        row = self.row(day, records=[{'record_file_id': 'f', 'meeting_record_id': 'r',
-                                    'type': '转写', 'duration': '01:00'}])
+        # Same user local calendar day 2025-12-13, seen from three zones:
+        # 2025-12-13T02:00Z (UTC), 2025-12-13T10:00+08:00 (Beijing) and
+        # 2025-12-13T17:00-08:00 = 2025-12-14T01:00Z (Los Angeles).
+        for label, start in (('utc', '2025-12-13T02:00:00Z'),
+                             ('shanghai', '2025-12-12T17:00:00Z'),
+                             ('la', '2025-12-14T01:00:00Z')):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+                (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': '启发星球，互相赋能'}))
+                row = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=start,
+                           start_time=start, records=[{'record_file_id': 'f', 'meeting_record_id': 'r',
+                                                       'type': '转写', 'duration': '01:00'}])
+                calls = []
+                class Client:
+                    def call(self, name, args):
+                        calls.append((name, args))
+                        if name == 'get_user_ended_meetings':
+                            return {'meeting_info_list': [row], 'has_more': False}
+                        if name == 'get_records_list':
+                            return {'record_meetings': [dict(meeting_id='series', sub_meeting_id=start,
+                                    meeting_record_id='r', record_files=[{'record_file_id': 'f'}])], 'has_more': False}
+                        return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0,
+                            'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成全文'}]}]}]}, 'more': False}
+                with patch.object(m, 'event_identity', side_effect=AssertionError('EP must not gate check')):
+                    l.main(['fetch-check', '--date', '2025-12-13'], root=root, client_factory=Client,
+                           run=lambda args: self.fail('fetch-check must not need GitHub'))
+                self.assertIn('合成全文', (root / '.git/meeting-content-fetch-check.txt').read_text())
+                self.assertEqual([n for n, _ in calls],
+                                 ['get_user_ended_meetings', 'get_records_list', 'get_transcripts_details'])
+                # Window must span the union of all three local days, not UTC only.
+                self.assertEqual(calls[0][1]['start_time'], '2025-12-12T16:00:00Z')
+                self.assertEqual(calls[0][1]['end_time'], '2025-12-14T08:00:00Z')
+
+    def test_history_local_date_same_day_multiple_or_none_stops(self):
+        l = self.latest()
+        import tempfile, json
+        day = '2025-12-13'
+        first = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='a',
+                     start_time='2025-12-13T02:00:00Z', records=[])
+        second = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='b',
+                      start_time='2025-12-13T04:00:00Z', records=[])
+        class Multi:
+            def call(self, name, args):
+                return {'meeting_info_list': [first, second], 'has_more': False}
+        class NoneRow:
+            def call(self, name, args):
+                return {'meeting_info_list': [dict(first, subject='Other')], 'has_more': False}
+        for client in (Multi(), NoneRow()):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+                (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': '启发星球，互相赋能'}))
+                with self.assertRaises(m.SafeError):
+                    l.main(['fetch-check', '--date', day], root=root, client_factory=lambda c=client: c,
+                           run=lambda args: self.fail('must not need GitHub'))
+
+    def test_history_episode_resolves_unique_archive_date_and_fails_closed(self):
+        l = self.latest()
+        import tempfile
+        def base(root):
+            (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text('{}')
+        # Unique single episode directory.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); base(root)
+            d = root / 'events/2025/20251213-ep48'; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
+            self.assertEqual(l.resolve_episode_date(root, '48'), ('2025-12-13', '48'))
+            for bad in ('99', '0', 'abc', '1000'):
+                with self.subTest(bad=bad), self.assertRaises(m.SafeError):
+                    l.resolve_episode_date(root, bad)
+        # Same UTC date mapped to several legacy episode directories -> ambiguous.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); base(root)
+            for ep in ('02', '03'):
+                d = root / f'events/2025/20250428-ep{ep}'; d.mkdir(parents=True)
+                (d / 'README.md').write_text('x')
+            with self.assertRaises(m.SafeError):
+                l.resolve_episode_date(root, '02')
+        # Same episode number repeated across years -> ambiguous.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); base(root)
+            for path in ('events/2025/20251018-ep40', 'events/2026/20261010-ep40'):
+                d = root / path; d.mkdir(parents=True); (d / 'transcript.txt').write_text('x')
+            with self.assertRaises(m.SafeError):
+                l.resolve_episode_date(root, '40')
+
+    def test_history_episode_prepare_uses_directory_mapping_only(self):
+        l = self.latest()
+        import tempfile, json
+        from unittest.mock import patch
+        day = '2025-12-13'
+        row = dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day,
+                   start_time=day + 'T02:00:00Z',
+                   records=[{'record_file_id': 'f', 'meeting_record_id': 'r', 'type': '转写', 'duration': '01:00'}])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir(); (root / 'events').mkdir()
+            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
+            d = root / 'events/2025/20251213-ep48'; d.mkdir(parents=True); (d / 'README.md').write_text('# x\n')
+            def run(args):
+                if args[:2] in (['git', 'fetch'], ['git', 'ls-remote']): return ''
+                if args[:3] == ['gh', 'api', '--paginate']: return '[[]]'
+                if args[:2] == ['git', 'ls-tree']: return 'events/2025/20251213-ep48/README.md\n'
+                if args[:3] == ['git', 'branch', '--show-current']: return 'main'
+                if args[:2] == ['git', 'rev-parse']: return 'a' * 40
+                if args[:3] == ['git', 'status', '--porcelain']: return ''
+                raise AssertionError(args)
+            class Client:
+                def call(self, name, args):
+                    if name == 'get_user_ended_meetings':
+                        return {'meeting_info_list': [row], 'has_more': False}
+                    raise AssertionError('discovery only')
+            with patch.object(l, 'discover', side_effect=AssertionError('EP must not run cadence discovery')):
+                l.main(['prepare', '--episode', '48'], root=root, run=run, client_factory=Client)
+            plan = json.loads((root / '.git/latest-plan.json').read_text())
+            self.assertFalse(plan['skip'])
+            self.assertEqual(plan['episode'], '48')
+            self.assertEqual(plan['date'], '2025-12-13')
+            self.assertEqual(plan['event'], 'events/2025/20251213-ep48')
+            # Unmapped episode fails closed before any remote read.
+            with self.assertRaises(m.SafeError):
+                l.main(['prepare', '--episode', '99'], root=root,
+                       run=lambda args: self.fail('unmapped EP must not run Git/GitHub'),
+                       client_factory=lambda: self.fail('unmapped EP must not read remote'))
+
+    def test_history_episode_and_date_mutually_exclusive_and_blank_requires_input(self):
+        l = self.latest()
+        import tempfile, json
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': 't'}))
+            for argv in (['fetch-check', '--episode', '48', '--date', '2025-12-13'],
+                         ['fetch-check', '--episode', '', '--date', ''],
+                         ['prepare', '--episode', '', '--date', ''],
+                         ['scan', '--date', '2025-12-13']):
+                with self.subTest(argv=argv), self.assertRaises(m.SafeError):
+                    l.main(argv, root=root, run=lambda args: self.fail('invalid input must not run Git/GitHub'),
+                           client_factory=lambda: self.fail('invalid input must not read remote'))
+
+    def test_history_blank_scan_is_bounded_and_reports_counts_only(self):
+        l = self.latest()
+        import io, tempfile, json
+        from contextlib import redirect_stdout
+        config = {'title': '启发星球，互相赋能'}
+        rows = [
+            dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='a',
+                 start_time='2025-12-13T02:00:00Z',
+                 records=[{'record_file_id': 'f', 'meeting_record_id': 'r', 'type': '转写', 'duration': '01:00'}]),
+            dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='b',
+                 start_time='2026-07-25T02:00:00Z', records=[]),
+            dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='c',
+                 start_time='2026-01-01T02:00:00Z', records=[]),
+            dict(subject='其他会议', meeting_id='series', sub_meeting_id='d',
+                 start_time='2026-02-01T02:00:00Z', records=[]),
+            dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='e',
+                 start_time='2027-01-01T02:00:00Z', records=[]),
+            dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id='f',
+                 start_time='2025-01-01T02:00:00Z', records=[]),
+        ]
         calls = []
         class Client:
             def call(self, name, args):
-                calls.append((name, args))
+                calls.append(name)
                 if name == 'get_user_ended_meetings':
-                    return {'meeting_info_list': [dict(row, subject='Other'), row], 'has_more': False}
+                    return {'meeting_info_list': rows, 'has_more': False}
                 if name == 'get_records_list':
-                    return {'record_meetings': [dict(meeting_id='series', sub_meeting_id=day,
-                        meeting_record_id='r', record_files=[{'record_file_id': 'f'}])], 'has_more': False}
-                return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0,
-                    'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成全文'}]}]}]}, 'more': False}
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
-            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
-            existing = root / 'events/2025/20251011-ep48/transcript.txt'
-            existing.parent.mkdir(parents=True); existing.write_text('unchanged')
-            with patch.object(m, 'event_identity', side_effect=AssertionError('EP must not gate check')):
-                l.main(['fetch-check', '--date', day], root=root, client_factory=Client,
-                       run=lambda args: self.fail('fetch-check must not need GitHub'))
-            self.assertEqual(existing.read_text(), 'unchanged')
-            self.assertIn('合成全文', (root / '.git/meeting-content-fetch-check.txt').read_text())
-            self.assertEqual([n for n, _ in calls], ['get_user_ended_meetings', 'get_records_list', 'get_transcripts_details'])
-            self.assertEqual(calls[0][1]['start_time'], day + 'T00:00:00Z')
-            self.assertEqual(calls[0][1]['end_time'], day + 'T23:59:59Z')
+                    return {'record_meetings': [
+                        dict(meeting_id='series', sub_meeting_id='b', meeting_record_id='rb',
+                             record_files=[{'record_file_id': 'g'}])], 'has_more': False}
+                raise AssertionError(name)
+        now = datetime(2026, 10, 15, 12, tzinfo=timezone.utc)
+        archive = {'keys': set(), 'dates': {'2026-01-01'}, 'mapping': {}}
+        out = io.StringIO()
+        with redirect_stdout(out):
+            summary = l.scan(Client(), config, archive, now)
+        text = out.getvalue()
+        self.assertEqual(summary['unarchived'], 2)
+        self.assertEqual(summary['probed'], 2)
+        self.assertIn('unarchived=2', text)
+        self.assertIn('2025-12-13 readable=true', text)
+        self.assertIn('2026-07-25 readable=false', text)
+        self.assertNotIn('其他会议', text)
+        self.assertNotIn('2027-01-01', text)
+        self.assertNotIn('2025-01-01', text)
+        self.assertEqual(calls.count('get_user_ended_meetings'), 5)
+        self.assertEqual(calls.count('get_records_list'), 1)
+
+    def test_history_scan_caps_windows_and_probes(self):
+        l = self.latest()
+        import io
+        from contextlib import redirect_stdout
+        config = {'title': 'P'}
+        base = datetime(2025, 11, 1, tzinfo=timezone.utc)
+        rows = [dict(subject='P', meeting_id='series', sub_meeting_id='s%d' % i,
+                     start_time=l.iso(base + timedelta(days=12 * i)), records=[]) for i in range(25)]
+        calls = []
+        class Client:
+            def call(self, name, args):
+                calls.append(name)
+                if name == 'get_user_ended_meetings':
+                    return {'meeting_info_list': rows, 'has_more': False}
+                if name == 'get_records_list':
+                    return {'record_meetings': [], 'has_more': False}
+                raise AssertionError(name)
+        now = datetime(2026, 10, 15, 12, tzinfo=timezone.utc)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            summary = l.scan(Client(), config, {'keys': set(), 'dates': set(), 'mapping': {}}, now)
+        text = out.getvalue()
+        self.assertEqual(summary['windows'], 5)
+        self.assertEqual(summary['unarchived'], 25)
+        self.assertEqual(summary['probed'], 20)
+        self.assertIn('windows=5', text)
+        self.assertIn('unarchived=25', text)
+        self.assertIn('probed=20', text)
+        self.assertEqual(calls.count('get_user_ended_meetings'), 5)
+        self.assertEqual(calls.count('get_records_list'), 20)
 
     def test_history_mapped_directory_and_unmapped_pending_reuse_pipeline(self):
         l = self.latest()
@@ -103,21 +291,23 @@ class LatestTests(unittest.TestCase):
                         l.main(['prepare', '--date', day], root=root, run=lambda args: self.fail('invalid date must not run Git/GitHub'),
                                client_factory=lambda: self.fail('invalid date must not read remote'))
 
-    def test_history_ci_uses_date_only_readonly_entry(self):
+    def test_history_ci_uses_episode_and_date_readonly_entries(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/content-ci.yml').read_text()
-        self.assertNotIn('CONTENT_EPISODE', workflow)
         self.assertNotIn('CONTENT_MEETING_ID', workflow)
         self.assertIn('scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"', workflow)
+        self.assertIn('scripts/latest_transcript.py fetch-check --episode 48', workflow)
+        self.assertIn('scripts/latest_transcript.py scan', workflow)
 
-    def test_history_workflow_date_only_shared_commands(self):
+    def test_history_workflow_episode_date_or_blank_scan(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
-        for forbidden in ('episode:', 'inputs.episode', 'CONTENT_EPISODE', 'inputs.subject',
-                          'inputs.meeting_id', 'CONTENT_MEETING_SUBJECT', 'CONTENT_MEETING_ID',
+        for forbidden in ('inputs.subject', 'inputs.meeting_id', 'CONTENT_MEETING_SUBJECT', 'CONTENT_MEETING_ID',
                           'scripts/meeting_content.py prepare', 'scripts/meeting_content.py fetch-check',
                           'validate'):
             self.assertNotIn(forbidden, workflow)
-        for required in ('default: draft', 'scripts/latest_transcript.py prepare --date',
-                         'scripts/latest_transcript.py fetch-check --date',
+        for required in ('inputs.episode', 'inputs.date', 'default: draft',
+                         'scripts/latest_transcript.py scan',
+                         'scripts/latest_transcript.py prepare --episode',
+                         'scripts/latest_transcript.py fetch-check --episode',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
                          'scripts/latest_transcript.py publish', 'scripts/meeting_content.py connectivity',
                          "if: always()", 'rm -f .git/'):
