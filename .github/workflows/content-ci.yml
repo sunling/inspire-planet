@@ -5,6 +5,11 @@ on:
     branches: [main, 'feat/**', 'content/**']
   pull_request:
   workflow_dispatch:
+    inputs:
+      historical_ep50:
+        description: 'Read-only EP50 historical structural diagnosis and fetch-check'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -32,6 +37,56 @@ jobs:
           CONTENT_MEETING_ID: '13319006708380765410'
         run: python3 scripts/meeting_content.py fetch-check
       - name: Verify public files unchanged
+        run: test -z "$(git status --porcelain)"
+      - name: Remove runner-only transcript cache
+        if: always()
+        run: rm -f .git/meeting-content-fetch-check.txt
+  historical-ep50-readonly:
+    if: github.event_name == 'workflow_dispatch' && inputs.historical_ep50
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fixed EP50 structural diagnosis (no body or identifiers)
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        shell: python
+        run: |
+          import sys, os, json
+          sys.path.insert(0, 'scripts')
+          import meeting_content as m
+          try:
+              client = m.MCP(lambda p: m.send_json(m.MCP_URL, p, {'X-Tencent-Meeting-Token': os.environ['TENCENT_MEETING_TOKEN'], 'X-Skill-Version': m.SKILL_VERSION}))
+              day, mid = '2025-12-27', '12250013113467370436'
+              rows = m.token_pages(client, 'get_user_ended_meetings', {'start_time': day+'T00:00:00Z', 'end_time': day+'T23:59:59Z'}, 'meeting_info_list')
+              meeting = m.select_meeting(rows, day, '启发星球，互相赋能', mid)
+              groups = m.token_pages(client, 'get_records_list', {'meeting_id': mid}, 'record_meetings')
+              scoped = [g for g in groups if g.get('meeting_id') == mid and g.get('sub_meeting_id') == meeting.get('sub_meeting_id')]
+              meta = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in meeting.get('records', [])]
+              native = [(g.get('meeting_record_id'), f.get('record_file_id')) for g in scoped for f in g.get('record_files', [])]
+              print(json.dumps({'metadata_count': len(meta), 'native_count': len(native), 'equal': set(meta) == set(native), 'metadata_unique': len(meta)==len(set(meta)), 'native_unique': len(native)==len(set(native)), 'metadata_missing_native': len(set(meta)-set(native)), 'native_missing_metadata': len(set(native)-set(meta))}))
+              print(json.dumps({'metadata_on_day': sum(m.utc_day(r.get('media_start_time')) == day for r in meeting.get('records', [])), 'native_on_day': sum(m.utc_day(f.get('record_start_time')) == day for g in scoped for f in g.get('record_files', []))}))
+          except Exception:
+              print('Structural diagnosis failed; raw response hidden.', file=sys.stderr)
+              sys.exit(1)
+      - name: Fixed EP50 real readonly fetch-check
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+          CONTENT_DATE: '2025-12-27'
+          CONTENT_EPISODE: '50'
+          CONTENT_MEETING_ID: '12250013113467370436'
+          CONTENT_MEETING_SUBJECT: '启发星球，互相赋能'
+        run: python3 scripts/meeting_content.py fetch-check
+      - name: Verify public files unchanged
+        if: always()
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only transcript cache
         if: always()
