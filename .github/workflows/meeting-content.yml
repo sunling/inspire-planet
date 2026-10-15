@@ -1,0 +1,96 @@
+name: Meeting content draft
+
+on:
+  schedule:
+    # UTC; weekly first attempt and daily retries. Safe-off until configured.
+    - cron: '20 6 * * 6'
+    - cron: '20 8 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '会议 UTC 日期 YYYY-MM-DD（connectivity 可留空）'
+        type: string
+        required: false
+      episode:
+        description: '期数 1–999（connectivity 可留空）'
+        type: string
+        required: false
+      source:
+        description: 'local 使用目标期已有转写；mcp 获取指定日期唯一匹配会议'
+        type: choice
+        options: [local, mcp]
+        default: local
+      mode:
+        description: 'validate 免费本地校验；connectivity 仅腾讯鉴权/schema；generate-check 会付费但不提交；draft 公开 PR'
+        type: choice
+        options: [validate, connectivity, generate-check, draft]
+        default: validate
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Serialize all runs, including manual/scheduled attempts at the same event.
+concurrency:
+  group: meeting-content-draft
+  cancel-in-progress: false
+
+jobs:
+  draft:
+    if: >-
+      github.ref_name == github.event.repository.default_branch &&
+      (github.event_name == 'workflow_dispatch' || vars.CONTENT_AUTOMATION_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CONTENT_DATE: ${{ inputs.date || vars.CONTENT_EVENT_DATE }}
+      CONTENT_EPISODE: ${{ inputs.episode || vars.CONTENT_EPISODE }}
+      CONTENT_SOURCE: ${{ inputs.source || 'mcp' }}
+      CONTENT_MODE: ${{ inputs.mode || 'draft' }}
+      CONTENT_BASE_BRANCH: ${{ github.event.repository.default_branch }}
+      CONTENT_MEETING_SUBJECT: ${{ vars.CONTENT_MEETING_SUBJECT }}
+      CONTENT_MEETING_ID: ${{ vars.CONTENT_MEETING_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Local validation (no secrets or model)
+        if: env.CONTENT_MODE == 'validate'
+        run: python3 scripts/meeting_content.py validate
+      - name: Tencent connectivity only (no model or content writes)
+        if: env.CONTENT_MODE == 'connectivity'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/meeting_content.py connectivity
+      - name: Scope and remote idempotency checks before billing
+        id: plan
+        if: env.CONTENT_MODE == 'draft' || env.CONTENT_MODE == 'generate-check'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/meeting_content.py prepare
+      - name: Read complete transcript
+        if: steps.plan.outputs.skip == 'false'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/meeting_content.py fetch
+      - name: Generate and validate JSON only (one model call, no retry)
+        if: steps.plan.outputs.skip == 'false'
+        env:
+          CONTENT_LLM_BASE_URL: ${{ vars.CONTENT_LLM_BASE_URL }}
+          CONTENT_LLM_MODEL: ${{ vars.CONTENT_LLM_MODEL }}
+          CONTENT_LLM_API_KEY: ${{ secrets.CONTENT_LLM_API_KEY }}
+        run: python3 scripts/meeting_content.py generate
+      - name: Check content before any commit
+        if: steps.plan.outputs.skip == 'false'
+        run: python3 scripts/check-content.py
+      - name: Create public Draft PR and verify scope (never merge)
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTENT_PUBLISH_ALLOWED: 'true'
+        run: python3 scripts/meeting_content.py publish

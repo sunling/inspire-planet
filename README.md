@@ -56,6 +56,8 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 
 字段、期次身份、溯源与审核后同步方式见 [内容数据约定](events/data-contract.md)。JSON 生成不等于获准公开；合并到 `main` 前完成内容与授权检查，网站会读取该分支的数据。
 
+可选的 [GitHub Actions 会议 JSON 草稿流水线](scripts/meeting-content.md) 只生成转写与两份 JSON，并创建**公开、未经人工审阅的 Draft PR**；排程默认关闭，配置与手动检查见文档，不生成图片、不自动合并或发布。
+
 ## 参与整理
 
 所有人都可以浏览本仓库，有 GitHub 账号即可通过 Issue 提出更正，或 Fork 后提交 Pull Request。直接写入权限由维护者另行授予。
