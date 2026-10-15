@@ -100,6 +100,6 @@
 | 20251206-ep47 | [卡片 JSON](2025/20251206-ep47/quote-cards.json) |
 | 20251213-ep48 | [卡片 JSON](2025/20251213-ep48/quote-cards.json) |
 | 20251220-ep49 | [卡片 JSON](2025/20251220-ep49/quote-cards.json) |
-| 20251227-ep50 | [卡片 JSON](2025/20251227-ep50/quote-cards.json) |
+| [20251227-ep50 · 转写](2025/20251227-ep50/transcript.txt) | [卡片 JSON](2025/20251227-ep50/quote-cards.json) |
 
 </details>
