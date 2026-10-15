@@ -28,9 +28,7 @@ jobs:
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
           CONTENT_DATE: '2026-10-10'
-          CONTENT_EPISODE: '40'
-          CONTENT_MEETING_ID: '13319006708380765410'
-        run: python3 scripts/meeting_content.py fetch-check
+        run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
       - name: Verify public files unchanged
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only transcript cache

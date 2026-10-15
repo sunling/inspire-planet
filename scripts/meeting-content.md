@@ -26,8 +26,12 @@
 
 ## 高级历史补录／检查
 
-- 单独入口 **Historical transcript (advanced)**，仅手动运行，保留 `validate / connectivity / fetch-check / draft`；按需输入日期、期数和精确标题／ID。
-- `validate` 只校验本地；`connectivity` 只校验鉴权/schema；`fetch-check` 即使本地已有稿也强制读远程全文，仅缓存 `.git/meeting-content-fetch-check.txt`；`draft` 才公开写入。
+- 单独入口 **Historical transcript (advanced)**，仅手动运行。只需选择 `mode`（默认 `draft`）与会议 **UTC 日期**；不提供 EP、主题或会议 ID 输入，精确项目标题始终读取已提交的 `meeting-project.json`，不要求重复填写。
+- `draft` / `fetch-check` 必须填写有效 `YYYY-MM-DD`；空日期会停止，绝不退回“最新会议”。`connectivity` 无需日期，只校验鉴权/schema，不读取会议。历史界面不再提供无法独立定位期次的 `validate`。
+- 按指定 UTC 日完整翻页，精确标题必须唯一命中；无匹配或同日多场停止，不任选一场。历史 `draft` 复用日常实例身份、主分支／开放 PR 去重、稳定内容分支、白名单写入与发布链路。
+- 历史 EP 仅复用 `main`／开放 PR 中**现有同 UTC 日期 event 目录**的唯一映射（即使目录尚无转写）；无映射或冲突则进入公开 `incoming/meetings/{实例哈希}/` 待确认。历史不调用下一期推断，不按周数、cadence 或最大 EP 计算。既有目录的旧日期口径不自动迁移。
+- `fetch-check` 不查询 GitHub 或计算 EP；即使本地已有稿仍强制读远程全文，仅缓存 `.git/meeting-content-fetch-check.txt`，公开文件不变；运行结束清理 runner 缓存。`draft` 已有转写／实例／内容分支时跳过，不覆盖。
+- 维护命令（Actions 注入 Secret）：`python3 scripts/latest_transcript.py fetch-check --date YYYY-MM-DD`；历史 `prepare --date YYYY-MM-DD` 后使用同一 `fetch / write / publish`。日常入口仍然零输入。
 - 历史周期会议 guard 不变：会议／子会议限定后，原生录制集合必须与本次文件集合**完全一致**；不放宽为包含关系，不跨日期选择最长录制。2025 旧协议问题不在本次范围内。
 - MCP 源适配合同不变：三个只读工具、运行时 schema、完整模式 `is_compact=false`、已观察的 HTTP/JSON 包装、列表完成标志、完整段落分页及上限。未知结构／分页缺失均安全停止，原始错误隐藏。
 

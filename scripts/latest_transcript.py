@@ -35,6 +35,13 @@ def discover(client, config, now):
     return sorted(selected, key=lambda r: timestamp(r['start_time']))
 
 
+def historical(client, config, day):
+    m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
+    rows = m.token_pages(client, 'get_user_ended_meetings',
+                        {'start_time': day + 'T00:00:00Z', 'end_time': day + 'T23:59:59Z'}, 'meeting_info_list')
+    return m.select_meeting(rows, day, config['title'], '')
+
+
 def instance(row):
     meeting, sub = row.get('meeting_id'), row.get('sub_meeting_id')
     m.need(isinstance(meeting, str) and bool(meeting) and isinstance(sub, str) and bool(sub), '会议实例身份缺失')
@@ -61,11 +68,12 @@ def archives(run):
     for ref in refs:
         paths = run(['git', 'ls-tree', '-r', '--name-only', ref]).splitlines()
         for path in paths:
-            match = re.fullmatch(r'events/(\d{4})/(\d{8})-ep(\d{2,3})/transcript.txt', path)
+            match = re.fullmatch(r'events/(\d{4})/(\d{8})-ep(\d{2,3})/.+', path)
             if match:
                 stamp = match[2]
                 day = stamp[:4] + '-' + stamp[4:6] + '-' + stamp[6:]
-                result['dates'].add(day)
+                if path.endswith('/transcript.txt'):
+                    result['dates'].add(day)
                 result['mapping'].setdefault(day, set()).add(str(int(match[3])))
             if re.fullmatch(r'(?:incoming/meetings/[0-9a-f]{64}|events/\d{4}/\d{8}-ep\d{2,3})/metadata.json', path):
                 data = json.loads(run(['git', 'show', ref + ':' + path]))
@@ -152,8 +160,15 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     import os
     import subprocess
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['readonly', 'prepare', 'fetch', 'write', 'publish'])
-    command = parser.parse_args(argv).command
+    parser.add_argument('command', choices=['readonly', 'prepare', 'fetch-check', 'fetch', 'write', 'publish'])
+    parser.add_argument('--date', help='Historical UTC occurrence date; no episode or filter input')
+    args = parser.parse_args(argv)
+    command = args.command
+    if args.date is not None:
+        m.need(command in ('prepare', 'fetch-check'), '日期仅用于历史 prepare/fetch-check')
+        m.need(bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', args.date)), '日期须为 YYYY-MM-DD')
+        m.utc_day(args.date + 'T00:00:00Z')
+    m.need(command != 'fetch-check' or args.date is not None, '历史检查需要日期')
     root = root or Path(__file__).resolve().parents[1]
     if run is None:
         def run(args):
@@ -173,6 +188,17 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     cache = root / '.git/latest-transcript.txt'
     m.need((root / '.git').is_dir() and not (root / '.git').is_symlink(), '要求安全 .git 目录')
     m.need(not state.is_symlink() and not cache.is_symlink(), '缓存路径不安全')
+    if command == 'fetch-check':
+        config = json.loads((root / 'scripts/meeting-project.json').read_text(encoding='utf-8'))
+        client = client_factory()
+        meeting = historical(client, config, args.date)
+        text = m.fetch_occurrence(client, meeting)
+        blocks = m.parse_transcript(text)
+        check_cache = root / '.git/meeting-content-fetch-check.txt'
+        m.need(not check_cache.is_symlink(), '缓存路径不安全')
+        check_cache.write_text(text, encoding='utf-8')
+        print(f'历史远程完整转写已验证：{len(blocks)} 段；仅 runner 缓存，未写入公开文件。')
+        return
     if command in ('readonly', 'prepare'):
         if command == 'prepare':
             m.need(run(['git', 'branch', '--show-current']).strip() == 'main', '生产必须检出 main')
@@ -183,11 +209,16 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
         archive = archives(run)
         if command == 'prepare':
             m.need(run(['git', 'rev-parse', 'HEAD']).strip() == run(['git', 'rev-parse', 'origin/main']).strip(), 'main 已变化；请重新运行')
-        rows = discover(client_factory(), config, now or datetime.now(timezone.utc))
+        rows = ([historical(client_factory(), config, args.date)] if args.date else
+                discover(client_factory(), config, now or datetime.now(timezone.utc)))
         plan = plan_latest(rows, archive, config)
         if not plan['skip']:
             metadata = plan['metadata']
-            episode = episode_for(plan['meeting'], rows, config)
+            if args.date:
+                mapped = archive['mapping'].get(metadata['date'], set())
+                episode = next(iter(mapped)) if len(mapped) == 1 else None
+            else:
+                episode = episode_for(plan['meeting'], rows, config)
             event = m.event_identity(metadata['date'], episode)[0] if episode else 'incoming/meetings/' + metadata['instance_key']
             plan.update(latest=True, event=event, episode=episode, date=metadata['date'],
                         branch='content/meeting-' + metadata['instance_key'], base='main',

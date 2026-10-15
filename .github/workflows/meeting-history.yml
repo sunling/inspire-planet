@@ -4,31 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: '会议 UTC 日期 YYYY-MM-DD（connectivity 可留空）'
-        type: string
-        required: false
-      episode:
-        description: '期数 1–999（connectivity 可留空）'
-        type: string
-        required: false
-      subject:
-        description: '精确会议标题（或使用 meeting_id）'
-        type: string
-        required: false
-      meeting_id:
-        description: '会议 ID（与标题同时提供时须同时匹配）'
+        description: '会议 UTC 日期 YYYY-MM-DD（仅 connectivity 可留空）'
         type: string
         required: false
       mode:
-        description: 'validate 本地校验；connectivity 鉴权/schema；fetch-check 远程拉取不公开；draft 公开逐字稿 PR'
+        description: 'draft 公开逐字稿 PR；fetch-check 强制远程检查不公开；connectivity 鉴权/schema'
         type: choice
-        options: [validate, connectivity, fetch-check, draft]
-        default: validate
+        options: [draft, fetch-check, connectivity]
+        default: draft
 
 permissions:
   contents: read
 
-# Serialize manual/scheduled attempts; never cancel an in-flight draft.
+# Share the production lock with zero-input latest discovery.
 concurrency:
   group: meeting-content-draft
   cancel-in-progress: false
@@ -45,11 +33,7 @@ jobs:
     timeout-minutes: 45
     env:
       CONTENT_DATE: ${{ inputs.date }}
-      CONTENT_EPISODE: ${{ inputs.episode }}
       CONTENT_MODE: ${{ inputs.mode || 'draft' }}
-      CONTENT_BASE_BRANCH: ${{ github.event.repository.default_branch }}
-      CONTENT_MEETING_SUBJECT: ${{ inputs.subject }}
-      CONTENT_MEETING_ID: ${{ inputs.meeting_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,33 +43,32 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Local transcript validation (no secrets)
-        if: env.CONTENT_MODE == 'validate'
-        run: python3 scripts/meeting_content.py validate
       - name: Tencent connectivity only (no meeting reads)
         if: env.CONTENT_MODE == 'connectivity'
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/meeting_content.py connectivity
-      - name: Force remote transcript check (cache only, no public writes)
+      - name: Force date-only remote transcript check (cache only, no public writes)
         if: env.CONTENT_MODE == 'fetch-check'
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/meeting_content.py fetch-check
-      - name: Scope and remote idempotency checks
+        run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
+      - name: Resolve historical project occurrence and check archives
         id: plan
         if: env.CONTENT_MODE == 'draft'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/meeting_content.py prepare
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE"
       - name: Read complete remote transcript
         if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         env:
+          GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/meeting_content.py fetch
-      - name: Write transcript and index only
+        run: python3 scripts/latest_transcript.py fetch
+      - name: Write scoped transcript and instance metadata
         if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
-        run: python3 scripts/meeting_content.py write
+        run: python3 scripts/latest_transcript.py write
       - name: Check content before any commit
         if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         run: python3 scripts/check-content.py
@@ -94,4 +77,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CONTENT_PUBLISH_ALLOWED: 'true'
-        run: python3 scripts/meeting_content.py publish
+        run: python3 scripts/latest_transcript.py publish
+      - name: Verify checks did not change public files
+        if: env.CONTENT_MODE != 'draft'
+        run: test -z "$(git status --porcelain)"
+      - name: Remove runner-only plans and transcript caches
+        if: always()
+        run: rm -f .git/latest-plan.json .git/latest-transcript.txt .git/meeting-content-fetch-check.txt

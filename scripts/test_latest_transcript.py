@@ -17,6 +17,112 @@ class LatestTests(unittest.TestCase):
         return dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day,
                     start_time=day + 'T00:00:00Z', **kw)
 
+    def test_history_date_only_exact_config_filter_and_forced_remote_check(self):
+        l = self.latest()
+        import tempfile, json
+        from unittest.mock import patch
+        day = '2025-10-11'
+        row = self.row(day, records=[{'record_file_id': 'f', 'meeting_record_id': 'r',
+                                    'type': '转写', 'duration': '01:00'}])
+        calls = []
+        class Client:
+            def call(self, name, args):
+                calls.append((name, args))
+                if name == 'get_user_ended_meetings':
+                    return {'meeting_info_list': [dict(row, subject='Other'), row], 'has_more': False}
+                if name == 'get_records_list':
+                    return {'record_meetings': [dict(meeting_id='series', sub_meeting_id=day,
+                        meeting_record_id='r', record_files=[{'record_file_id': 'f'}])], 'has_more': False}
+                return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0,
+                    'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成全文'}]}]}]}, 'more': False}
+        with tempfile.TemporaryDirectory(dir='/data/cache/scratch') as tmp:
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
+            existing = root / 'events/2025/20251011-ep48/transcript.txt'
+            existing.parent.mkdir(parents=True); existing.write_text('unchanged')
+            with patch.object(m, 'event_identity', side_effect=AssertionError('EP must not gate check')):
+                l.main(['fetch-check', '--date', day], root=root, client_factory=Client,
+                       run=lambda args: self.fail('fetch-check must not need GitHub'))
+            self.assertEqual(existing.read_text(), 'unchanged')
+            self.assertIn('合成全文', (root / '.git/meeting-content-fetch-check.txt').read_text())
+            self.assertEqual([n for n, _ in calls], ['get_user_ended_meetings', 'get_records_list', 'get_transcripts_details'])
+            self.assertEqual(calls[0][1]['start_time'], day + 'T00:00:00Z')
+            self.assertEqual(calls[0][1]['end_time'], day + 'T23:59:59Z')
+
+    def test_history_mapped_directory_and_unmapped_pending_reuse_pipeline(self):
+        l = self.latest()
+        import tempfile, json
+        from unittest.mock import patch
+        day = '2025-10-11'
+        row = self.row(day, records=[{'record_file_id': 'f', 'meeting_record_id': 'r',
+                                    'type': '转写', 'duration': '01:00'}])
+        for mapped in (True, False):
+            with self.subTest(mapped=mapped), tempfile.TemporaryDirectory(dir='/data/cache/scratch') as tmp:
+                root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir(); (root / 'events').mkdir()
+                (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
+                (root / 'events/README.md').write_text('# Synthetic index\n')
+                def run(args):
+                    if args[:2] in (['git', 'fetch'], ['git', 'ls-remote']): return ''
+                    if args[:3] == ['gh', 'api', '--paginate']: return '[[]]'
+                    if args[:2] == ['git', 'ls-tree']:
+                        return 'events/2025/20251011-ep48/recap.md\n' if mapped else ''
+                    if args[:3] == ['git', 'branch', '--show-current']: return 'main'
+                    if args[:2] == ['git', 'rev-parse']: return 'a'*40
+                    if args[:3] == ['git', 'status', '--porcelain']: return ''
+                    raise AssertionError(args)
+                class Client:
+                    def call(self, name, args):
+                        if name == 'get_user_ended_meetings':
+                            return {'meeting_info_list': [row], 'has_more': False}
+                        raise AssertionError('discovery only')
+                with patch.object(l, 'episode_for', side_effect=AssertionError('never infer historical EP')):
+                    l.main(['prepare', '--date', day], root=root, run=run, client_factory=Client)
+                plan = json.loads((root / '.git/latest-plan.json').read_text())
+                self.assertFalse(plan['skip'])
+                self.assertEqual(plan['episode'], '48' if mapped else None)
+                expected = 'events/2025/20251011-ep48' if mapped else 'incoming/meetings/' + l.instance(row)['instance_key']
+                self.assertEqual(plan['event'], expected)
+                with patch.object(m, 'fetch_occurrence', return_value='合成甲(00:01):\n合成全文\n') as fetch:
+                    l.main(['fetch'], root=root, run=run, client_factory=Client)
+                    fetch.assert_called_once()
+                l.main(['write'], root=root, run=run)
+                self.assertTrue((root / expected / 'metadata.json').is_file())
+                with self.assertRaises(m.SafeError): l.main(['write'], root=root, run=run)
+                self.assertFalse(list(root.rglob('summary.json')))
+
+    def test_history_empty_or_invalid_date_never_falls_back_to_latest(self):
+        l = self.latest()
+        import tempfile, json
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir='/data/cache/scratch') as tmp:
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': 'project'}))
+            for day in ('', '2025-02-30', '2025-1-1'):
+                with self.subTest(day=day), patch.object(l, 'discover', side_effect=AssertionError('must not select latest')):
+                    with self.assertRaises(m.SafeError):
+                        l.main(['prepare', '--date', day], root=root, run=lambda args: self.fail('invalid date must not run Git/GitHub'),
+                               client_factory=lambda: self.fail('invalid date must not read remote'))
+
+    def test_history_ci_uses_date_only_readonly_entry(self):
+        workflow = (Path(__file__).parents[1] / '.github/workflows/content-ci.yml').read_text()
+        self.assertNotIn('CONTENT_EPISODE', workflow)
+        self.assertNotIn('CONTENT_MEETING_ID', workflow)
+        self.assertIn('scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"', workflow)
+
+    def test_history_workflow_date_only_shared_commands(self):
+        workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
+        for forbidden in ('episode:', 'inputs.episode', 'CONTENT_EPISODE', 'inputs.subject',
+                          'inputs.meeting_id', 'CONTENT_MEETING_SUBJECT', 'CONTENT_MEETING_ID',
+                          'scripts/meeting_content.py prepare', 'scripts/meeting_content.py fetch-check',
+                          'validate'):
+            self.assertNotIn(forbidden, workflow)
+        for required in ('default: draft', 'scripts/latest_transcript.py prepare --date',
+                         'scripts/latest_transcript.py fetch-check --date',
+                         'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
+                         'scripts/latest_transcript.py publish', 'scripts/meeting_content.py connectivity',
+                         "if: always()", 'rm -f .git/'):
+            self.assertIn(required, workflow)
+
     def test_complete_pagination_exact_title_true_utc_window_latest(self):
         l = self.latest()
         calls = []
