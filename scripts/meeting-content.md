@@ -1,80 +1,47 @@
 # 腾讯会议逐字稿 → 公开 Draft PR
 
-- 先打通逐字稿拉取：Actions 只读取腾讯会议，写入本期 `transcript.txt` 和 `events/README.md` 索引。
-- 不调用模型，不需要模型 API Key，不生成纪要、金句、文章、图片或发布包；没有内容生成 workflow。
-- 后续整理可在 ChatGPT/Codex 中单独发起，继续使用同一 `content/YYYYMMDD-epXX` 分支；本自动化不会覆盖人工内容，不自动合并或发布。
-- **Draft PR 不是私密空间**：原始转写、姓名和上下文会公开在分支上。启用 `draft` 前确认参与者授权、隐私与公开范围；保密会议不要使用此路线。
+## 日常：不填日期、EP 或过滤器
 
-## 首次设置
+- Actions → **Transcript draft** → Run workflow → 选择 `main`。日常入口没有输入框；API 也不需要 EP。
+- 一次配置在 [meeting-project.json](meeting-project.json)：精确标题 `启发星球，互相赋能`、90 天回看、已核对锚点 `2026-10-10 / EP40 / 13319006708380765410`。会议周期 ID 可变化，发现按精确标题，不锁死旧 ID。
+- 首次只需已授权的 `TENCENT_MEETING_TOKEN` Secret；不需要模型、API Key 或外部内容服务。Token 不放变量、参数、聊天或日志。
+- **当前 Actions 创建 PR 设置为 false**（2026-10-15 核对）。新会议的自动 Draft PR 会被仓库设置阻塞；无新会议的只读 skip 不需要该权限。本次不修改设置。
+- 本工具 PR 尚需用户审核合并后，生产入口才会使用新代码；生产保持默认分支门禁，不从 feature 分支绕过。
 
-1. 先 review 工具 PR 与无密钥 **Content CI**。生产入口 `Transcript draft` 必须存在于默认分支，手动运行也只允许默认分支。PR26 已合并；后续修复仍须独立 Draft PR，不能因联调通过自动合并。下述 Content CI 的固定 EP40 只读 dispatch 是单独的维护入口，不绕过生产默认分支保护。
-2. 在腾讯会议 [AI Skill 页面](https://meeting.tencent.com/ai-skill/)本人登录取得个人 MCP Token；不是 `tmeet` OAuth access/refresh token。
-3. GitHub 仓库 Settings → Secrets and variables → Actions → **Secrets** → New repository secret，名称 `TENCENT_MEETING_TOKEN`。Token 只在 GitHub Secrets 输入，不发到聊天、Issue、PR、workflow 输入或日志；不要交给协作者代填。
-4. 同页 **Variables** 可设置 `CONTENT_MEETING_SUBJECT`（完整精确标题）或 `CONTENT_MEETING_ID`。手动输入可覆盖对应变量；两种过滤条件同时设置时必须同时匹配。不要从历史文案或 `current.md` 猜会议号。
-5. 仅创建公开 `draft` PR 时才需 Settings → Actions → General 中允许 **Allow GitHub Actions to create and approve pull requests**；这不是自动批准授权，本实现不批准 PR。目前此开关未开启，维护者按需设置；组织策略锁定时找管理员。`connectivity` / `fetch-check` 不需要开启它。
+## 发现、去重与期次
 
-工作流显式申请 `contents: write` / `pull-requests: write`；不需要 PAT。checkout 不持久化凭据，Tencent Secret 只给读取步骤，GitHub Token 只给远端检查和提交步骤，不上传转写 artifacts。
+- 查询真实 UTC 时间区间 `[now−90 天, now]`，完整翻页（最多 200 页），再次排除窗口外／未来实例；仅精确匹配项目标题，按实际开始时间取最新，不取账号任意最新一场。
+- 先读取远端 `main` 与**全部开放 PR**的固定 head SHA；按既有转写日期和持久实例信息去重。实例键为 `sha256(meeting_id, sub_meeting_id, UTC start_time)`，不是共享周期 ID。
+- 最新场已入库／已有草稿时 clean skip，不回退抓更旧会议，不覆盖或重复读取正文。稳定内容分支也去重，包括推送成功但建 PR 失败的分支。
+- 优先使用已核对日期映射（初始为 EP40）。只有完整列表包含唯一锚点、同年同周期、其后仅一场且恰好是连续下一次时，才递增为 EP41；7 天间隔仅为连续性保守门禁，不按周数推 EP，不看历史最大 EP。
+- 漏期、多场、回补、跨年、周期切换或锚点不可见时不猜 EP，也不阻塞下载。后续超出已核对的一次递增范围先待确认，审核后更新配置锚点，不要求每次运行填写字段。
 
-## 按顺序检查
+## 两种公开归档
 
-Actions → **Transcript draft** → Run workflow → 选择默认分支：
+- EP 可证明：`events/{year}/{YYYYMMDD}-epXX/transcript.txt`、`metadata.json` 与总索引。
+- EP 不明：`incoming/meetings/{sha256-instance-key}/transcript.txt`、`metadata.json` 与待确认 `README.md`；不改活动索引，不生成网站 JSON。
+- **两条路线都是用户已授权的公开、未经审核 Draft PR**，不是私密暂存。metadata 保留实例、UTC 日期与录制文件身份；确认期次时保留它，避免重抓。
+- 提交仅允许本次固定路径；检查默认分支、HEAD、工作区、暂存区、远端同名分支。无 force push；推送后读回 SHA，建 PR 后读回 Draft 状态及精确文件清单。
+- 不调用模型，不生成文章、纪要、卡片或图片；不合并、不发消息、不修改网站或社交平台。网站只读取审核后 `main` 的既有 JSON，本流水线不生成它们。
 
-- `validate`（默认）：明确填写 `date` / `episode`；只验证已提交的本地转写，无服务调用、无写入。已有公开 EP40 可用 `2026-10-10` / `40`。
-- `connectivity`：日期、期数可空。只调用 `tools/list` 验证鉴权与三个只读工具的参数 schema，不读取会议。成功不代表逐字稿接口已联调。
-- `fetch-check`：明确填写日期、期数及精确标题或 ID（过滤器也可来自变量）。建议先用公开 EP40 的 `2026-10-10` / `40`，标题/ID 用本人确认的真实值。**即使已有本地转写也强制访问远程 MCP**，实际走会议、录制和完整转写分页；只缓存到 `.git/meeting-content-fetch-check.txt`，不替换已提交的 EP40，不提交、不推送、不创建 PR。日志只报发言块数，不打印正文、姓名或响应。
-- `draft`：确认一个尚无逐字稿的新目标，明确日期、期数及过滤器；先幂等检查，再远程拉取、写入逐字稿与索引、校验、创建公开 Draft PR，最后回读状态与文件范围。
+## 高级历史补录／检查
 
-首次顺序：无密钥 CI / `validate` → 设置腾讯 Secret → `connectivity` → EP40 `fetch-check` → 确认新一期公开范围后 `draft`。不要把合成测试通过当成真实拉取通过。
+- 单独入口 **Historical transcript (advanced)**，仅手动运行，保留 `validate / connectivity / fetch-check / draft`；按需输入日期、期数和精确标题／ID。
+- `validate` 只校验本地；`connectivity` 只校验鉴权/schema；`fetch-check` 即使本地已有稿也强制读远程全文，仅缓存 `.git/meeting-content-fetch-check.txt`；`draft` 才公开写入。
+- 历史周期会议 guard 不变：会议／子会议限定后，原生录制集合必须与本次文件集合**完全一致**；不放宽为包含关系，不跨日期选择最长录制。2025 旧协议问题不在本次范围内。
+- MCP 源适配合同不变：三个只读工具、运行时 schema、完整模式 `is_compact=false`、已观察的 HTTP/JSON 包装、列表完成标志、完整段落分页及上限。未知结构／分页缺失均安全停止，原始错误隐藏。
 
-## 每日排程：默认关闭
+## 安全与排程
 
-- 只有 Variable `CONTENT_AUTOMATION_ENABLED` 精确等于 `true` 才启用每日 **08:20 UTC** 的 `draft`；未设置或其他值均不执行。
-- 必须显式设置 `CONTENT_EVENT_DATE=YYYY-MM-DD`（会议 UTC 日期）、`CONTENT_EPISODE=1–999` 及精确过滤器；每期确认后人工更新。手动任务需自行填写日期、期数，不借用排程目标。
-- 每日只重试同一目标；不会任选账号最新会议，不会自动发现下一期、推进期数或按周推算日期。真实联调通过后再考虑开启。
+- Tencent Secret 只注入发现／读取步骤；GitHub Token 只用于归档去重及提交。无原始 payload、转写日志或 artifacts；缓存留在 runner `.git`，任务结束清理。
+- 生产 `main` 门禁不变。每日 08:20 UTC 排程仍由 `CONTENT_AUTOMATION_ENABLED == true` 保护；变量未设置，**本次未启用排程**，不再使用固定日期／EP／过滤器变量。
+- 创建 PR 开关、Actions job 权限与 Secret 是三项独立条件；只读成功不证明自动建 PR 权限可用。
 
-## 幂等与失败恢复
+## 验证
 
-- `prepare` 要求默认分支、干净工作区；目标 `transcript.txt` 已存在、远端同名分支已存在、或同 head/base 的任意状态 PR 已存在，均跳过。**不以 `summary.json` / `quote-cards.json` / 本期 README 判断是否拉取过**。
-- 日期与期数固定目录 `events/{year}/{YYYYMMDD}-epXX` 和分支 `content/{YYYYMMDD}-epXX`，未来可由 Codex 在原分支追加整理稿；rerun 不重写、不重开已关闭 PR。
-- 创建新计划先清除旧草稿缓存；检查用缓存与草稿缓存分开。生产顺序固定 `prepare → fetch → write → check-content → publish`。
-- 原始转写用独占创建，已有文件绝不覆盖。仅提交本期 `transcript.txt` 与总索引，保留已有索引其他栏目；不创建空 README 或 JSON。
-- 提交前复查基线 HEAD、检出分支、远端分支、所有改动与暂存区白名单。不 force push；推送后核对远端 SHA，创建 PR 后回读 Draft 状态、head/base 与精确文件范围。
-- 分支已推送但建 PR 因权限失败时，重跑安全跳过。维护者检查已有分支，开启所需权限后从 GitHub compare 页面或 `gh pr create --draft --base main --head content/YYYYMMDD-epXX` 补 PR，不删分支重跑。
-- 无匹配或多场匹配、schema 变化、缺少分页完成标志、循环/空续页、超过 200 页或 20000 段、超过 300000 字符或 HTTP 响应 8 MiB，均停止，不截断冒充全文。只在候选转写明确为空（含 30002）时尝试下一候选，不把分页/鉴权失败降级为短稿。
-- 401 检查 Token/个人账号，403 检查权限；结构不兼容时核对官方 schema 后补测试，不猜字段或调用相似工具。原始服务错误与 CLI 输出隐藏；不要开启 `set -x`、`ACTIONS_STEP_DEBUG` 或打印响应。
-
-## 本地校验与真实边界
-
-```bash
-python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v
-python3 scripts/check-content.py
-CONTENT_DATE=2026-10-10 CONTENT_EPISODE=40 python3 scripts/meeting_content.py validate
-```
-
-- 标准库实现，不安装或执行远程 Skill 包。`publish` 额外要求 `CONTENT_PUBLISH_ALLOWED=true` 与 `GITHUB_ACTIONS=true`，本地维护不要设置这两个发布开关。
-- 只允许 `get_user_ended_meetings`、`get_records_list`、`get_transcripts_details`。固定 HTTPS endpoint 与请求头来自[腾讯官方 MCP 说明](https://meeting.tencent.com/support/topic/2233/index.html)及此前只读核对的官方 `@tencent-adm/tencent-meeting-mcp` 包；`X-Skill-Version` 固定为包内 config 的 `v1.0.15`，不声称最新版本。
-- 参数以运行时官方 `tools/list` 为准；字段名、类型、必填参数不兼容即停止。三个工具都显式设置经 schema 验证的 `is_compact=false`：实测默认 compact 转写会删掉 `more`，不能据此判定全文。
-- 实测工具结果为 `content[0].text` 中的 JSON，可含 `_meta` / `data`，其内或直接为 `{status_code, headers, body}`；`body` 是另一个 JSON 字符串。仅解已知包装、最多六层，每层检查业务码与上游 HTTP 状态；从不打印 body、headers 或原始错误。
-- 已结束会议使用 `meeting_info_list + has_more`；录制分页使用原生 `record_meetings[].record_files[] + has_more`，不再假设顶层 `records`。用唯一 UTC 会议的 `meeting_id + sub_meeting_id` 精确限定本次，再核对 `(meeting_record_id, record_file_id)` 集合与该次 `records` 元数据完全一致，拒绝缺项、重复或跨期混入。实测 `records_total_count` 不等于本次 records 长度，不能据它判断本次完整性；缺少子会议身份或元数据覆盖不完整时停止，不猜测回退。
-- 候选仍按本次元数据的时长降序，仅在完整空稿或首屏明确 30002 时尝试下一份；转写必须有 `minutes.paragraphs + more`。原生段落时间为整数毫秒，按[腾讯转写详情说明](https://meeting.tencent.com/support/topic/797/index.html)转为 `HH:MM:SS`；保留 CLI 的字符串时间兼容。分页、上限和未知发言人检查不降级。
-- 测试中的正文与 GitHub PR 响应仍为合成数据；新增回归仅复现已观察的结构，不保存真实响应。独立集成测试实际执行临时本地 Git/bare 仓库的提交、推送与 SHA 回读，不写 GitHub、不把测试内容放进本仓库 events。
-
-## 固定 EP40 的显式只读维护检查
-
-`Content CI` 的 push / pull_request `check` job 不接收任何 Secret。只有人工 `workflow_dispatch` 才运行 `ep40-readonly`：`contents: read`、checkout 精确 `github.sha`、不持久化 GitHub 凭据，仅拉取步骤接收 Tencent Secret。日期固定 `2026-10-10`、期数 `40`，ID 使用已确认的 EP40 过滤器；不开放任意工具或发布模式。
-
-对已审阅、已推送的修复 ref，可由维护者执行：
-
-```bash
-gh workflow run content-ci.yml --ref fix/mcp-transcript-response
-```
-
-该 job 调用真实 `fetch-check`，验证 `git status --porcelain` 为空，始终删除 `.git/meeting-content-fetch-check.txt`，无 transcript artifact、提交、推送或内容 PR。结构探针已移除，正常维护入口不打印任何响应结构或值。生产 `meeting-content.yml` 的默认分支与排程开关保护未修改。
-
-### 真实验证记录（2026-10-15）
-
-- [38783795059：生产 connectivity 成功](https://github.com/sunling/inspire-planet/actions/runs/38783795059)：Actions Secret 鉴权与三个工具参数 schema 通过，单凭此不能证明转写可用。
-- [38783877138：旧适配器 fetch-check 失败](https://github.com/sunling/inspire-planet/actions/runs/38783877138)：列表结构不支持，未发布或覆盖内容。
-- [38784249250：安全结构诊断](https://github.com/sunling/inspire-planet/actions/runs/38784249250)识别 HTTP/JSON body 包装；[38784551270](https://github.com/sunling/inspire-planet/actions/runs/38784551270)确认 full 模式恢复 `more`；[38785307755](https://github.com/sunling/inspire-planet/actions/runs/38785307755)确认原生录制列表经子会议限定后与该次文件集合一致。仅结构、类型、计数及必要分页标志进入日志，没有原始响应或转写 artifact。
-- [38785641587：真实 EP40 fetch-check 成功](https://github.com/sunling/inspire-planet/actions/runs/38785641587)，代码 `79dbd6bf98f4811a9986c1c28b26e54a17e19b66`：**181 段**，会议/录制/转写实际远程分页路径通过、公开文件未变化、runner-only 缓存清理成功；同次 19 项本地逻辑测试及 `check-content`（87 期、7 skills）通过。这个数字来自真实运行，不是预设断言。
-- 本次未测试公开内容 Draft PR 的发布权限，不改 Actions 建 PR 设置，不启用排程，不合并修复 PR，也不覆盖已有 EP40。
+- 无密钥：`python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v`、`python3 -m unittest discover -s scripts -p 'test_latest_transcript.py' -v`、`python3 scripts/check-content.py`；可用时运行 actionlint。
+- 已注册 `Content CI` 的 push／PR 仅跑无密钥测试。只有人工 dispatch 才给只读 job Secret，checkout **精确 dispatched `github.sha`**；feature 验证用 `gh workflow run content-ci.yml --ref feat/latest-transcript`，不绕过生产门禁。
+- `latest-readonly` 执行零输入真实发现与主分支／开放 PR 去重，验证公开工作区不变，不下载正文、不提交、不建 PR。`ep40-readonly` 保留真实固定 EP40 全文检查与缓存清理。
+- 先前 EP40 全文实际成功：Actions run `38785641587`，181 段；本次新增真实运行以 PR 检查和手动 run 为准。
+- 合成测试覆盖无新会议／主分支及开放草稿去重、下一期证明、间隔／跨年待确认、完整下载一次及真实本地 Git/bare 推送；合成 GitHub 响应不冒充真实内容 PR。
+- 若真实最新仍是已入库 EP40，正确验收结果是 skip；不能据此声称新场次自动内容 PR 已真实跑通。新场次建 PR 尚受上述仓库设置阻塞。
