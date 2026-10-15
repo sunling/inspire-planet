@@ -3,8 +3,12 @@ name: Historical transcript (advanced)
 on:
   workflow_dispatch:
     inputs:
+      episode:
+        description: '仓库期数（events 目录概念，如 48）；与 date 二选一；都留空则做只读扫描'
+        type: string
+        required: false
       date:
-        description: '会议 UTC 日期 YYYY-MM-DD（仅 connectivity 可留空）'
+        description: '你的本地日历日期 YYYY-MM-DD（自动按 UTC/北京/美西匹配当天开始的一场）；与 episode 二选一'
         type: string
         required: false
       mode:
@@ -32,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
+      CONTENT_EPISODE: ${{ inputs.episode }}
       CONTENT_DATE: ${{ inputs.date }}
       CONTENT_MODE: ${{ inputs.mode || 'draft' }}
     steps:
@@ -48,18 +53,24 @@ jobs:
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/meeting_content.py connectivity
-      - name: Force date-only remote transcript check (cache only, no public writes)
-        if: env.CONTENT_MODE == 'fetch-check'
-        env:
-          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
-      - name: Resolve historical project occurrence and check archives
-        id: plan
-        if: env.CONTENT_MODE == 'draft'
+      - name: Bounded read-only scan when no episode or date is given
+        if: env.CONTENT_MODE == 'draft' && env.CONTENT_EPISODE == '' && env.CONTENT_DATE == ''
         env:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE"
+        run: python3 scripts/latest_transcript.py scan
+      - name: Force remote transcript check (cache only, no public writes)
+        if: env.CONTENT_MODE == 'fetch-check'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py fetch-check --episode "$CONTENT_EPISODE" --date "$CONTENT_DATE"
+      - name: Resolve historical occurrence by episode or local date and check archives
+        id: plan
+        if: env.CONTENT_MODE == 'draft' && (env.CONTENT_EPISODE != '' || env.CONTENT_DATE != '')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py prepare --episode "$CONTENT_EPISODE" --date "$CONTENT_DATE"
       - name: Read complete remote transcript
         if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
         env:
@@ -78,8 +89,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CONTENT_PUBLISH_ALLOWED: 'true'
         run: python3 scripts/latest_transcript.py publish
-      - name: Verify checks did not change public files
-        if: env.CONTENT_MODE != 'draft'
+      - name: Verify checks and scans did not change public files
+        if: >-
+          env.CONTENT_MODE != 'draft' ||
+          (env.CONTENT_EPISODE == '' && env.CONTENT_DATE == '')
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only plans and transcript caches
         if: always()

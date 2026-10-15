@@ -26,13 +26,16 @@
 
 ## 高级历史补录／检查
 
-- 单独入口 **Historical transcript (advanced)**，仅手动运行。只需选择 `mode`（默认 `draft`）与会议 **UTC 日期**；不提供 EP、主题或会议 ID 输入，精确项目标题始终读取已提交的 `meeting-project.json`，不要求重复填写。
-- `draft` / `fetch-check` 必须填写有效 `YYYY-MM-DD`；空日期会停止，绝不退回“最新会议”。`connectivity` 无需日期，只校验鉴权/schema，不读取会议。历史界面不再提供无法独立定位期次的 `validate`。
-- 按指定 UTC 日完整翻页，精确标题必须唯一命中；无匹配或同日多场停止，不任选一场。历史 `draft` 复用日常实例身份、主分支／开放 PR 去重、稳定内容分支、白名单写入与发布链路。
-- 历史 EP 仅复用 `main`／开放 PR 中**现有同 UTC 日期 event 目录**的唯一映射（即使目录尚无转写）；无映射或冲突则进入公开 `incoming/meetings/{实例哈希}/` 待确认。历史不调用下一期推断，不按周数、cadence 或最大 EP 计算。既有目录的旧日期口径不自动迁移。
-- `fetch-check` 不查询 GitHub 或计算 EP；即使本地已有稿仍强制读远程全文，仅缓存 `.git/meeting-content-fetch-check.txt`，公开文件不变；运行结束清理 runner 缓存。`draft` 已有转写／实例／内容分支时跳过，不覆盖。
-- 维护命令（Actions 注入 Secret）：`python3 scripts/latest_transcript.py fetch-check --date YYYY-MM-DD`；历史 `prepare --date YYYY-MM-DD` 后使用同一 `fetch / write / publish`。日常入口仍然零输入。
-- 历史周期会议 guard 不变：会议／子会议限定后，原生录制集合必须与本次文件集合**完全一致**；不放宽为包含关系，不跨日期选择最长录制。2025 旧协议问题不在本次范围内。
+- 单独入口 **Historical transcript (advanced)**，仅手动运行。输入为 `episode`（仓库期数，如 `48`）、`date`（**你的本地日历日期**，如 `2025-12-14`）与 `mode`（默认 `draft`）。**episode 与 date 二选一**，都不填则做只读扫描；精确项目标题始终读取已提交的 `meeting-project.json`，界面不再重复提供主题或 meeting_id。
+- **EP 是仓库概念，腾讯会议没有期次概念**。腾讯侧只有每场会议的实例（meeting_id / sub_meeting_id / 开始时间）；`ep{N}` 完全是本仓库 `events/{year}/{YYYYMMDD}-epXX/` 目录的命名约定。`--episode` 只把 EP 反查为**仓库现有目录唯一映射**的 UTC 日期，绝不按周数、cadence 或“历史最大 EP”推算。
+- EP 反查**失败即停止**：EP 在仓库中无目录、同一日期对应多个期次目录（如旧布局 `20250428-ep02…ep15`）、或同一 EP 跨年重复（如 2025 与 2026 都有 `ep40`）时，都会给出明确错误并要求改用本地日期，不会任选一个。
+- `date` 接受**用户自己的本地日历日期**，不要求换算 UTC。工具按 UTC、Asia-Shanghai（北京）、America/Los_Angeles（美西）三个时区判断该会议是否“当天开始”，必须**唯一命中一场**项目会议；同日多场或无命中则停止。
+- 选中场次后，`draft` 复用日常实例身份、主分支／开放 PR 去重、稳定内容分支、白名单写入与发布链路。期次目录的映射仍来自 `main`／开放 PR 中**现有同 UTC 日期的 event 目录**（即使目录尚无转写）；无映射或冲突则进入公开 `incoming/meetings/{实例哈希}/` 待确认。历史不调用下一期推断，既有目录的旧日期口径不自动迁移。
+- **留空 = 只读扫描**：无 episode 也无 date 时，工具在最近 **12 个月**内按 **≤90 天窗口**分块调用 list-ended，排除未来／窗口外场次与重复实例，最多探测 **20** 场**未归档**的项目会议。每场只调用**元数据** `get_records_list` 判断能否读取，**不拉取正文、不写任何公开文件**。输出只有计数、场次日期、可读布尔与静态原因（不打印原始 payload、Token、姓名或其他会议）。扫描始终退出 0，即使仍有未归档场次。
+- 只读扫描的“可读”判断：优先看该场 list-ended 记录里是否有 `转写` 类型录制文件；没有时再用限定到该场（meeting_id + sub_meeting_id）的原生录制列表兜底区分“仅录制未转写”与“无录制”。该会话 `records[]` 计数已知不可靠（可能为 0 而实际已有转写），因此扫描结果是保守下限，不保证已经能读全。
+- `fetch-check` 不查询 GitHub，也不计算历史 EP（EP 反查只读本地 `events/` 目录）；即使本地已有稿仍强制读远程全文，仅缓存 `.git/meeting-content-fetch-check.txt`，公开文件不变；运行结束清理 runner 缓存。`draft` 已有转写／实例／内容分支时跳过，不覆盖。
+- 维护命令（Actions 注入 Secret）：`python3 scripts/latest_transcript.py fetch-check --episode 48`（或 `--date 2025-12-14`）、`scan`；历史 `prepare --episode 48` / `prepare --date 2025-12-14` 后使用同一 `fetch / write / publish`。日常入口仍然零输入。
+- **已知历史限制（本轮不变）**：历史周期会议 guard 保持严格——会议／子会议限定后，原生录制集合必须与本次文件集合**完全一致**，不放宽为包含关系，也不跨日期选择最长录制。2025 年旧协议的录制归属问题会使这些历史场次在 `fetch` 阶段失败即停止，本流水线不会绕过该保护；需要人工先核对录制归属。
 - MCP 源适配合同不变：三个只读工具、运行时 schema、完整模式 `is_compact=false`、已观察的 HTTP/JSON 包装、列表完成标志、完整段落分页及上限。未知结构／分页缺失均安全停止，原始错误隐藏。
 
 ## 安全与排程
@@ -45,7 +48,7 @@
 
 - 无密钥：`python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v`、`python3 -m unittest discover -s scripts -p 'test_latest_transcript.py' -v`、`python3 scripts/check-content.py`；可用时运行 actionlint。
 - 已注册 `Content CI` 的 push／PR 仅跑无密钥测试。只有人工 dispatch 才给只读 job Secret，checkout **精确 dispatched `github.sha`**；feature 验证用 `gh workflow run content-ci.yml --ref feat/latest-transcript`，不绕过生产门禁。
-- `latest-readonly` 执行零输入真实发现与主分支／开放 PR 去重，验证公开工作区不变，不下载正文、不提交、不建 PR。`ep40-readonly` 保留真实固定 EP40 全文检查与缓存清理。
+- `latest-readonly` 执行零输入真实发现与主分支／开放 PR 去重，验证公开工作区不变，不下载正文、不提交、不建 PR。`ep40-readonly` 保留真实固定 EP40 全文检查与缓存清理。新增 `history-ep48-readonly`（`fetch-check --episode 48`，验证 EP→日期映射 + 真实全文读取）与 `history-scan-readonly`（真实 `scan`，验证有界只读扫描与公开工作区不变）。
 - 先前 EP40 全文实际成功：Actions run `38785641587`，181 段；本次新增真实运行以 PR 检查和手动 run 为准。
-- 合成测试覆盖无新会议／主分支及开放草稿去重、下一期证明、间隔／跨年待确认、完整下载一次及真实本地 Git/bare 推送；合成 GitHub 响应不冒充真实内容 PR。
+- 合成测试覆盖无新会议／主分支及开放草稿去重、下一期证明、间隔／跨年待确认、完整下载一次及真实本地 Git/bare 推送；历史 EP 唯一映射／歧义失败、本地日期三时区匹配、有界扫描窗口/探测上限与去重均有合成覆盖。合成 GitHub 响应不冒充真实内容 PR。
 - 若真实最新仍是已入库 EP40，正确验收结果是 skip；不能据此声称新场次自动内容 PR 已真实跑通。新场次建 PR 尚受上述仓库设置阻塞。

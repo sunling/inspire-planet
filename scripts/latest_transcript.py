@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
-"""Zero-input project discovery; deterministic transcript-only public drafts."""
+"""Zero-input project discovery; deterministic transcript-only public drafts.
+
+Historical backfill accepts either a repository episode number (EP, which only
+exists as an events/ directory concept and is resolved to a UTC date through the
+committed mapping) or the user's own local calendar date (auto-matched across
+UTC / Asia-Shanghai / America-Los_Angeles). A blank historical invocation runs a
+bounded read-only scan of unarchived project occurrences.
+"""
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import re
+from zoneinfo import ZoneInfo
 import meeting_content as m
+
+# A user's local calendar day is matched in any of these zones; Tencent has no
+# notion of a "local day", so the same occurrence may fall on a different UTC
+# date depending on where the user lives. Asia-Shanghai and America/Los_Angeles
+# are the two communities this project is run for.
+LOCAL_ZONES = ('UTC', 'Asia/Shanghai', 'America/Los_Angeles')
+
+# Bounded read-only scan limits (no bodies, no public writes).
+SCAN_LOOKBACK_DAYS = 365
+SCAN_WINDOW_DAYS = 90
+SCAN_MAX_PROBES = 20
 
 
 def timestamp(value):
@@ -36,10 +55,83 @@ def discover(client, config, now):
 
 
 def historical(client, config, day):
+    """Exact project occurrence whose UTC day is `day`; unique match required."""
     m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
     rows = m.token_pages(client, 'get_user_ended_meetings',
                         {'start_time': day + 'T00:00:00Z', 'end_time': day + 'T23:59:59Z'}, 'meeting_info_list')
     return m.select_meeting(rows, day, config['title'], '')
+
+
+def local_window(day):
+    """UTC window covering local calendar day `day` in every LOCAL_ZONES zone."""
+    try:
+        d = datetime.strptime(day, '%Y-%m-%d').date()
+    except ValueError:
+        raise m.SafeError('日期无效') from None
+    nxt = d + timedelta(days=1)
+    starts, ends = [], []
+    for zone in LOCAL_ZONES:
+        tz = ZoneInfo(zone)
+        starts.append(datetime(d.year, d.month, d.day, tzinfo=tz).astimezone(timezone.utc))
+        ends.append(datetime(nxt.year, nxt.month, nxt.day, tzinfo=tz).astimezone(timezone.utc))
+    return min(starts), max(ends)
+
+
+def historical_local(client, config, day):
+    """Exact project occurrence starting within local calendar day `day`.
+
+    The user provides their own local date and never needs to know UTC; the
+    occurrence is matched in any of LOCAL_ZONES so long as it is unique.
+    """
+    m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
+    d = datetime.strptime(day, '%Y-%m-%d').date()
+    start, end = local_window(day)
+    rows = m.token_pages(client, 'get_user_ended_meetings',
+                        {'start_time': iso(start), 'end_time': iso(end)}, 'meeting_info_list')
+    zones = [ZoneInfo(z) for z in LOCAL_ZONES]
+    matches = [r for r in rows if r.get('subject') == config['title']
+               and any(timestamp(r.get('start_time')).astimezone(z).date() == d for z in zones)]
+    m.need(len(matches) == 1, '本地日期必须唯一命中一场项目会议；同日多场或没有则停止')
+    return matches[0]
+
+
+def episode_mapping(root):
+    """Repo EP -> UTC date mapping derived from committed events/ directories."""
+    mapping = {}
+    base = root / 'events'
+    if not base.is_dir():
+        return mapping
+    for year_dir in sorted(base.iterdir()):
+        if not year_dir.is_dir() or not re.fullmatch(r'\d{4}', year_dir.name):
+            continue
+        for event in sorted(year_dir.iterdir()):
+            match = re.fullmatch(r'(\d{8})-ep(\d{2,3})', event.name)
+            if not match or not event.is_dir():
+                continue
+            stamp = match.group(1)
+            if stamp[:4] != year_dir.name:
+                continue
+            day = stamp[:4] + '-' + stamp[4:6] + '-' + stamp[6:]
+            mapping.setdefault(day, set()).add(str(int(match.group(2))))
+    return mapping
+
+
+def resolve_episode_date(root, episode):
+    """Resolve a repository EP number to its unique UTC date, else fail closed.
+
+    Tencent exposes no episode concept: EP is purely a repository convention
+    (events/{year}/{YYYYMMDD}-epXX). It must be derived from the committed
+    directory mapping, never inferred from cadence, week counts or maxima.
+    """
+    m.need(bool(re.fullmatch(r'[1-9]\d{0,2}', episode)), '期数须为 1–999')
+    ep = str(int(episode))
+    mapping = episode_mapping(root)
+    days = sorted(d for d, eps in mapping.items() if ep in eps)
+    m.need(len(days) == 1, f'期数 EP{ep} 在仓库 events 目录中没有唯一日期映射；'
+                           '请在仓库中确认期数目录，或改用你的本地日期')
+    day = days[0]
+    m.need(mapping[day] == {ep}, f'日期 {day} 对应多个期次目录，无法用 EP 唯一定位；请改用本地日期')
+    return day, ep
 
 
 def instance(row):
@@ -114,6 +206,80 @@ def plan_latest(rows, archive, config):
     return {'skip': False, 'metadata': metadata, 'meeting': latest}
 
 
+def scan_window(now):
+    m.need(now.tzinfo is not None, '扫描时间必须有时区')
+    start = now - timedelta(days=SCAN_LOOKBACK_DAYS)
+    bounds, cursor = [], start
+    while cursor < now:
+        end = min(cursor + timedelta(days=SCAN_WINDOW_DAYS), now)
+        bounds.append((cursor, end))
+        cursor = end
+    return start, bounds
+
+
+def probe_readable(client, row):
+    """Whether an occurrence's transcript can be read, without pulling bodies.
+
+    A 转写 record in the occurrence's own list is the same criterion the fetch
+    pipeline uses; records[] is known to be unreliable (may be empty even when a
+    transcript exists), so a native record listing is consulted as a fallback.
+    """
+    listed = any('转写' in str(r.get('type', '')) and r.get('record_file_id')
+                 for r in (row.get('records') or []))
+    if listed:
+        return True, 'listed-transcript'
+    try:
+        groups = m.token_pages(client, 'get_records_list', {'meeting_id': row['meeting_id']}, 'record_meetings')
+    except m.SafeError:
+        return False, 'record-list-unavailable'
+    sub = row.get('sub_meeting_id')
+    native = {f.get('record_file_id') for group in groups
+              if group.get('meeting_id') == row['meeting_id'] and group.get('sub_meeting_id') == sub
+              for f in (group.get('record_files') or [])}
+    return False, ('native-recording-no-listed-transcript' if native else 'no-recording')
+
+
+def scan(client, config, archive, now):
+    """Bounded read-only scan of unarchived project occurrences.
+
+    Chunks list-ended into <=90-day windows over a capped lookback, excludes
+    future/out-of-window occurrences and the same occurrence twice, and prints
+    only counts, occurrence dates and static read-availability reasons. No
+    bodies, tokens, names or other project meetings are ever emitted.
+    """
+    m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
+    title = config['title']
+    start, bounds = scan_window(now)
+    found = {}
+    for begin, end in bounds:
+        rows = m.token_pages(client, 'get_user_ended_meetings',
+                             {'start_time': iso(begin), 'end_time': iso(end)}, 'meeting_info_list')
+        for row in rows:
+            if row.get('subject') != title:
+                continue
+            if not (start <= timestamp(row.get('start_time')) <= now):
+                continue
+            meta = instance(row)
+            if meta['instance_key'] in archive['keys'] or meta['date'] in archive['dates']:
+                continue
+            found.setdefault(meta['instance_key'], (meta, row))
+    items = sorted(found.values(), key=lambda item: (item[0]['date'], item[0]['instance_key']))
+    probed = min(len(items), SCAN_MAX_PROBES)
+    print(f'scan: lookback_days={SCAN_LOOKBACK_DAYS}; windows={len(bounds)}; unarchived={len(items)}; '
+          f'probed={probed}; truncated={str(len(items) > SCAN_MAX_PROBES).lower()}')
+    readable = 0
+    for index, (meta, row) in enumerate(items):
+        if index >= SCAN_MAX_PROBES:
+            print(f'{meta["date"]} probed=false')
+            continue
+        ok, reason = probe_readable(client, row)
+        if ok:
+            readable += 1
+        print(f'{meta["date"]} readable={str(ok).lower()} reason={reason}')
+    print(f'scan: readable={readable}; unarchived={len(items)}; probed={probed}')
+    return {'windows': len(bounds), 'unarchived': len(items), 'probed': probed, 'readable': readable}
+
+
 def allowed_paths(plan):
     metadata = plan['metadata']
     m.need(instance(metadata) == {k: metadata.get(k) for k in instance(metadata)}, '计划实例身份不一致')
@@ -160,16 +326,29 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     import os
     import subprocess
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['readonly', 'prepare', 'fetch-check', 'fetch', 'write', 'publish'])
-    parser.add_argument('--date', help='Historical UTC occurrence date; no episode or filter input')
+    parser.add_argument('command', choices=['readonly', 'scan', 'prepare', 'fetch-check', 'fetch', 'write', 'publish'])
+    parser.add_argument('--date', help='你的本地日历日期 YYYY-MM-DD；自动匹配 UTC/北京/美西当天的项目会议')
+    parser.add_argument('--episode', help='仓库期数（events 目录概念），如 48；由仓库目录唯一映射出 UTC 日期')
     args = parser.parse_args(argv)
     command = args.command
-    if args.date is not None:
-        m.need(command in ('prepare', 'fetch-check'), '日期仅用于历史 prepare/fetch-check')
-        m.need(bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', args.date)), '日期须为 YYYY-MM-DD')
-        m.utc_day(args.date + 'T00:00:00Z')
-    m.need(command != 'fetch-check' or args.date is not None, '历史检查需要日期')
+    date = args.date if args.date else None
+    episode = args.episode if args.episode else None
+    historical_input = args.date is not None or args.episode is not None
+    if historical_input:
+        m.need(command in ('prepare', 'fetch-check'), '日期或期数仅用于历史 prepare/fetch-check')
+    if date is not None:
+        m.need(bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', date)), '日期须为 YYYY-MM-DD')
+        m.utc_day(date + 'T00:00:00Z')
+    if episode is not None:
+        m.need(bool(re.fullmatch(r'[1-9]\d{0,2}', episode)), '期数须为 1–999')
+    m.need(not (date and episode), '期数与日期只能二选一')
+    m.need(not (command == 'scan' and historical_input), '扫描不接受日期或期数')
+    m.need(command != 'fetch-check' or date or episode, '历史检查需要本地日期或期数')
+    m.need(bool(date or episode) or not historical_input, '历史补录需要本地日期或仓库期数；留空请使用只读扫描')
     root = root or Path(__file__).resolve().parents[1]
+    # Resolve a repository EP to its unique UTC date from local events/ directories
+    # before any Git/GitHub or remote work, so an unmapped episode fails closed early.
+    resolved_episode = resolve_episode_date(root, episode) if episode else None
     if run is None:
         def run(args):
             try:
@@ -191,13 +370,21 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     if command == 'fetch-check':
         config = json.loads((root / 'scripts/meeting-project.json').read_text(encoding='utf-8'))
         client = client_factory()
-        meeting = historical(client, config, args.date)
+        if resolved_episode:
+            meeting = historical(client, config, resolved_episode[0])
+        else:
+            meeting = historical_local(client, config, date)
         text = m.fetch_occurrence(client, meeting)
         blocks = m.parse_transcript(text)
         check_cache = root / '.git/meeting-content-fetch-check.txt'
         m.need(not check_cache.is_symlink(), '缓存路径不安全')
         check_cache.write_text(text, encoding='utf-8')
         print(f'历史远程完整转写已验证：{len(blocks)} 段；仅 runner 缓存，未写入公开文件。')
+        return
+    if command == 'scan':
+        config = json.loads((root / 'scripts/meeting-project.json').read_text(encoding='utf-8'))
+        archive = archives(run)
+        scan(client_factory(), config, archive, now or datetime.now(timezone.utc))
         return
     if command in ('readonly', 'prepare'):
         if command == 'prepare':
@@ -209,23 +396,30 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
         archive = archives(run)
         if command == 'prepare':
             m.need(run(['git', 'rev-parse', 'HEAD']).strip() == run(['git', 'rev-parse', 'origin/main']).strip(), 'main 已变化；请重新运行')
-        rows = ([historical(client_factory(), config, args.date)] if args.date else
-                discover(client_factory(), config, now or datetime.now(timezone.utc)))
+        if resolved_episode:
+            rows = [historical(client_factory(), config, resolved_episode[0])]
+        elif date:
+            rows = [historical_local(client_factory(), config, date)]
+        else:
+            rows = discover(client_factory(), config, now or datetime.now(timezone.utc))
         plan = plan_latest(rows, archive, config)
         if not plan['skip']:
             metadata = plan['metadata']
-            if args.date:
+            if resolved_episode:
+                m.need(metadata['date'] == resolved_episode[0], '期数映射日期与会议 UTC 日期不一致')
+                mapped_episode = resolved_episode[1]
+            elif date:
                 mapped = archive['mapping'].get(metadata['date'], set())
-                episode = next(iter(mapped)) if len(mapped) == 1 else None
+                mapped_episode = next(iter(mapped)) if len(mapped) == 1 else None
             else:
-                episode = episode_for(plan['meeting'], rows, config)
-            event = m.event_identity(metadata['date'], episode)[0] if episode else 'incoming/meetings/' + metadata['instance_key']
-            plan.update(latest=True, event=event, episode=episode, date=metadata['date'],
+                mapped_episode = episode_for(plan['meeting'], rows, config)
+            event = m.event_identity(metadata['date'], mapped_episode)[0] if mapped_episode else 'incoming/meetings/' + metadata['instance_key']
+            plan.update(latest=True, event=event, episode=mapped_episode, date=metadata['date'],
                         branch='content/meeting-' + metadata['instance_key'], base='main',
                         head=run(['git', 'rev-parse', 'HEAD']).strip())
             branches = [plan['branch']]
-            if episode:
-                branches.append(m.event_identity(metadata['date'], episode)[1])
+            if mapped_episode:
+                branches.append(m.event_identity(metadata['date'], mapped_episode)[1])
             for branch in branches:
                 if run(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + branch]).strip():
                     plan.update(skip=True, reason='existing-branch')
