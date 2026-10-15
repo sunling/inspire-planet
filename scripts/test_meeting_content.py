@@ -1,6 +1,7 @@
 """Synthetic fixtures only: these are NOT real meeting outputs."""
 import importlib.util
 from pathlib import Path
+import re
 import unittest
 
 spec = importlib.util.spec_from_file_location('meeting_content', Path(__file__).with_name('meeting_content.py'))
@@ -441,6 +442,13 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}', flow)
         self.assertNotIn('run: ${{', flow)
         self.assertNotIn('pull_request_target', flow)
+
+    def test_weekly_schedule_is_three_attempts_ten_minutes_apart_after_meeting(self):
+        root = Path(__file__).resolve().parents[1]
+        flow = (root / '.github/workflows/meeting-content.yml').read_text()
+        crons = re.findall(r"cron:\s*'([^']+)'", flow)
+        # 会议北京时间周六 08:00–10:00（UTC 周六 00:00–02:00）；结束后 02:00/02:10/02:20 三次尝试。
+        self.assertEqual(crons, ['0,10,20 2 * * 6'])
 
 
 class EndToEndTests(unittest.TestCase):
