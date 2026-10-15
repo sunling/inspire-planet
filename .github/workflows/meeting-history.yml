@@ -1,0 +1,99 @@
+name: Historical transcript (advanced)
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '你的本地日历日期 YYYY-MM-DD（自动按 UTC/北京/美西匹配当天开始的一场）；与 pick 二选一'
+        type: string
+        required: false
+      pick:
+        description: '只读扫描输出的编号（如 3），抓取该未归档场次；与 date 二选一；都留空则只读扫描'
+        type: string
+        required: false
+      mode:
+        description: 'draft 公开逐字稿 PR；fetch-check 强制远程检查不公开；connectivity 鉴权/schema'
+        type: choice
+        options: [draft, fetch-check, connectivity]
+        default: draft
+
+permissions:
+  contents: read
+
+# Share the production lock with zero-input latest discovery.
+concurrency:
+  group: meeting-content-draft
+  cancel-in-progress: false
+
+jobs:
+  draft:
+    if: >-
+      github.ref_name == github.event.repository.default_branch &&
+      github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CONTENT_DATE: ${{ inputs.date }}
+      CONTENT_PICK: ${{ inputs.pick }}
+      CONTENT_MODE: ${{ inputs.mode || 'draft' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tencent connectivity only (no meeting reads)
+        if: env.CONTENT_MODE == 'connectivity'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/meeting_content.py connectivity
+      - name: Bounded read-only scan when no date or pick is given
+        if: env.CONTENT_MODE == 'draft' && env.CONTENT_DATE == '' && env.CONTENT_PICK == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py scan
+      - name: Force remote transcript check (cache only, no public writes)
+        if: env.CONTENT_MODE == 'fetch-check'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
+      - name: Resolve historical occurrence by local date or scan number and check archives
+        id: plan
+        if: env.CONTENT_MODE == 'draft' && (env.CONTENT_DATE != '' || env.CONTENT_PICK != '')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py prepare --pick "$CONTENT_PICK" --date "$CONTENT_DATE"
+      - name: Read complete remote transcript
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py fetch
+      - name: Write scoped transcript and instance metadata
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
+        run: python3 scripts/latest_transcript.py write
+      - name: Check content before any commit
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
+        run: python3 scripts/check-content.py
+      - name: Create public transcript Draft PR and verify scope (never merge)
+        if: steps.plan.outputs.skip == 'false' && env.CONTENT_MODE == 'draft'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTENT_PUBLISH_ALLOWED: 'true'
+        run: python3 scripts/latest_transcript.py publish
+      - name: Verify checks and scans did not change public files
+        if: >-
+          env.CONTENT_MODE != 'draft' ||
+          (env.CONTENT_DATE == '' && env.CONTENT_PICK == '')
+        run: test -z "$(git status --porcelain)"
+      - name: Remove runner-only plans and transcript caches
+        if: always()
+        run: rm -f .git/latest-plan.json .git/latest-transcript.txt .git/meeting-content-fetch-check.txt

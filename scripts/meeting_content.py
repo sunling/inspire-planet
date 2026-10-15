@@ -48,7 +48,12 @@ def publish(root, plan, run):
     need(run(['git', 'rev-parse', 'HEAD']).strip() == plan['head'], '发布前基线改变；拒绝提交')
     changed = set(run(['git', 'diff', '--name-only', 'HEAD']).splitlines())
     changed.update(run(['git', 'ls-files', '--others', '--exclude-standard']).splitlines())
-    allowlist = set(allowed_paths(plan['event']))
+    if plan.get('latest'):
+        from latest_transcript import allowed_paths as latest_paths
+        allowlist = set(latest_paths(plan))
+    else:
+        allowlist = set(allowed_paths(plan['event']))
+    label = f"EP{int(plan['episode']):02d}" if plan['episode'] else '待确认期次'
     need(bool(changed) and changed <= allowlist, '改动包含非本期白名单文件；拒绝提交')
     for relative in allowlist:
         path = root / relative
@@ -61,7 +66,7 @@ def publish(root, plan, run):
     staged = set(run(['git', 'diff', '--cached', '--name-only']).splitlines())
     need(staged == changed and staged <= allowlist, '暂存区超出本期范围')
     run(['git', '-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
-         'commit', '-m', f"content: draft {plan['date']} EP{int(plan['episode']):02d}"])
+         'commit', '-m', f"content: draft {plan['date']} {label}"])
     run(['git', 'push', '--set-upstream', 'origin', plan['branch']])
     local_head = run(['git', 'rev-parse', 'HEAD']).strip()
     remote = run(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + plan['branch']]).split()
@@ -72,7 +77,7 @@ def publish(root, plan, run):
             '没有生成纪要、金句、文章或图片；后续可由 ChatGPT/Codex 在同一分支人工发起整理。\n'
             '不自动合并，不发布到网站或社交平台。')
     run(['gh', 'pr', 'create', '--draft', '--base', plan['base'], '--head', plan['branch'],
-         '--title', f"内容草稿 {plan['date']} EP{int(plan['episode']):02d}", '--body', body])
+         '--title', f"内容草稿 {plan['date']} {label}", '--body', body])
     result = json.loads(run(['gh', 'pr', 'view', plan['branch'], '--json', 'state,isDraft,headRefName,baseRefName,files']))
     need(result.get('state') == 'OPEN' and result.get('isDraft') is True and result.get('headRefName') == plan['branch']
          and result.get('baseRefName') == plan['base'], '无法确认公开 Draft PR 状态')
@@ -269,6 +274,10 @@ def select_meeting(rows, day, subject, meeting_id):
 def fetch_transcript(client, day, subject, meeting_id):
     rows = token_pages(client, 'get_user_ended_meetings', {'start_time': day + 'T00:00:00Z', 'end_time': day + 'T23:59:59Z'}, 'meeting_info_list')
     meeting = select_meeting(rows, day, subject, meeting_id)
+    return fetch_occurrence(client, meeting)
+
+
+def fetch_occurrence(client, meeting):
     # Metadata is occurrence-specific, but records_total_count does not equal
     # the occurrence's file count in the live response. Verify coverage against
     # native record_meetings list, scoped by BOTH meeting and sub-meeting IDs.

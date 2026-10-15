@@ -28,14 +28,56 @@ jobs:
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
           CONTENT_DATE: '2026-10-10'
-          CONTENT_EPISODE: '40'
-          CONTENT_MEETING_ID: '13319006708380765410'
-        run: python3 scripts/meeting_content.py fetch-check
+        run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
       - name: Verify public files unchanged
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only transcript cache
         if: always()
         run: rm -f .git/meeting-content-fetch-check.txt
+  history-scan-readonly:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Real bounded read-only history scan (explicit dispatch only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py scan
+      - name: Verify public files unchanged
+        run: test -z "$(git status --porcelain)"
+  latest-readonly:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Real zero-input project discovery (explicit dispatch only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+        run: python3 scripts/latest_transcript.py readonly
+      - name: Verify public files unchanged
+        run: test -z "$(git status --porcelain)"
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -47,6 +89,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test transcript automation (synthetic fixtures)
-        run: python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v
+          python3 -m unittest discover -s scripts -p 'test_latest_transcript.py' -v
       - name: Check repository content
         run: python3 scripts/check-content.py
