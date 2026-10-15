@@ -154,6 +154,8 @@ TOOL_FIELDS = {
     'get_records_list': {'meeting_id': 'string', 'page_size': 'integer', 'page_token': 'string'},
     'get_transcripts_details': {'meeting_id': 'string', 'record_file_id': 'string', 'pid': 'string', 'limit': 'integer'},
 }
+for _fields in TOOL_FIELDS.values():
+    _fields['is_compact'] = 'boolean'  # Full mode preserves business/paging flags.
 MAX_PAGES = 200
 MAX_PARAGRAPHS = 20000
 
@@ -195,11 +197,14 @@ class MCP:
 
     def call(self, name, args):
         need(name in TOOL_FIELDS, '禁止非白名单 MCP 工具')
+        need(args.get('is_compact', False) is False, 'MCP 必须使用完整模式；拒绝缺失分页标志')
+        args = dict(args, is_compact=False)
         schema = self.schemas[name]
         need(set(args) <= set(TOOL_FIELDS[name]) and set(schema.get('required', [])) <= set(args), 'MCP 参数不符合已验证 schema')
         for key, value in args.items():
             typ = TOOL_FIELDS[name][key]
-            need((typ == 'string' and isinstance(value, str)) or (typ == 'integer' and type(value) is int), 'MCP 参数类型无效')
+            need((typ == 'string' and isinstance(value, str)) or (typ == 'integer' and type(value) is int)
+                 or (typ == 'boolean' and type(value) is bool), 'MCP 参数类型无效')
         result = self.rpc('tools/call', {'name': name, 'arguments': args})
         need(not result.get('isError'), 'MCP 工具失败；检查授权和录制状态（响应已隐藏）')
         if isinstance(result.get('structuredContent'), dict):
@@ -212,15 +217,27 @@ class MCP:
             except (ValueError, KeyError):
                 raise SafeError('MCP 工具未返回完整 JSON') from None
         need(isinstance(data, dict), 'MCP 工具返回结构不支持')
-        for _ in range(2):
+        # Observed MCP returns optional data -> HTTP envelope -> JSON body.
+        # Check every layer (including the final body); never recursively hunt
+        # for a plausible list or ignore an inner business/HTTP failure.
+        for _ in range(6):
             if data.get('code') == 30002 and name == 'get_transcripts_details':
                 return {'empty_transcript': True}
             need(data.get('code', 0) == 0, 'MCP 业务失败（响应已隐藏）')
-            if 'data' not in data:
-                break
-            data = data['data']
+            if 'status_code' in data or 'body' in data:
+                status = data.get('status_code')
+                need(type(status) is int and status == 200, 'MCP 上游 HTTP 失败（响应已隐藏）')
+                need(isinstance(data.get('body'), str), 'MCP HTTP body 结构不支持')
+                try:
+                    data = json.loads(data['body'])
+                except ValueError:
+                    raise SafeError('MCP HTTP body 不是完整 JSON') from None
+            elif 'data' in data:
+                data = data['data']
+            else:
+                return data
             need(isinstance(data, dict), 'MCP data 结构不支持')
-        return data
+        raise SafeError('MCP 返回包装层数超过上限')
 
 
 def token_pages(client, name, args, key):
@@ -252,7 +269,25 @@ def select_meeting(rows, day, subject, meeting_id):
 def fetch_transcript(client, day, subject, meeting_id):
     rows = token_pages(client, 'get_user_ended_meetings', {'start_time': day + 'T00:00:00Z', 'end_time': day + 'T23:59:59Z'}, 'meeting_info_list')
     meeting = select_meeting(rows, day, subject, meeting_id)
-    records = token_pages(client, 'get_records_list', {'meeting_id': meeting['meeting_id']}, 'records')
+    # Metadata is occurrence-specific, but records_total_count does not equal
+    # the occurrence's file count in the live response. Verify coverage against
+    # native record_meetings list, scoped by BOTH meeting and sub-meeting IDs.
+    records = meeting.get('records')
+    sub = meeting.get('sub_meeting_id')
+    need(isinstance(records, list) and isinstance(sub, str) and bool(sub), '本场录制列表或子会议身份缺失')
+    groups = token_pages(client, 'get_records_list', {'meeting_id': meeting['meeting_id']}, 'record_meetings')
+    native = []
+    for group in groups:
+        if group.get('meeting_id') != meeting['meeting_id'] or group.get('sub_meeting_id') != sub:
+            continue
+        files = group.get('record_files')
+        need(isinstance(files, list) and bool(files) and bool(group.get('meeting_record_id')), '本场录制文件列表结构不支持')
+        for file in files:
+            need(isinstance(file.get('record_file_id'), str) and bool(file['record_file_id']), '录制文件缺少 ID')
+            native.append((group['meeting_record_id'], file['record_file_id']))
+    metadata = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records]
+    need(bool(native) and len(set(native)) == len(native) and len(set(metadata)) == len(metadata)
+         and set(native) == set(metadata), '本场录制列表不完整或重复；拒绝跨期选择或截断')
     candidates = [r for r in records if '转写' in r.get('type', '') and r.get('record_file_id')]
     def duration(r):
         value = r.get('duration')
@@ -330,6 +365,12 @@ def utc_day(value):
 
 
 def norm_time(value):
+    # Native transcript timestamps are integer milliseconds (Tencent topic 797),
+    # unlike CLI duration/header strings. Floor subsecond precision for headers.
+    if type(value) is int:
+        need(value >= 0, '转写时间戳无效')
+        seconds = value // 1000
+        return f'{seconds // 3600:02d}:{seconds // 60 % 60:02d}:{seconds % 60:02d}'
     need(isinstance(value, str) and bool(re.fullmatch(r'\d+:\d{2}(?::\d{2})?', value)), '转写时间戳无效')
     parts = [int(x) for x in value.split(':')]
     if len(parts) == 2:

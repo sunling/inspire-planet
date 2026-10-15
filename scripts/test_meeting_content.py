@@ -23,6 +23,125 @@ class IdentityTests(unittest.TestCase):
 
 
 class TranscriptTests(unittest.TestCase):
+    def test_observed_http_body_envelopes_decode_and_check_inner_business_code(self):
+        # Sanitized structure from live runs 38784249250 / 38784551270;
+        # all values below are synthetic, never copied meeting content.
+        import json
+        for wrapped in (True, False):
+            for code in (0, 30002, 999):
+                with self.subTest(wrapped=wrapped, code=code):
+                    def transport(packet):
+                        if packet['method'] == 'tools/list':
+                            return {'id': 1, 'result': {'tools': [
+                                {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                                for n, f in m.TOOL_FIELDS.items()]}}
+                        body = {'code': code, 'more': False, 'minutes': {'paragraphs': []}}
+                        data = {'status_code': 200, 'headers': {}, 'body': json.dumps(body)}
+                        return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps({'_meta': {}, 'data': data} if wrapped else data)}]}}
+                    client = m.MCP(transport)
+                    args = {'meeting_id': 'synthetic', 'record_file_id': 'synthetic', 'pid': '0', 'limit': 100}
+                    if code == 999:
+                        with self.assertRaises(m.SafeError): client.call('get_transcripts_details', args)
+                    else:
+                        actual = client.call('get_transcripts_details', args)
+                        self.assertEqual(actual, {'empty_transcript': True} if code == 30002 else {'code': 0, 'more': False, 'minutes': {'paragraphs': []}})
+
+    def test_http_body_envelopes_fail_closed_without_leaking_payload(self):
+        import json
+        for data in (
+            {'status_code': 403, 'body': 'private-server-error'},
+            {'status_code': 200, 'body': 'private-not-json'},
+            {'status_code': 200, 'body': '[]'},
+            {'status_code': 200, 'body': {'code': 0}},
+            {'data': {'data': {'data': {'data': {'data': {'data': {'code': 999}}}}}}},
+        ):
+            with self.subTest(shape=type(data).__name__):
+                def transport(packet):
+                    if packet['method'] == 'tools/list':
+                        return {'id': 1, 'result': {'tools': [
+                            {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                            for n, f in m.TOOL_FIELDS.items()]}}
+                    return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps(data)}]}}
+                with self.assertRaises(m.SafeError) as caught:
+                    m.MCP(transport).call('get_transcripts_details', {'meeting_id': 'synthetic', 'record_file_id': 'synthetic', 'pid': '0', 'limit': 100})
+                self.assertNotIn('private', str(caught.exception))
+
+    def test_full_mode_is_requested_and_required_by_live_schema(self):
+        calls = []
+        def transport(packet):
+            if packet['method'] == 'tools/list':
+                tools = [{'name': n, 'inputSchema': {'type': 'object', 'properties': dict({k: {'type': t} for k, t in f.items()}, is_compact={'type': 'boolean'})}} for n, f in m.TOOL_FIELDS.items()]
+                return {'id': 1, 'result': {'tools': tools}}
+            calls.append(packet['params']['arguments'])
+            return {'id': 1, 'result': {'structuredContent': {'meeting_info_list': [], 'has_more': False}}}
+        client = m.MCP(transport)
+        client.call('get_user_ended_meetings', {'start_time': 'synthetic', 'end_time': 'synthetic', 'page_size': 100, 'page_token': ''})
+        self.assertIs(calls[0].get('is_compact'), False)
+        with self.assertRaises(m.SafeError):
+            client.call('get_user_ended_meetings', {'is_compact': True})
+
+    def test_observed_occurrence_records_full_transcript_pages_and_millisecond_times(self):
+        import json
+        calls = []
+        records = [{'record_file_id': 'short', 'meeting_record_id': 'short-group', 'type': '转写', 'duration': '00:01'},
+                   {'record_file_id': 'long', 'meeting_record_id': 'long-group', 'type': '转写', 'duration': '01:02:03'}]
+        def transport(packet):
+            if packet['method'] == 'tools/list':
+                return {'id': 1, 'result': {'tools': [
+                    {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                    for n, f in m.TOOL_FIELDS.items()]}}
+            name, args = packet['params']['name'], packet['params']['arguments']
+            calls.append((name, args))
+            self.assertIs(args['is_compact'], False)
+            if name == 'get_user_ended_meetings':
+                data = {'has_more': False, 'meeting_info_list': [{'meeting_id': 'recurring', 'sub_meeting_id': 'occurrence', 'subject': 'Synthetic', 'start_time': '2026-10-10T00:00:00Z', 'records': records, 'records_total_count': 115}]}
+                envelope = {'_meta': {}, 'data': {'status_code': 200, 'headers': {}, 'body': json.dumps(data)}}
+            elif name == 'get_records_list':
+                groups = [{'meeting_id': 'recurring', 'sub_meeting_id': 'occurrence', 'meeting_record_id': r['meeting_record_id'], 'record_files': [{'record_file_id': r['record_file_id']}]} for r in records]
+                groups.append({'meeting_id': 'recurring', 'sub_meeting_id': 'other-week', 'meeting_record_id': 'unrelated', 'record_files': [{'record_file_id': 'unrelated'}]})
+                first = not args['page_token']
+                data = {'record_meetings': groups[:1] if first else groups[1:], 'has_more': first, 'next_page_token': 'synthetic-next' if first else '', 'total_count': 3}
+                envelope = {'data': {'status_code': 200, 'body': json.dumps(data)}}
+            else:
+                self.assertEqual(name, 'get_transcripts_details')
+                self.assertEqual(args['record_file_id'], 'long')
+                pid = int(args['pid'])
+                data = {'code': 0, 'more': pid == 0, 'minutes': {'paragraphs': [{'pid': str(pid), 'start_time': 4400 if pid == 0 else 3723999, 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成文本'}]}]}]}}
+                envelope = {'status_code': 200, 'headers': {}, 'body': json.dumps(data)}
+            return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps(envelope)}]}}
+        text = m.fetch_transcript(m.MCP(transport), '2026-10-10', 'Synthetic', 'recurring')
+        self.assertEqual(text, '合成甲(00:00:04):\n合成文本\n\n合成甲(01:02:03):\n合成文本\n')
+        self.assertEqual([a['pid'] for n, a in calls if n == 'get_transcripts_details'], ['0', '1'])
+
+    def test_occurrence_coverage_and_transcript_paging_fail_closed(self):
+        from unittest.mock import patch
+        record = {'record_file_id': 'file', 'meeting_record_id': 'group', 'type': '转写', 'duration': '01:00'}
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'occurrence', 'start_time': '2026-10-10T00:00:00Z', 'records': [record]}
+        group = {'meeting_id': 'series', 'sub_meeting_id': 'occurrence', 'meeting_record_id': 'group', 'record_files': [{'record_file_id': 'file'}]}
+        paragraph = {'pid': '0', 'start_time': 0, 'speaker': {'user_name': '合成'}, 'sentences': [{'words': [{'text': '合成'}]}]}
+        for case in ('missing_sub', 'missing_metadata', 'duplicate_file', 'missing_more', 'empty_more', 'duplicate_pid', 'midstream_empty', 'page_bound'):
+            with self.subTest(case=case):
+                class Client:
+                    def __init__(self): self.pages = 0
+                    def call(self, name, args):
+                        if name == 'get_user_ended_meetings':
+                            row = dict(meeting)
+                            if case == 'missing_sub': row.pop('sub_meeting_id')
+                            if case == 'missing_metadata': row['records'] = []
+                            return {'meeting_info_list': [row], 'has_more': False}
+                        if name == 'get_records_list':
+                            return {'record_meetings': [group, group] if case == 'duplicate_file' else [group], 'has_more': False}
+                        self.pages += 1
+                        if case == 'midstream_empty' and self.pages > 1: return {'empty_transcript': True}
+                        if case == 'missing_more': return {'minutes': {'paragraphs': [paragraph]}}
+                        if case == 'empty_more': return {'minutes': {'paragraphs': []}, 'more': True}
+                        row = dict(paragraph, pid=str(self.pages - 1)) if case == 'page_bound' else paragraph
+                        return {'minutes': {'paragraphs': [row]}, 'more': True}
+                with patch.object(m, 'MAX_PAGES', 2), self.assertRaises(m.SafeError):
+                    m.fetch_transcript(Client(), '2026-10-10', '', 'series')
+        for value in (-1, True, 4.5):
+            with self.assertRaises(m.SafeError): m.norm_time(value)
+
     def test_runtime_schema_changes_fail_before_any_tool_call(self):
         import copy
         tools = [{'name': name, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in fields.items()}, 'required': list(fields)}} for name, fields in m.TOOL_FIELDS.items()]
@@ -48,9 +167,9 @@ class TranscriptTests(unittest.TestCase):
                     for name, fields in m.TOOL_FIELDS.items()]}}
             name, args = payload['params']['name'], payload['params']['arguments']
             if name == 'get_user_ended_meetings':
-                data = {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'subject': 'Synthetic Planet', 'start_time': '2026-10-16T17:00:00-07:00'}], 'has_more': False}
+                data = {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'sub_meeting_id': 'occurrence', 'subject': 'Synthetic Planet', 'start_time': '2026-10-16T17:00:00-07:00', 'records': [{'record_file_id': 'empty', 'meeting_record_id': 'empty-group', 'type': '转写', 'duration': '02:00:00'}, {'record_file_id': 'full', 'meeting_record_id': 'full-group', 'type': '转写', 'duration': '01:00:00'}]}], 'has_more': False}
             elif name == 'get_records_list':
-                data = {'records': [{'record_file_id': 'empty', 'type': '转写', 'duration': '02:00:00'}, {'record_file_id': 'full', 'type': '转写', 'duration': '01:00:00'}], 'has_more': False}
+                data = {'record_meetings': [{'meeting_id': 'synthetic-id', 'sub_meeting_id': 'occurrence', 'meeting_record_id': f + '-group', 'record_files': [{'record_file_id': f}]} for f in ('empty', 'full')], 'has_more': False}
             elif args['record_file_id'] == 'empty':
                 data = {'code': 30002}  # documented empty-shell recording, not transport failure
             else:
@@ -229,8 +348,8 @@ class CLITests(unittest.TestCase):
                 else:
                     name = packet['params']['name']
                     data = {
-                        'get_user_ended_meetings': {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'subject': 'Synthetic Planet', 'start_time': '2026-10-17T00:00:00Z'}], 'has_more': False},
-                        'get_records_list': {'records': [{'record_file_id': 'synthetic-file', 'type': '转写', 'duration': '01:00:00'}], 'has_more': False},
+                        'get_user_ended_meetings': {'meeting_info_list': [{'meeting_id': 'synthetic-id', 'sub_meeting_id': 'occurrence', 'subject': 'Synthetic Planet', 'start_time': '2026-10-17T00:00:00Z', 'records': [{'record_file_id': 'synthetic-file', 'meeting_record_id': 'group', 'type': '转写', 'duration': '01:00:00'}]}], 'has_more': False},
+                        'get_records_list': {'record_meetings': [{'meeting_id': 'synthetic-id', 'sub_meeting_id': 'occurrence', 'meeting_record_id': 'group', 'record_files': [{'record_file_id': 'synthetic-file'}]}], 'has_more': False},
                         'get_transcripts_details': {'minutes': {'paragraphs': [{'pid': '0', 'start_time': '00:01', 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '仅合成远程正文'}]}]}]}, 'more': False},
                     }[name]
                     result = {'structuredContent': {'data': data}}
@@ -273,7 +392,22 @@ class WorkflowTests(unittest.TestCase):
         flow = (root / '.github/workflows/meeting-content.yml').read_text()
         self.assertIn('pull_request:', ci)
         self.assertIn('push:', ci)
-        self.assertNotIn('secrets.', ci)
+        check = ci.split('  check:', 1)[1]
+        self.assertNotIn('secrets.', check)
+        probe = ci.split('  ep40-readonly:', 1)[1].split('  check:', 1)[0]
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", probe)
+        self.assertIn('ref: ${{ github.sha }}', probe)
+        self.assertIn('contents: read', probe)
+        self.assertNotIn('write', probe)
+        self.assertNotIn('upload-artifact', ci)
+        self.assertEqual(ci.count('secrets.'), 1)
+        self.assertIn('CONTENT_DATE: \'2026-10-10\'', probe)
+        self.assertIn('CONTENT_EPISODE: \'40\'', probe)
+        self.assertIn('run: python3 scripts/meeting_content.py fetch-check', probe)
+        self.assertIn('run: test -z "$(git status --porcelain)"', probe)
+        self.assertIn('if: always()', probe)
+        self.assertIn('rm -f .git/meeting-content-fetch-check.txt', probe)
+        self.assertNotIn('CONTENT_PUBLISH_ALLOWED', probe)
         self.assertIn('check-content.py', ci)
         self.assertIn("vars.CONTENT_AUTOMATION_ENABLED == 'true'", flow)
         self.assertIn('name: Transcript draft', flow)
