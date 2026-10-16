@@ -28,7 +28,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 路由
 
-- 逐字稿 / 转写 → `inspireplanet-transcript`
+- 逐字稿 / 转写 → GitHub Actions，入口与历史补录见 [下载说明](../../../scripts/meeting-content.md)
 - 公众号文章 / 标题 / 摘要 / 横版封面 → `inspireplanet-gzh`
 - 小红书 / 图集 / 竖版封面 → `inspireplanet-xhs`
 - 视频号 → `inspireplanet-sph`
@@ -40,7 +40,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 工作流程
 
-1. **下载转写稿（暂由孙玲完成）**：孙玲手动下载或在自己的已授权环境中用 `inspireplanet-transcript` 调用 CLI 拉取，原样保存为本期 `transcript.txt`。已有转写不重复下载；缺少时标记等待孙玲提供，不要求其他协作者登录她的账号。
+1. **下载与归档**：通过 GitHub Actions 拉取转写并创建公开 Draft PR，人工审核期次与公开范围后归档为本期 `transcript.txt`。已有转写不重复下载；缺少时提供 Actions 入口，等待转写归档或用户提供原稿。触发下载并公开原稿须有用户授权；仅请求整理内容不视为下载公开授权。
 2. **生成发布包**：全套包括公众号文章、小红书与视频号各自的图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json`，以及 `assets/cover-configs.md`；只要某个渠道时只生成相关交付物。先完成内容，再汇总公众号封面配置，并更新本期 README 的导航与制作流程，此阶段不渲染。公众号配置的布局 `layout` 和配色 `theme` 通过 `scripts/covers/assign_themes.py {本期目录}/assets/cover-configs.md` 将未指定值随机均衡分配为具体组合，保留已有选择。小红书／视频号各篇在脚本中写明 `- 主题：paper` 或 `inspire`，首图内容在第 1 页；没有公众号稿时无需新建独立封面配置。
 3. **确认**：在 README 同一步中提供文章、`assets/cover-configs.md` 和各篇小红书／视频号脚本的导航、渲染命令与 prompt。确认对应文章、封面文字、视觉命题、图卡每页文字、署名与主题后，才生成公众号封面和分别渲染图卡，再检查。按保存的布局与主题出图，不重新抽选；结果在交付回复中说明。各渠道可分别确认并出图，不必等待无关篇目。
 4. **发布**：当事人确认具体稿件与公开范围后，由发布者使用 `ready/` 对应平台成品发布。授权与发布注意事项记入 README 的发布备注，实际发布日期及平台链接也可记在此处，不维护状态面板。AI 仅在用户明确要求时操作外部平台，出图确认不视为发布授权。
@@ -62,7 +62,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ```mermaid
 flowchart LR
-    A["1 下载<br/>孙玲提供转写稿"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
+    A["1 下载与归档<br/>Actions 拉取，人工审核 PR"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
     B --> C["3 确认<br/>封面配置与图文脚本"]
     C -->|确认后渲染并检查| D["4 发布<br/>获授权后使用 ready/ 成品"]
     C -.->|需要修改| B
@@ -70,15 +70,9 @@ flowchart LR
 
 命令在仓库根目录、已安装依赖的渲染环境中执行。固定发布入口为仓库旁的 `inspire-planet-publish/{期目录}/`，发布只使用 `ready/`；预览打开 `preview.html`，下载使用 `gzh.zip`、`xhs.zip`、`sph.zip` 或 `all.zip`。
 
-### 1. 下载转写稿（暂由孙玲完成）
+### 1. 下载与归档
 
-孙玲手动下载，或使用自己的已授权 CLI：
-
-```bash
-python3 scripts/pull-transcript.py --date {YYYY-MM-DD} --episode {NN}
-```
-
-原样保存为 `transcript.txt`；已有转写无需重复下载。
+已有 [transcript.txt](transcript.txt)，无需重复下载。缺少转写时，通过 GitHub Actions 的 **Transcript draft** 获取最新会议；历史会议使用 **Historical transcript (advanced)** 按日期或扫描编号选择，见 [下载说明](../../../scripts/meeting-content.md)。人工审核公开 Draft PR 的期次与公开范围后归档，原始转写不润色。
 
 ### 2. 生成发布包
 

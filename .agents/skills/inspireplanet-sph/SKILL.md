@@ -32,7 +32,7 @@ events/{year}/{YYYYMMDD}-epXX/
   sph-{slug}.md    输出，一位分享者一个文件
 ```
 
-- 没有 `transcript.txt` 时先用 `inspireplanet-transcript` 取逐字稿；
+- 没有 `transcript.txt` 时，提供 [Actions 下载入口与说明](../../../scripts/meeting-content.md)，等待转写归档或用户提供原稿；不凭空补写会议事实，也不因整理请求自行公开原稿；
 - 已有同名文件时更新原文件；
 - 文件只放模板里的内容；待确认事项在完成后的回复里说。
 

@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart LR
-    A["1 下载<br/>孙玲提供转写稿"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
+    A["1 下载与归档<br/>Actions 拉取，人工审核 PR"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
     B --> C["3 确认<br/>封面配置与图文脚本"]
     C -->|确认后渲染并检查| D["4 发布<br/>获授权后使用 ready/ 成品"]
     C -.->|需要修改| B
@@ -16,15 +16,9 @@ flowchart LR
 
 下面的命令均在仓库根目录执行。渲染环境安装见 [公众号封面说明](../../../scripts/covers/README.md) 和 [图卡说明](../../../scripts/text-cards/README.md)；需 Python 依赖、Chromium 和霞鹜文楷字体。本机字体无法自动找到时加 `--font <字体文件路径>`；使用已安装的 Chrome 时加 `--browser <浏览器文件路径>`。
 
-### 1. 下载转写稿（暂由孙玲完成）
+### 1. 下载与归档
 
-孙玲手动下载腾讯会议转写稿，或用已授权的 CLI 拉取，原样保存为 [transcript.txt](transcript.txt)。已有转写时无需重复执行。
-
-```bash
-python3 scripts/pull-transcript.py --date 2026-10-10 --episode 40
-```
-
-CLI 需要孙玲的腾讯会议授权；不共享或提交凭据。手动下载同样暂由孙玲完成。
+本期已有 [transcript.txt](transcript.txt)，无需重复下载。其他会议通过 GitHub Actions 获取，见 [下载说明](../../../scripts/meeting-content.md)；人工审核公开 Draft PR 的期次与公开范围后归档。原始转写不润色。
 
 ### 2. 生成发布包
 

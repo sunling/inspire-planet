@@ -8,19 +8,20 @@
 
 - [按期浏览会议资料](events/README.md)
 - [当前活动信息](current.md)：只有经过确认的信息才用于新的邀请与发布文案。
+- [下载会议转写稿](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml)：Actions 日常入口，无需填写日期或期数；[使用与维护说明](scripts/meeting-content.md)。
 - [AI 工作流](.agents/skills/)：公众号文章、金句卡片、小红书/视频号图文和封面。
 
 ## 内容工作流
 
 ```mermaid
 flowchart LR
-    A["1 下载<br/>孙玲提供转写稿"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
+    A["1 下载与归档<br/>Actions 拉取，人工审核 PR"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
     B --> C["3 确认<br/>封面配置与图文脚本"]
     C -->|确认后渲染并检查| D["4 发布<br/>获授权后使用 ready/ 成品"]
     C -.->|需要修改| B
 ```
 
-1. **下载**：孙玲手动下载或通过已授权的 CLI 获取转写稿，原样保存为本期 `transcript.txt`；已有转写无需重复下载。
+1. **下载与归档**：GitHub Actions 的 **Transcript draft** 发现最新项目会议，去重后拉取原始转写并创建公开 Draft PR，无需填写日期或期数。人工审核转写的公开范围与期次后合并；期次不明的材料先进入 `incoming/meetings/` 待确认。已有转写无需重复下载，自动拉取不可用时可由孙玲手动提供原稿。Actions 只负责获取转写，后续内容整理另行发起。
 2. **生成**：准备公众号文章、小红书／视频号图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json` 和 `assets/cover-configs.md`，也可只生成指定内容。`cover-configs.md` 是本期公众号封面的设计稿，按文章记录封面文字、布局、配色、设计意图和图片输出路径，供出图前审阅；确认后渲染工具按它生成图片。小红书／视频号首图的文字和主题放在各自图文脚本中。此阶段只交付文字与配置。
 3. **确认**：审阅文章、公众号封面配置及小红书／视频号脚本；确认对应内容后再生成封面、渲染图卡并检查。命令与 prompt 放在本期 README 的这一步，成品统一更新到固定 `ready/`。
 4. **发布**：当事人确认具体稿件与公开范围后，从 `ready/` 取对应平台的成品发布；发布日期和平台链接可记入发布备注。
@@ -43,7 +44,10 @@ events/{year}/{YYYYMMDD}-epXX/
     cover-configs.md   公众号横版封面的配置与设计信息
     recap-cover-{slug}.jpg  公众号封面成品
 .agents/skills/          生成上述内容的工作流
-scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HTML 模板生成渠道封面；scripts/text-cards/ 把图集脚本或分页 Markdown 渲染为卡片图（多主题）
+.github/workflows/      转写下载、历史补录与内容检查的 GitHub Actions
+scripts/                Actions 调用的转写程序、内容检查与发布包渲染工具
+  covers/               用 HTML 模板生成公众号封面
+  text-cards/           把图文脚本渲染为小红书／视频号图卡
 ```
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
@@ -56,7 +60,13 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 
 字段、期次身份、溯源与审核后同步方式见 [内容数据约定](events/data-contract.md)。JSON 生成不等于获准公开；合并到 `main` 前完成内容与授权检查，网站会读取该分支的数据。
 
-可选的 [GitHub Actions 逐字稿流水线](scripts/meeting-content.md) 日常入口无需填写日期或期数：发现最新项目会议，去重后拉取逐字稿并创建**公开、未经人工审阅的 Draft PR**。期数不明时保存到 `incoming/meetings/` 待确认；历史补录保留独立高级入口。不调用模型、不生成网站内容 JSON 或图片，排程默认关闭，不自动合并或发布。后续内容整理在 ChatGPT/Codex 中单独发起，可继续使用同一内容分支。
+## 转写下载自动化
+
+- **日常下载**：[Transcript draft](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml) → Run workflow → 选择 `main`，无需输入日期或期数。
+- **定时下载**：已配置 UTC 周六 02:00、02:10、02:20 三次尝试（北京时间周六 10:00、10:10、10:20）；仅在仓库变量 `CONTENT_AUTOMATION_ENABLED` 为 `true` 时运行。定时触发可能延迟，必要时手动补跑。
+- **历史补录**：[Historical transcript (advanced)](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)。留空运行可先扫描，再按日期或扫描编号选择会议。
+
+流水线需要 `TENCENT_MEETING_TOKEN` Secret 和 Actions 创建 PR 的权限；配置、去重和期次处理见 [维护说明](scripts/meeting-content.md)。生成的是**公开、未经人工审阅的 Draft PR**，不自动合并。自动化不调用模型、不生成文章、网站 JSON 或图片，也不操作网站或社交平台。后续内容整理在 ChatGPT/Codex 中单独发起，可继续使用同一内容分支。
 
 ## 参与整理
 
@@ -70,7 +80,6 @@ scripts/                 拉取逐字稿等辅助脚本；scripts/covers/ 用 HT
 
 在本仓库根目录打开支持项目 skills 的 AI 工具，先读取 [AGENTS.md](AGENTS.md)。例如：
 
-- “下载本期逐字稿” → `inspireplanet-transcript`
 - “整理某期会议的完整发布包” → `inspireplanet`
 - “写公众号文章 / 起标题 / 写摘要” → `inspireplanet-gzh`
 - “提炼单期分享纪要” → `inspireplanet-summary`
