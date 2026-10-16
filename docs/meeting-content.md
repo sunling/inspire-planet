@@ -23,11 +23,13 @@
 
 ## 3. 历史会议补录
 
-使用独立的 [Historical transcript (advanced)](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)：
+使用独立的 [历史会议转写 · 查找与补录](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)：
 
-1. 先不填 `date` 和 `pick`，使用默认 `draft` 运行，查看只读扫描结果；**扫描不会下载全文，也不会创建 PR**。
-2. 选择要补录的会议，填入扫描列出的 `pick` 编号，或单独填写本地日历日期 `date`（格式 `YYYY-MM-DD`），二者只填一个。
-3. 保留 `mode=draft` 再运行；查看生成的 Draft PR 并人工审核。若同日多场或归属不明确，工作流会停止而不是猜测。
+1. **先查找**：`Use workflow from` 选 `main`，`date`、`pick` **都留空**，`mode` 保持默认 `draft`，点击 **Run workflow**。在运行日志中查看带编号的未归档会议列表。**这一步只扫描，不下载全文、不创建 PR**。
+2. **再补录**：再次运行该工作流，填入刚才扫描结果的 `pick` 编号；如果已确定具体会议日期，也可以直接填写 `date`（`YYYY-MM-DD`）。**两项只填一个**。
+3. 保持 `mode=draft`，运行完成后去 **Pull requests** 审核生成的 Draft PR。若同日多场或归属不明确，工作流会停止而不是猜测。
+
+> `mode` 的其他选项 `fetch-check`、`connectivity` 仅供维护者排查；正常查找和补录不需要改动它。
 
 历史归档可能受会议 API 的可用期限和旧录制归属问题限制；失败时不要反复尝试绕过安全检查。
 
