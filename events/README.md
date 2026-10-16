@@ -8,24 +8,24 @@
 | 20260117-ep02 | — | — | [卡片 JSON](2026/20260117-ep02/quote-cards.json) | — | — |
 | 20260124-ep03 | — | — | [卡片 JSON](2026/20260124-ep03/quote-cards.json) | — | — |
 | 20260131-ep04 | — | — | [卡片 JSON](2026/20260131-ep04/quote-cards.json) | — | — |
-| 20260207-ep05 | [转写](2026/20260207-ep05/transcript.txt) | — | [卡片 JSON](2026/20260207-ep05/quote-cards.json) · [金句笔记](2026/20260207-ep05/quote-notes.md) | — | — |
+| 20260207-ep05 | [转写](2026/20260207-ep05/transcript.txt) | — | [卡片 JSON](2026/20260207-ep05/quote-cards.json) | — | — |
 | 20260214-ep06 | [转写](2026/20260214-ep06/transcript.txt) | — | — | — | — |
 | 20260221-ep07 | [转写](2026/20260221-ep07/transcript.txt) | — | — | — | — |
-| 20260228-ep08 | [转写](2026/20260228-ep08/transcript.txt) | — | [卡片 JSON](2026/20260228-ep08/quote-cards.json) · [金句笔记](2026/20260228-ep08/quote-notes.md) | — | — |
-| 20260307-ep09 | [转写](2026/20260307-ep09/transcript.txt) | — | [卡片 JSON](2026/20260307-ep09/quote-cards.json) · [金句笔记](2026/20260307-ep09/quote-notes.md) | — | — |
-| 20260314-ep10 | [转写](2026/20260314-ep10/transcript.txt) | — | [卡片 JSON](2026/20260314-ep10/quote-cards.json) · [金句笔记](2026/20260314-ep10/quote-notes.md) | — | — |
-| 20260321-ep11 | [转写](2026/20260321-ep11/transcript.txt) | — | [卡片 JSON](2026/20260321-ep11/quote-cards.json) · [金句笔记](2026/20260321-ep11/quote-notes.md) | — | — |
-| 20260328-ep12 | [转写](2026/20260328-ep12/transcript.txt) | — | [卡片 JSON](2026/20260328-ep12/quote-cards.json) · [金句笔记](2026/20260328-ep12/quote-notes.md) | — | — |
-| 20260404-ep13 | [转写](2026/20260404-ep13/transcript.txt) | — | [卡片 JSON](2026/20260404-ep13/quote-cards.json) · [金句笔记](2026/20260404-ep13/quote-notes.md) | — | — |
-| 20260411-ep14 | [转写](2026/20260411-ep14/transcript.txt) | — | [卡片 JSON](2026/20260411-ep14/quote-cards.json) · [金句笔记](2026/20260411-ep14/quote-notes.md) | — | — |
-| 20260418-ep15 | [转写](2026/20260418-ep15/transcript.txt) | — | [卡片 JSON](2026/20260418-ep15/quote-cards.json) · [金句笔记](2026/20260418-ep15/quote-notes.md) | — | — |
-| 20260425-ep16 | [转写](2026/20260425-ep16/transcript.txt) | — | [卡片 JSON](2026/20260425-ep16/quote-cards.json) · [金句笔记](2026/20260425-ep16/quote-notes.md) | — | — |
-| 20260502-ep17 | [转写](2026/20260502-ep17/transcript.txt) | — | [卡片 JSON](2026/20260502-ep17/quote-cards.json) · [金句笔记](2026/20260502-ep17/quote-notes.md) | — | — |
-| 20260509-ep18 | [转写](2026/20260509-ep18/transcript.txt) | — | [卡片 JSON](2026/20260509-ep18/quote-cards.json) · [金句笔记](2026/20260509-ep18/quote-notes.md) | — | — |
-| 20260516-ep19 | [转写](2026/20260516-ep19/transcript.txt) | — | [卡片 JSON](2026/20260516-ep19/quote-cards.json) · [金句笔记](2026/20260516-ep19/quote-notes.md) | — | — |
-| 20260523-ep20 | [转写](2026/20260523-ep20/transcript.txt) | — | [卡片 JSON](2026/20260523-ep20/quote-cards.json) · [金句笔记](2026/20260523-ep20/quote-notes.md) | — | — |
-| 20260530-ep21 | [转写](2026/20260530-ep21/transcript.txt) | [纪要](2026/20260530-ep21/recap.md) | [卡片 JSON](2026/20260530-ep21/quote-cards.json) · [金句笔记](2026/20260530-ep21/quote-notes.md) | — | [封面](2026/20260530-ep21/assets) |
-| 20260606-ep22 | [转写](2026/20260606-ep22/transcript.txt) | [纪要](2026/20260606-ep22/recap.md) | [卡片 JSON](2026/20260606-ep22/quote-cards.json) · [金句笔记](2026/20260606-ep22/quote-notes.md) | — | [封面](2026/20260606-ep22/assets) |
+| 20260228-ep08 | [转写](2026/20260228-ep08/transcript.txt) | — | [卡片 JSON](2026/20260228-ep08/quote-cards.json) | — | — |
+| 20260307-ep09 | [转写](2026/20260307-ep09/transcript.txt) | — | [卡片 JSON](2026/20260307-ep09/quote-cards.json) | — | — |
+| 20260314-ep10 | [转写](2026/20260314-ep10/transcript.txt) | — | [卡片 JSON](2026/20260314-ep10/quote-cards.json) | — | — |
+| 20260321-ep11 | [转写](2026/20260321-ep11/transcript.txt) | — | [卡片 JSON](2026/20260321-ep11/quote-cards.json) | — | — |
+| 20260328-ep12 | [转写](2026/20260328-ep12/transcript.txt) | — | [卡片 JSON](2026/20260328-ep12/quote-cards.json) | — | — |
+| 20260404-ep13 | [转写](2026/20260404-ep13/transcript.txt) | — | [卡片 JSON](2026/20260404-ep13/quote-cards.json) | — | — |
+| 20260411-ep14 | [转写](2026/20260411-ep14/transcript.txt) | — | [卡片 JSON](2026/20260411-ep14/quote-cards.json) | — | — |
+| 20260418-ep15 | [转写](2026/20260418-ep15/transcript.txt) | — | [卡片 JSON](2026/20260418-ep15/quote-cards.json) | — | — |
+| 20260425-ep16 | [转写](2026/20260425-ep16/transcript.txt) | — | [卡片 JSON](2026/20260425-ep16/quote-cards.json) | — | — |
+| 20260502-ep17 | [转写](2026/20260502-ep17/transcript.txt) | — | [卡片 JSON](2026/20260502-ep17/quote-cards.json) | — | — |
+| 20260509-ep18 | [转写](2026/20260509-ep18/transcript.txt) | — | [卡片 JSON](2026/20260509-ep18/quote-cards.json) | — | — |
+| 20260516-ep19 | [转写](2026/20260516-ep19/transcript.txt) | — | [卡片 JSON](2026/20260516-ep19/quote-cards.json) | — | — |
+| 20260523-ep20 | [转写](2026/20260523-ep20/transcript.txt) | — | [卡片 JSON](2026/20260523-ep20/quote-cards.json) | — | — |
+| 20260530-ep21 | [转写](2026/20260530-ep21/transcript.txt) | [纪要](2026/20260530-ep21/recap.md) | [卡片 JSON](2026/20260530-ep21/quote-cards.json) | — | [封面](2026/20260530-ep21/assets) |
+| 20260606-ep22 | [转写](2026/20260606-ep22/transcript.txt) | [纪要](2026/20260606-ep22/recap.md) | [卡片 JSON](2026/20260606-ep22/quote-cards.json) | — | [封面](2026/20260606-ep22/assets) |
 | 20260613-ep23 | [转写](2026/20260613-ep23/transcript.txt) | [纪要](2026/20260613-ep23/recap.md) | [卡片 JSON](2026/20260613-ep23/quote-cards.json) | — | [封面](2026/20260613-ep23/assets) |
 | 20260620-ep24 | [转写](2026/20260620-ep24/transcript.txt) | [纪要](2026/20260620-ep24/recap.md) | [卡片 JSON](2026/20260620-ep24/quote-cards.json) | — | [封面](2026/20260620-ep24/assets) |
 | 20260627-ep25 | [转写](2026/20260627-ep25/transcript.txt) | [纪要](2026/20260627-ep25/recap.md) | [卡片 JSON](2026/20260627-ep25/quote-cards.json) | — | — |
