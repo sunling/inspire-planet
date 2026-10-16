@@ -32,7 +32,6 @@ events/{year}/{YYYYMMDD}-epXX/
   gzh-{slug}.md        公众号分享文章（一位分享者一篇；末尾附标题与摘要）
   xhs-{slug}.md        小红书图文（一位分享者一篇）
   sph-{slug}.md        视频号图文（一位分享者一篇）
-  quote-notes.md       历史金句与语境笔记
   summary.json         网站单期详情页的结构化分享纪要
   quote-cards.json     金句卡片与周刊数据
   assets/             只保存必要原图、配置与公众号封面
