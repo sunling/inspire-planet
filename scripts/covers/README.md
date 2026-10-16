@@ -51,7 +51,7 @@ python3 scripts/covers/assign_themes.py events/{year}/{event}/assets/cover-confi
 
 ## 固定发布入口
 
-确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，在云端临时 runner 中输出；校验成功后通过保留 1 天的 Artifact 下载，旧图片不归档。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，在云端临时 runner 中输出；校验成功后通过保留 1 天的 Artifact 下载，旧图片不归档。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../../docs/rendering.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
 
 ## 运行
 
