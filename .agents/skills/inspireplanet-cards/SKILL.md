@@ -5,6 +5,17 @@ description: 从启发星球某期会议转写中提炼可追溯的金句卡片 
 
 # Inspire Planet Quote Cards
 
+## 第一阶段：纪要与金句的能力与交付门禁
+
+- 默认使用本人或协作者自己的 AI 工具与订阅，不需要项目模型 API，不共享登录。只有能实际读取完整仓库文件的工具才能按这些规则生成；ChatGPT 对话／浏览器能打开 GitHub 不等于能写仓库。
+- 开工先读取当前 main 的 AGENTS、README、current、总控及 summary/cards SKILL、cards EXAMPLES/LEARNINGS 和 events/data-contract；fetch 后确认目标分支、精确 head 与脏状态，保护不相关文件，独立分支，或核对后安全续用同一期转写分支。
+- 完整阅读目标期 transcript.txt 与已有 README 授权／匿名边界，不只看片段；只生成用户指定交付物。“第一阶段／纪要＋金句”只做 summary.json 和 quote-cards.json，不扩展文章、封面配置或图片。已有人工文件默认不覆盖，只补缺失项；重做或编辑已有内容须有明确授权。
+- 年份＋EP 唯一定位；incoming 先确认期次并归档到 events，不能猜期数或直接生成网站 JSON。事实和署名回查转写，摘录保留单人连续原文依据；隐私、授权与语义需人工审阅，不能用结构校验替代。
+- 运行 python3 scripts/check-content.py，检查本期白名单 diff，提交公开 Draft PR，不合并。main 会被网站读取，不是草稿区。
+- 没有写文件／执行／GitHub 提交工具时，明确缺少哪项能力，交付可下载的目标路径 JSON 文件与核对说明；未运行的检查标为未运行，不能假称已保存、commit、push 或建 PR。下载文件不等于入库。
+
+手动 Actions 是可选 Plan B，使用同一规则与数据契约，不自动跟随转写执行；未配置项目 API 时不可用。完整设置与边界见 [两条内容生产通道](../../../scripts/content-plan.md)。
+
 ## 路径
 
 ```text

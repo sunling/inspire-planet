@@ -92,5 +92,7 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_meeting_content.py' -v
           python3 -m unittest discover -s scripts -p 'test_latest_transcript.py' -v
+      - name: Test manual content plan (synthetic transport and local Git)
+        run: python3 -m unittest discover -s scripts -p 'test_content_plan.py' -v
       - name: Check repository content
         run: python3 scripts/check-content.py
