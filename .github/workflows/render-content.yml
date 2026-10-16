@@ -87,8 +87,11 @@ jobs:
           python scripts/render-publish.py "$event" \
             --root "$RUNNER_TEMP/inspire-planet-publish" \
             "${args[@]}" "${extra[@]}"
-          cp -a "$RUNNER_TEMP/inspire-planet-publish/$EPISODE" "$RUNNER_TEMP/deliverable"
-          # ready JPGs, preview.html and ZIPs are temporary artifacts only
+          # upload-artifact already creates a downloadable ZIP. Include just
+          # the JPEG directory and its HTML preview; omit nested channel/all ZIPs.
+          mkdir -p "$RUNNER_TEMP/deliverable"
+          cp -a "$RUNNER_TEMP/inspire-planet-publish/$EPISODE/ready" "$RUNNER_TEMP/deliverable/"
+          cp "$RUNNER_TEMP/inspire-planet-publish/$EPISODE/preview.html" "$RUNNER_TEMP/deliverable/"
       - uses: actions/upload-artifact@v4
         with:
           name: render-${{ inputs.episode }}-${{ inputs.channel }}-${{ github.run_number }}
