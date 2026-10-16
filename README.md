@@ -25,6 +25,19 @@ flowchart LR
 
 ## 文件结构
 
+仓库里的内容与工具分开存放：
+
+```text
+events/                 按年份、期次保存会议内容（单期结构见下）
+.agents/skills/         AI 内容整理工作流
+.github/workflows/      GitHub Actions 下载与检查任务
+scripts/                下载、检查与渲染程序
+  covers/               公众号封面渲染器：Python、HTML 模板与 CSS
+  text-cards/           图卡渲染器：Python、CSS 主题与测试
+```
+
+每期内容目录（只创建实际需要的文件）：
+
 ```text
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt       会议原始转写
@@ -35,15 +48,12 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-notes.md       历史金句与语境笔记
   summary.json         网站单期详情页的结构化分享纪要
   quote-cards.json     金句卡片与周刊数据
-  assets/             只保存必要原图、配置与公众号封面
+  assets/              本期素材：必要原图、配置与公众号封面
     cover-configs.md   公众号横版封面的配置与设计信息
     recap-cover-{slug}.jpg  公众号封面成品
-.agents/skills/          生成上述内容的工作流
-.github/workflows/      转写下载、历史补录与内容检查的 GitHub Actions
-scripts/                Actions 调用的转写程序、内容检查与发布包渲染工具
-  covers/               用 HTML 模板生成公众号封面
-  text-cards/           把图文脚本渲染为小红书／视频号图卡
 ```
+
+`scripts/covers/` 和 `scripts/text-cards/` 保存渲染工具代码；生成的小红书／视频号图片、预览与 ZIP 保存在仓库外的 `../inspire-planet-publish/{期目录}/ready/` 及其同级文件中，不提交到这两个工具目录。每期 `assets/` 按约定保留必要原图、公众号封面配置与封面图片；历史期已有的旧封面保留原样。
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
 
