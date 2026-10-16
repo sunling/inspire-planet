@@ -7,9 +7,9 @@ on:
         description: '要做什么？先查找历史会议，或按指定日期补录'
         type: choice
         options:
-          - search
-          - by_date
-        default: search
+          - 查找未归档会议
+          - 按日期补录
+        default: 查找未归档会议
       date:
         description: '按日期补录时填写：YYYY-MM-DD（如 2026-09-26）'
         type: string
@@ -57,12 +57,12 @@ jobs:
       - name: Validate selected operation
         shell: bash
         run: |
-          if [ "$CONTENT_OPERATION" = search ]; then
+          if [ "$CONTENT_OPERATION" = "查找未归档会议" ]; then
             if [ -n "$CONTENT_DATE" ]; then
               echo "::error::查找无需填日期；请选择按日期补录"
               exit 1
             fi
-          elif [ "$CONTENT_OPERATION" = by_date ]; then
+          elif [ "$CONTENT_OPERATION" = "按日期补录" ]; then
             if [[ ! "$CONTENT_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
               echo "::error::请填写 YYYY-MM-DD 格式的会议日期"
               exit 1
@@ -71,14 +71,14 @@ jobs:
             exit 1
           fi
       - name: Find unarchived historical meetings (read-only)
-        if: env.CONTENT_OPERATION == 'search'
+        if: env.CONTENT_OPERATION == '查找未归档会议'
         env:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/latest_transcript.py scan
       - name: Match selected date and create draft plan
         id: plan
-        if: env.CONTENT_OPERATION == 'by_date'
+        if: env.CONTENT_OPERATION == '按日期补录'
         env:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
