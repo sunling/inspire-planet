@@ -23,7 +23,6 @@ events/{year}/{YYYYMMDD}-epXX/
   transcript.txt           输入
   gzh-{slug}.md            输出，一位分享者一个文件
   assets/cover-configs.md         公众号横版封面的配置与设计信息
-  assets/recap-cover.jpg   横版封面；一期多篇时用 recap-cover-{slug}.jpg
 ```
 
 已有同名文件时更新原文件，不新建 `gzh-{slug}-2.md`。
@@ -59,7 +58,7 @@ events/{year}/{YYYYMMDD}-epXX/
   2. ...
 - 摘要：{120 字以内}
 - 作者栏：{名字}
-- 封面：`assets/recap-cover.jpg`（计划路径，待确认后渲染）
+- 封面：仓库外 `inspire-planet-publish/{期目录}/ready/gzh/recap-cover-{slug}.jpg`（待确认后渲染）
 - 发布前：待 {名字} 本人过目
 ```
 
@@ -104,7 +103,8 @@ events/{year}/{YYYYMMDD}-epXX/
 - 只放 6–14 字短副标题，取自本篇核心变化或动作，不重复发布标题；
 - 默认 HTML/CSS 渲染；生成配置时独立选择布局 `layout`（`collage` 拼贴、`editorial` 杂志排版、`signal` 大字海报）与配色 `theme`（`collage`、`pop`、`garden`、`blueprint`、`night`），随机均衡分配后把具体组合写入配置，再交用户确认；完整的 `cover-config` JSON、副标题和视觉命题统一写入本期 `assets/cover-configs.md`，按公众号篇目分节，不写入文章；渲染方法见 `scripts/covers/README.md`；
 - 设计原则、出图流程和 JPEG 规范见 `../inspireplanet/references/cover-design.md`；
-- 本篇「发布信息」的封面一行只保留成品路径，不附副标题、视觉命题或封面配置。修改已有稿件时先把封面配置及设计信息移入 `assets/cover-configs.md`，再移除稿件中的配置块。
+- 新配置的 `asset` 只写 `recap-cover-{slug}.jpg` 文件名，实际输出由发布工具指定为仓库外 `ready/gzh/`。
+- 本篇「发布信息」的封面一行只保留仓库外成品路径，不附副标题、视觉命题或封面配置。修改已有稿件时先把封面配置及设计信息移入 `assets/cover-configs.md`，再移除稿件中的配置块。
 
 ## 工作流程
 
@@ -114,7 +114,7 @@ events/{year}/{YYYYMMDD}-epXX/
 4. 通读查代词：每个“她/他”只能指向一个人，不能就改成名字或省略主语；
 5. 写「发布信息」；
 6. 内容完成后更新 `assets/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。发布信息中标明计划封面路径及待确认、待渲染状态；检查文章未保留封面配置；
-7. 交付文章与封面脚本，在本期 README 的稿件导航提供配置链接，在“本期命令”提供真实路径的渲染命令，通用步骤与 prompt 链接 `scripts/content-workflow.md`；发布渲染用 `scripts/render-publish.py {本期目录} --channel gzh`，将检查通过的封面更新到固定 `ready/gzh/`，旧版存 `history/`；必要入库 JPEG 再从此复制到本期 `assets/`。用户明确确认后才渲染封面、存 JPEG，结果在交付回复中说明，不回写 README 的制作进度；发布授权记入发布备注；
+7. 交付文章与封面脚本，在本期 README 的稿件导航提供配置链接，在“本期命令”提供真实路径的渲染命令，通用步骤与 prompt 链接 `scripts/content-workflow.md`；发布渲染用 `scripts/render-publish.py {本期目录} --channel gzh`，将检查通过的封面更新到固定 `ready/gzh/`，旧版存 `history/`；封面成品不复制回仓库，历史入库封面与引用保留原样。用户明确确认后才渲染封面、存 JPEG，结果在交付回复中说明，不回写 README 的制作进度；发布授权记入发布备注；
 8. 修改已有文章时局部改，并回到转写核对。
 
 稳定的新偏好写进 `LEARNINGS.md`，典型改写样本写进 `EXAMPLES.md`；用户明确要求复盘时才更新。
