@@ -11,6 +11,8 @@
 
 ## 字段
 
+金句只维护 `quote-cards.json`，不再维护重复的 Markdown 数据副本；历史帖文、标题与话题词不混入金句字段。
+
 JSON 使用 UTF-8。金句文件是数组，每项只含非空字符串 `name`、`title`、`quote`、`detail`、`episode`。`detail` 是读者可直接阅读的会议语境，不带“出处：……”、转写时间戳或时间区间。
 
 纪要文件是对象，包含非空字符串 `episode`、`date`、`title`、`overview` 和非空数组 `topics`。新纪要每个话题包含 `speaker`、`title`、`context`、`keyPoints`、`quote`、`discussion`；`keyPoints` 是非空字符串数组。`highlights` 是字符串数组，没有额外片段时可为空。没有现场讨论时 `discussion` 可为空，不为满足格式补造问答。校验兼容历史话题的 `summary` 字段。
