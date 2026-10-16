@@ -2,7 +2,7 @@
 
 一句话有智慧的话，一个人开了一整天的车，一个住在微信里的助手。
 
-通用步骤与 prompt 见 [内容制作说明](../../../scripts/content-workflow.md)。
+通用步骤与 prompt 见 [内容制作说明](../../../docs/content-workflow.md)。
 
 ## 稿件导航
 
