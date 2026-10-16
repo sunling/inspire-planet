@@ -21,7 +21,7 @@ flowchart LR
     C -.->|需要修改| B
 ```
 
-详细步骤、通用 prompt、确认要求与环境入口见 [内容制作说明](scripts/content-workflow.md)。每期 `README.md` 只保留稿件导航、本期命令与发布备注；详细核对记录按需折叠，不维护制作状态面板。
+详细流程见 [内容制作说明](scripts/content-workflow.md)；[云端与本地渲染操作](docs/rendering.md)及[设计修改清单](docs/design-editing.md)单独维护。每期 `README.md` 只保留稿件导航、本期命令与发布备注。
 
 ## 文件结构
 
