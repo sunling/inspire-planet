@@ -21,17 +21,17 @@
 
 若工作流失败，先查看报错：常见原因包括转写未就绪、凭据失效、自动建 PR 的权限关闭、会议期次无法确认等；不要自行猜测期数或手动上传未获授权的转写。
 
-## 3. 历史会议补录
+## 3. 历史会议转写：查找或按日期补录
 
-使用独立的 [历史会议转写 · 查找与补录](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)：
+打开 [历史会议转写 · 查找与补录](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)，点 **Run workflow**，在 **Use workflow from** 选择 `main`。
 
-1. **先查找**：`Use workflow from` 选 `main`，`date`、`pick` **都留空**，`mode` 保持默认 `draft`，点击 **Run workflow**。在运行日志中查看带编号的未归档会议列表。**这一步只扫描，不下载全文、不创建 PR**。
-2. **再补录**：再次运行该工作流，填入刚才扫描结果的 `pick` 编号；如果已确定具体会议日期，也可以直接填写 `date`（`YYYY-MM-DD`）。**两项只填一个**。
-3. 保持 `mode=draft`，运行完成后去 **Pull requests** 审核生成的 Draft PR。若同日多场或归属不明确，工作流会停止而不是猜测。
+- **查找未归档会议**：操作选择 `search`（默认），日期留空，运行后在日志查看未归档会议的真实日期。此操作只扫描，不下载全文、不创建 PR。
+- **按日期补录**：操作选择 `by_date`，填写会议日期 `YYYY-MM-DD`（例如 `2026-09-26`），再选择**该日期所属的时区**：默认 `Asia/Shanghai`（北京时间），也可选择 `America/Los_Angeles`（美西时间）或 `UTC`。运行后如唯一匹配对应会议，会尝试生成 Draft PR。
+- **人工审核**：到 **Pull requests** 检查日期、来源、期次和公开范围，再决定是否合并。
 
-> `mode` 的其他选项 `fetch-check`、`connectivity` 仅供维护者排查；正常查找和补录不需要改动它。
+会议日期严格按**你选定的时区**解释，不会同时用多个时区猜测。同一当地日期有多场项目会议、没有匹配，或数据有歧义时，流程会停止，不会自动选择错误场次。
 
-历史归档可能受会议 API 的可用期限和旧录制归属问题限制；失败时不要反复尝试绕过安全检查。
+历史录制可能受 API 可用期限与旧录制归属限制；如失败请交由维护者核对。
 
 ## 4. 什么时候需要维护者？
 
