@@ -7,7 +7,7 @@
 1. 在 GitHub 打开 **Actions → Render content (temporary download) → Run workflow**。
 2. **Use workflow from** 选择包含已审稿件和配置的分支；填写 `episode`，例如 `20260919-ep37`（只填文件夹名）。
 3. 选择 `channel`：`gzh` 公众号封面、`xhs` 小红书、`sph` 视频号，或 `all` 渲染当前存在的渠道稿。
-4. 运行成功后，在该次 Workflow Run 的 **Artifacts** 下载 `render-...` ZIP。内含 `ready/` JPEG、`preview.html`、按平台 ZIP 和 `all.zip`。
+4. 运行成功后，在该次 Workflow Run 的 **Artifacts** 下载 `render-...` ZIP。解压后只含 `ready/` JPEG 和 `preview.html`；Artifact 下载文件本身已是 ZIP，不再额外嵌套 `gzh.zip`、`xhs.zip`、`sph.zip` 或 `all.zip`。
 5. 下载解压后在浏览器打开 `preview.html` 检查版式、溢出、署名、分镜与隐私；人工确认后从 `ready/` 取图发布。
 
 Artifact **仅保留 1 天**，过期后重新运行即可。工作流的 `contents: read` 权限不允许回写仓库；无仓库写入步骤、无长期云端图片存储。没有确认授权的内容不得直接公开发布。
