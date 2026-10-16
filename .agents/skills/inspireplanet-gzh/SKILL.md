@@ -114,7 +114,7 @@ events/{year}/{YYYYMMDD}-epXX/
 4. 通读查代词：每个“她/他”只能指向一个人，不能就改成名字或省略主语；
 5. 写「发布信息」；
 6. 内容完成后更新 `assets/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。发布信息中标明计划封面路径及待确认、待渲染状态；检查文章未保留封面配置；
-7. 交付文章与封面配置，在本期 README 的稿件导航提供配置链接，并指向 `scripts/publish.md` 的云端一键渲染流程。确认后运行 GitHub Actions `render-content.yml`，由临时 runner 生成、检查并提供保留 1 天的 Artifact 下载；不将 JPEG 回写到 `assets/`，不长期保留 `ready/` 与 `history/`。发布授权记入发布备注；
+7. 交付文章与封面配置，在本期 README 的稿件导航提供配置链接，并指向 `docs/rendering.md` 的云端一键渲染流程。确认后运行 GitHub Actions `render-content.yml`，由临时 runner 生成、检查并提供保留 1 天的 Artifact 下载；不将 JPEG 回写到 `assets/`，不长期保留 `ready/` 与 `history/`。发布授权记入发布备注；
 8. 修改已有文章时局部改，并回到转写核对。
 
 稳定的新偏好写进 `LEARNINGS.md`，典型改写样本写进 `EXAMPLES.md`；用户明确要求复盘时才更新。
