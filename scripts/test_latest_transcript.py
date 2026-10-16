@@ -311,7 +311,7 @@ class LatestTests(unittest.TestCase):
     def test_history_workflow_timezone_and_operation(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
         for required in ('inputs.operation', 'inputs.date', 'inputs.timezone',
-                         'default: Asia/Shanghai', 'default: search',
+                         'default: Asia/Shanghai', 'default: 查找未归档会议',
                          'scripts/latest_transcript.py scan',
                          'scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
