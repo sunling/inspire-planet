@@ -1,18 +1,18 @@
-name: Historical transcript (advanced)
+name: 历史会议转写 · 查找与补录
 
 on:
   workflow_dispatch:
     inputs:
       date:
-        description: '你的本地日历日期 YYYY-MM-DD（自动按 UTC/北京/美西匹配当天开始的一场）；与 pick 二选一'
+        description: '直接按日期补录：填 YYYY-MM-DD（如 2026-09-26）；与 pick 二选一'
         type: string
         required: false
       pick:
-        description: '只读扫描输出的编号（如 3），抓取该未归档场次；与 date 二选一；都留空则只读扫描'
+        description: '按编号补录：先将 date/pick 留空运行，查看日志编号，再填数字（如 3）'
         type: string
         required: false
       mode:
-        description: 'draft 公开逐字稿 PR；fetch-check 强制远程检查不公开；connectivity 鉴权/schema'
+        description: '一般保持 draft：空日期和编号=查找；填日期或编号=创建草稿。其余为维护检查'
         type: choice
         options: [draft, fetch-check, connectivity]
         default: draft
