@@ -92,7 +92,7 @@ speaker: 孙玲
 
 ## 固定发布入口
 
-确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph`，在 GitHub Actions 的临时 runner 中输出；校验成功后以保留 1 天的 Artifact 交付，旧图片不归档。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../../docs/rendering.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph`，在 GitHub Actions 的临时 runner 中输出；校验成功后以保留 1 天的 Artifact 交付，旧图片不归档。本地调试、临时输出与下载规则见 [渲染与交付说明](../../docs/rendering.md)。下面的直接渲染命令仅用于单独调试，正式出图请参考云端或本地指南。
 
 ## 运行
 
