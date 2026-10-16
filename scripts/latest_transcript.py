@@ -2,9 +2,9 @@
 """Zero-input project discovery; deterministic transcript-only public drafts.
 
 Historical selection is occurrence-based and never uses an episode number as an
-input. The user gives their own local calendar date (auto-matched across UTC /
-Asia-Shanghai / America-Los_Angeles), or leaves it blank for a bounded read-only
-scan that numbers unarchived project occurrences so a later run can pick=N one.
+input. The user provides a calendar date and its explicit time zone (default
+Asia/Shanghai), or runs a bounded read-only scan. A maintainer CLI can also
+choose an unarchived occurrence by its latest scan number with pick=N.
 EP numbers are at most a display hint derived from existing directories; they
 reset every year and some directory dates are migration artifacts, so fetch
 dates come from real Tencent occurrence data only.
@@ -17,10 +17,8 @@ import re
 from zoneinfo import ZoneInfo
 import meeting_content as m
 
-# A user's local calendar day is matched in any of these zones; Tencent has no
-# notion of a "local day", so the same occurrence may fall on a different UTC
-# date depending on where the user lives. Asia-Shanghai and America/Los_Angeles
-# are the two communities this project is run for.
+# The user explicitly selects one of these calendar zones; never union them.
+# The same meeting may have different calendar dates across zones.
 LOCAL_ZONES = ('UTC', 'Asia/Shanghai', 'America/Los_Angeles')
 
 # Bounded read-only scan limits (no bodies, no public writes).
