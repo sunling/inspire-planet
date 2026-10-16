@@ -21,7 +21,7 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-cards.json              金句卡片与周刊数据
   assets/cover-configs.md              公众号横版封面的配置与设计信息
   assets/recap-cover.jpg        公众号横版封面（多篇时加 -{slug}）
-  README.md                     本期导航、制作流程与发布备注
+  README.md                     本期导航、命令与发布备注
 ```
 
 `{slug}` 是分享者的英文小写名，一位分享者一个文件，如 `gzh-liying.md`。只创建真实需要的文件。
@@ -34,15 +34,15 @@ events/{year}/{YYYYMMDD}-epXX/
 - 视频号 → `inspireplanet-sph`
 - 网站纪要 / summary.json → `inspireplanet-summary`
 - 金句 / 卡片 JSON → `inspireplanet-cards`
-- 本期导航 / 制作流程 / 发布备注 → 本 Skill
+- 本期导航 / 命令 / 发布备注 → 本 Skill
 
 完整发布包包含两份 JSON；只生成指定交付物时不扩展范围。字段、期次身份、溯源和审核后同步方式见 [内容数据约定](../../../events/data-contract.md)。生成不等于公开，提交到网站读取的 `main` 分支前核对具体稿件与授权。
 
 ## 工作流程
 
 1. **下载与归档**：通过 GitHub Actions 拉取转写并创建公开 Draft PR，人工审核期次与公开范围后归档为本期 `transcript.txt`。已有转写不重复下载；缺少时提供 Actions 入口，等待转写归档或用户提供原稿。触发下载并公开原稿须有用户授权；仅请求整理内容不视为下载公开授权。
-2. **生成发布包**：全套包括公众号文章、小红书与视频号各自的图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json`，以及 `assets/cover-configs.md`；只要某个渠道时只生成相关交付物。先完成内容，再汇总公众号封面配置，并更新本期 README 的导航与制作流程，此阶段不渲染。公众号配置的布局 `layout` 和配色 `theme` 通过 `scripts/covers/assign_themes.py {本期目录}/assets/cover-configs.md` 将未指定值随机均衡分配为具体组合，保留已有选择。小红书／视频号各篇在脚本中写明 `- 主题：paper` 或 `inspire`，首图内容在第 1 页；没有公众号稿时无需新建独立封面配置。
-3. **确认**：在 README 同一步中提供文章、`assets/cover-configs.md` 和各篇小红书／视频号脚本的导航、渲染命令与 prompt。确认对应文章、封面文字、视觉命题、图卡每页文字、署名与主题后，才生成公众号封面和分别渲染图卡，再检查。按保存的布局与主题出图，不重新抽选；结果在交付回复中说明。各渠道可分别确认并出图，不必等待无关篇目。
+2. **生成发布包**：全套包括公众号文章、小红书与视频号各自的图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json`，以及 `assets/cover-configs.md`；只要某个渠道时只生成相关交付物。先完成内容，再汇总公众号封面配置，并更新本期 README 的导航与本期命令，此阶段不渲染。公众号配置的布局 `layout` 和配色 `theme` 通过 `scripts/covers/assign_themes.py {本期目录}/assets/cover-configs.md` 将未指定值随机均衡分配为具体组合，保留已有选择。小红书／视频号各篇在脚本中写明 `- 主题：paper` 或 `inspire`，首图内容在第 1 页；没有公众号稿时无需新建独立封面配置。
+3. **确认**：在 README 的稿件导航与“本期命令”中提供文章、`assets/cover-configs.md` 和各篇小红书／视频号脚本的导航、渲染命令；通用 prompt 见 `scripts/content-workflow.md`。确认对应文章、封面文字、视觉命题、图卡每页文字、署名与主题后，才生成公众号封面和分别渲染图卡，再检查。按保存的布局与主题出图，不重新抽选；结果在交付回复中说明。各渠道可分别确认并出图，不必等待无关篇目。
 4. **发布**：当事人确认具体稿件与公开范围后，由发布者使用 `ready/` 对应平台成品发布。授权与发布注意事项记入 README 的发布备注，实际发布日期及平台链接也可记在此处，不维护状态面板。AI 仅在用户明确要求时操作外部平台，出图确认不视为发布授权。
 
 已有渲染确认在脚本未变时继续有效；用户明确确认已有脚本并要求渲染时直接执行。改动图中文字或视觉命题后重新确认受影响部分。
@@ -51,68 +51,14 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## README.md
 
-本期目录下的 `README.md` 是协作操作入口，不对外发布。按“制作流程 → 稿件导航 → 发布备注”排列，使用下面的精简结构；输出时替换为本期真实日期、期数、文件路径及分享者 slug，链接只指向已存在的材料。命令从仓库根目录执行，使用已准备好的渲染环境；可链接工具说明解释依赖、字体和浏览器。每期都写“下载 → 生成 → 确认 → 发布”四步，并用 Mermaid 流程图显示确认后渲染检查再发布的顺序；只为实际存在的交付物提供链接和渲染命令，不补空稿或进度说明。
+通用制作步骤与 prompt 集中在 [内容制作说明](../../../scripts/content-workflow.md)，每期 README 链接该说明，按“稿件导航 → 本期命令 → 发布备注”排列，不复制四步流程或 Mermaid 图。替换下列示例为本期真实日期、路径与篇目，只链接已存在的文件；只列具备配置和脚本的渠道命令。
 
 ````md
 # EPXX｜{YYYY-MM-DD}
 
 {一句话概括本期}
 
-## 制作流程
-
-```mermaid
-flowchart LR
-    A["1 下载与归档<br/>Actions 拉取，人工审核 PR"] --> B["2 生成<br/>文章、图文脚本与封面配置"]
-    B --> C["3 确认<br/>封面配置与图文脚本"]
-    C -->|确认后渲染并检查| D["4 发布<br/>获授权后使用 ready/ 成品"]
-    C -.->|需要修改| B
-```
-
-命令在仓库根目录、已安装依赖的渲染环境中执行。固定发布入口为仓库旁的 `inspire-planet-publish/{期目录}/`，发布只使用 `ready/`；预览打开 `preview.html`，下载使用 `gzh.zip`、`xhs.zip`、`sph.zip` 或 `all.zip`。
-
-### 1. 下载与归档
-
-已有 [transcript.txt](transcript.txt)，无需重复下载。缺少转写时，通过 GitHub Actions 的 **Transcript draft** 获取最新会议；历史会议使用 **Historical transcript (advanced)** 按日期或扫描编号选择，见 [下载说明](../../../scripts/meeting-content.md)。人工审核公开 Draft PR 的期次与公开范围后归档，原始转写不润色。
-
-### 2. 生成发布包
-
-准备文章、图文脚本、网站纪要 `summary.json` 和金句 `quote-cards.json`，同时生成 `assets/cover-configs.md`：这是本期公众号封面的设计稿，按文章记录封面文字、布局、配色、设计意图和图片输出路径，供出图前审阅；确认后渲染工具读取它生成图片。小红书／视频号首图的文字和主题放在各自图文脚本中。本步骤只生成文字与配置，不出图。
-
-Prompt：基于 {本期目录}/transcript.txt，使用 inspireplanet 生成本期公众号、小红书、视频号、网站纪要 summary.json、金句 quote-cards.json 与公众号封面配置，更新本期 README，先不要渲染。
-
-### 3. 确认
-
-先确认对应文章、封面配置和图文脚本，再执行下面的出图命令。
-
-#### 公众号封面
-
-审阅 [assets/cover-configs.md](assets/cover-configs.md) 中的文字、布局、配色和对应文章。确认后执行：
-
-```bash
-python3 scripts/render-publish.py {本期目录} --channel gzh
-```
-
-成品固定写入仓库旁 `inspire-planet-publish/{期目录}/ready/gzh/`，预览固定为该目录的 `preview.html`；检查成功后替换当前版本，旧版进入 `history/`。
-
-Prompt：本期公众号文章及 assets/cover-configs.md 已确认，请按保存的布局与配色渲染封面，检查排版并提供成品链接。
-
-#### 小红书／视频号图卡
-
-打开下方稿件导航中的各篇脚本，确认首图、每页文字、署名和主题。分别执行（按本期实际篇目展开）：
-
-```bash
-python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph
-# 只更新一篇时：
-python3 scripts/render-publish.py {本期目录} --channel xhs --slug {slug}
-```
-
-发布只使用固定的 `ready/xhs/{slug}/`、`ready/sph/{slug}/`；脚本内部用临时目录检查，成功后更新当前图片、预览与 ZIP。各篇首图随内页生成，主题按脚本选择；图卡不提交 GitHub。
-
-Prompt：本期小红书与视频号图文脚本已确认，请按各篇保存的主题分别渲染，首图随内页生成；通过 scripts/render-publish.py 更新仓库外固定发布目录，旧版存 history/，按平台和分享者分目录，检查并提供成品链接。
-
-### 4. 发布
-
-当事人确认稿件与公开范围后发布；实际发布日期与平台链接可记入下方发布备注。出图确认不视为发布授权。
+通用步骤与 prompt 见 [内容制作说明](../../../scripts/content-workflow.md)。
 
 ## 稿件导航
 
@@ -120,15 +66,24 @@ Prompt：本期小红书与视频号图文脚本已确认，请按各篇保存�
 |---|---|---|---|
 | {名字：选题} | [文章](gzh-{slug}.md) | [图文脚本](xhs-{slug}.md) | [图文脚本](sph-{slug}.md) |
 
-纪要：[分享纪要 JSON](summary.json)。来源：[转写](transcript.txt)。公众号封面：[配置](assets/cover-configs.md)。金句：[JSON](quote-cards.json)。
+来源：[转写](transcript.txt)。纪要：[JSON](summary.json)。金句：[JSON](quote-cards.json)。公众号封面：[配置](assets/cover-configs.md)。
+
+## 本期命令
+
+确认对应稿件、封面配置与图文脚本后，在仓库根目录执行：
+
+```bash
+python3 scripts/render-publish.py {本期目录} --channel gzh
+python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph
+```
+
+发布目录：`../inspire-planet-publish/{期目录}/ready/`（相对仓库根目录）。
 
 ## 发布备注
 
-- {本期尚待确认的署名授权、事实或隐私；详细核对记录按需用 details 折叠}
+- {本期特有的授权、隐私或事实核对事项；详细依据按需用 details 折叠}
 ````
 
-- 每期根目录只保留转写、渠道稿、纪要与金句 JSON、索引及实际需要的历史资料；`assets/` 只放公众号封面配置、成品与经确认的必要原图。不单独保存小红书／视频号首图，不归档预览、临时 HTML、ZIP 或生成日志；
-- 只列真实存在的文件和篇目，不补空小节；
-- 不放文章正文和摘要；
-- 稿件链接只在索引集中列一次，制作流程引用该索引；不另建重复的“本期文件”“这一期有谁”清单，不累积出图流水账。选题说明只保留影响本期协作的内容；详细会议与编辑核对记录按需折叠；
-- README 只负责导航、制作流程与发布备注，不写发布包生成进度、审稿或渲染状态，不放“当前状态”摘要或状态列。制作结果、检查情况及临时成品链接在交付回复中说明；事实核对与发布授权事项按需写入发布备注。
+- 每期根目录只保留转写、渠道稿、纪要与金句 JSON、索引及实际需要的历史资料；`assets/` 放公众号封面配置、成品与必要原图。图卡、预览、HTML、ZIP 和生成日志不入库。
+- 只列真实存在的文件，不补空小节，不重复文章正文或摘要。稿件链接集中列一次，不另建“本期文件”“这一期有谁”等重复清单。
+- README 不写生成、审稿或渲染进度，不设状态列；制作结果与临时成品链接在交付回复中说明。事实核对和发布授权事项保留在发布备注，长记录折叠。

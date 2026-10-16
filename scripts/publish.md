@@ -42,6 +42,6 @@ python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX \
 
 导入会检查图片完整性、尺寸与图卡页码，文字和排版需事先审阅。来源目录保留不动，导入后发布只认固定入口。公众号入库需要的 JPEG 可从 `ready/gzh/` 复制到本期 `assets/`；图卡、预览、下载包与历史均不提交 GitHub。
 
-每期 README 的制作流程写明固定目录和命令；不记录生成或渲染状态。出图不代表对外发布授权。
+每期 README 的“本期命令”写明固定目录和命令；不记录生成或渲染状态。出图不代表对外发布授权。
 
 验证：`python3 scripts/test-render-publish.py`（需 Pillow）。

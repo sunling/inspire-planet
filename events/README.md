@@ -44,7 +44,7 @@
 | 20261003-ep39 | [转写](2026/20261003-ep39/transcript.txt) | [分享纪要 JSON](2026/20261003-ep39/summary.json) · [索引](2026/20261003-ep39/README.md) · [公众号 2 篇](2026/20261003-ep39/gzh-liying.md) | [卡片 JSON](2026/20261003-ep39/quote-cards.json) | [小红书](2026/20261003-ep39/xhs-liying.md) · [视频号](2026/20261003-ep39/sph-liying.md) | — |
 | 20261010-ep40 | [转写](2026/20261010-ep40/transcript.txt) | [分享纪要 JSON](2026/20261010-ep40/summary.json) · [索引／公众号 3 篇](2026/20261010-ep40/README.md) | [卡片 JSON](2026/20261010-ep40/quote-cards.json) | [小红书／视频号各 3 篇](2026/20261010-ep40/README.md) | [封面](2026/20261010-ep40/assets) |
 
-2026-10-06 起，公众号文章的标题、备选标题、摘要与封面配置随文章放在 `gzh-{slug}.md`；本期索引、发布状态与发布备注在 `README.md`，不再新增 `promo.md`。上表历史期的「发布文案」指向当时的 `promo.md`，保留原样。
+2026-10-06 起，公众号文章的标题、备选标题与摘要放在 `gzh-{slug}.md`，新稿的封面配置集中在 `assets/cover-configs.md`；本期导航、命令与发布备注在 `README.md`，不再新增 `promo.md`。上表历史期的「发布文案」指向当时的 `promo.md`，保留原样。
 
 ## 2025 年金句归档
 
