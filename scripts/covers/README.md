@@ -51,7 +51,7 @@ python3 scripts/covers/assign_themes.py events/{year}/{event}/assets/cover-confi
 
 ## 固定发布入口
 
-确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，在云端临时 runner 中输出；校验成功后通过保留 1 天的 Artifact 下载，旧图片不归档。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，在云端临时 runner 中输出；校验成功后通过保留 1 天的 Artifact 下载，旧图片不归档。本地调试、临时输出与下载规则见 [渲染与交付说明](../../docs/rendering.md)。下面的直接渲染命令仅用于单独调试，正式出图请参考云端或本地指南。
 
 ## 运行
 
@@ -102,7 +102,7 @@ python3 scripts/covers/render.py events/{year}/{event}/assets/cover-configs.md \
 
 新增配色使用 `themes/{name}.css`，新增布局使用 `layouts/{name}.css`；同时更新选择池与渲染检查。通过配置中的 `layout`、`theme` 选择组合，`--theme` 可覆盖配色。尺寸、检查、截图和压缩逻辑共享。
 
-仅配置和公众号封面成品存入本期 `assets/`；预览 HTML、总览和 ZIP 输出到仓库外同一批目录。横竖版兼容能力保留用于历史配置与测试，新的小红书／视频号首图由图卡工具生成。
+只保留配置与必要原始素材于本期 `assets/`；预览 HTML、总览和 ZIP 输出到仓库外同一批目录。横竖版兼容能力保留用于历史配置与测试，新的小红书／视频号首图由图卡工具生成。
 
 ## 验证
 

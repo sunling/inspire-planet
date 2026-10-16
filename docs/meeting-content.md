@@ -3,7 +3,7 @@
 ## 日常：不填日期、EP 或过滤器
 
 - Actions → **Transcript draft** → Run workflow → 选择 `main`。日常入口没有输入框；API 也不需要 EP。
-- 一次配置在 [meeting-project.json](meeting-project.json)：精确标题 `启发星球，互相赋能`、90 天回看、已核对锚点 `2026-10-10 / EP40 / 13319006708380765410`。会议周期 ID 可变化，发现按精确标题，不锁死旧 ID。
+- 一次配置在 [meeting-project.json](../scripts/meeting-project.json)：精确标题 `启发星球，互相赋能`、90 天回看、已核对锚点 `2026-10-10 / EP40 / 13319006708380765410`。会议周期 ID 可变化，发现按精确标题，不锁死旧 ID。
 - 首次只需已授权的 `TENCENT_MEETING_TOKEN` Secret；不需要模型、API Key 或外部内容服务。Token 不放变量、参数、聊天或日志。
 - **当前 Actions 创建 PR 设置为 false**（2026-10-15 核对）。新会议的自动 Draft PR 会被仓库设置阻塞；无新会议的只读 skip 不需要该权限。本次不修改设置。
 - 本工具 PR 尚需用户审核合并后，生产入口才会使用新代码；生产保持默认分支门禁，不从 feature 分支绕过。

@@ -8,7 +8,7 @@
 
 - [按期浏览会议资料](events/README.md)
 - [当前活动信息](current.md)：只有经过确认的信息才用于新的邀请与发布文案。
-- [下载会议转写稿](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml)：Actions 日常入口，无需填写日期或期数；[使用与维护说明](scripts/meeting-content.md)。
+- [下载会议转写稿](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml)：Actions 日常入口，无需填写日期或期数；[使用与维护说明](docs/meeting-content.md)。
 - [AI 工作流](.agents/skills/)：公众号文章、金句卡片、小红书/视频号图文和封面。
 
 ## 内容工作流
@@ -21,7 +21,7 @@ flowchart LR
     C -.->|需要修改| B
 ```
 
-详细流程见 [内容制作说明](scripts/content-workflow.md)；[云端与本地渲染操作](docs/rendering.md)及[设计修改清单](docs/design-editing.md)单独维护。每期 `README.md` 只保留稿件导航、本期命令与发布备注。
+详细流程见 [内容制作说明](docs/content-workflow.md)；[云端与本地渲染操作](docs/rendering.md)及[设计修改清单](docs/design-editing.md)单独维护。每期 `README.md` 只保留稿件导航、本期命令与发布备注。
 
 ## 文件结构
 
@@ -46,7 +46,7 @@ scripts/                Actions 调用的转写程序、内容检查与发布包
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
 
-每期根目录放来源、稿件和索引，`assets/` 只放必要的授权原始素材和公众号封面配置，不放渲染成品。小红书与视频号按平台分别编排图文脚本、选择主题、审阅并渲染整套图卡（含首图）。确认后使用 [云端一键渲染](scripts/publish.md) 生成临时 JPG、预览和 ZIP，通过 GitHub Actions Artifact 下载；产物保留 1 天，不归档在仓库或仓库旁的固定目录。每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
+每期根目录放来源、稿件和索引，`assets/` 只放必要的授权原始素材和公众号封面配置，不放渲染成品。小红书与视频号按平台分别编排图文脚本、选择主题、审阅并渲染整套图卡（含首图）。确认后使用 [云端一键渲染](docs/rendering.md) 生成临时 JPG、预览和 ZIP，通过 GitHub Actions Artifact 下载；产物保留 1 天，不归档在仓库或仓库旁的固定目录。每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
 
 ## 网站与周刊数据
 
@@ -60,7 +60,7 @@ scripts/                Actions 调用的转写程序、内容检查与发布包
 - **定时下载**：已配置 UTC 周六 02:00、02:10、02:20 三次尝试（北京时间周六 10:00、10:10、10:20）；仅在仓库变量 `CONTENT_AUTOMATION_ENABLED` 为 `true` 时运行。定时触发可能延迟，必要时手动补跑。
 - **历史补录**：[Historical transcript (advanced)](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)。留空运行可先扫描，再按日期或扫描编号选择会议。
 
-流水线需要 `TENCENT_MEETING_TOKEN` Secret 和 Actions 创建 PR 的权限；配置、去重和期次处理见 [维护说明](scripts/meeting-content.md)。生成的是**公开、未经人工审阅的 Draft PR**，不自动合并。自动化不调用模型、不生成文章、网站 JSON 或图片，也不操作网站或社交平台。后续内容整理在 ChatGPT/Codex 中单独发起，可继续使用同一内容分支。
+流水线需要 `TENCENT_MEETING_TOKEN` Secret 和 Actions 创建 PR 的权限；配置、去重和期次处理见 [维护说明](docs/meeting-content.md)。生成的是**公开、未经人工审阅的 Draft PR**，不自动合并。自动化不调用模型、不生成文章、网站 JSON 或图片，也不操作网站或社交平台。后续内容整理在 ChatGPT/Codex 中单独发起，可继续使用同一内容分支。
 
 ## 参与整理
 

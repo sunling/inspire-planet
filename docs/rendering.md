@@ -109,4 +109,14 @@ python3 scripts/check-content.py
 python3 scripts/test-render-publish.py
 ```
 
-如果报缺字体，检查 `--font` 路径；如果报 `No renderable content`，确认期数目录和该渠道的脚本或封面配置是否存在。脚本细节见 [发布与存储规则](../scripts/publish.md)、[公众号封面渲染器](../scripts/covers/README.md)、[图卡渲染器](../scripts/text-cards/README.md)。
+如果报缺字体，检查 `--font` 路径；如果报 `No renderable content`，确认期数目录和该渠道的脚本或封面配置是否存在。脚本细节见 [发布与存储规则](rendering.md#发布与存储规则)、[公众号封面渲染器](../scripts/covers/README.md)、[图卡渲染器](../scripts/text-cards/README.md)。
+
+## 发布与存储规则
+
+**源稿为长期资产，生成图为临时输出。** Git 仓库只保存转写、文章、脚本、JSON、封面配置和必要的授权原始素材；不提交生成的 JPG、预览 HTML、ZIP，也不维护永久 `ready/` 或 `history/` 存档。公众号配置的 `asset` 字段仅是输出文件名。
+
+GitHub Actions 使用只读 `contents: read` 权限、不注入社交平台发布密钥。运行成功后 Artifact 中只有 `ready/` 与 `preview.html`，下载文件本身是 ZIP，**保留 1 天**。过期重新运行即可；旧图不会自动归档。所有平台均需人工检查版式和获取当事人明确的公开授权，不会因渲染成功而自动发布。
+
+本地原有 `render-publish.py` 在重复使用同一个 `--root` 时可能保留旧版到 `history/` 并生成内部 ZIP；这是兼容逻辑，并非长期存储要求。建议将 `--root` 指向仓库外临时目录，完成检查或取图后自行删除。本地运行时不传 `--root` 会使用仓库外默认固定目录。
+
+原始照片、二维码等作为渲染输入的素材与生成的图片不同；它们是否可入库应单独核对许可与隐私。公开渠道的发布日期、链接、署名和授权边界写在单期 README 的发布备注中。

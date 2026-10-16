@@ -2,7 +2,7 @@
 
 李影读到“无聊之地”，抹茶回看一个月的加班，孙玲把本地模型探索与妈妈的微信助手需求分开。
 
-通用步骤与 prompt 见 [内容制作说明](../../../scripts/content-workflow.md)。
+通用步骤与 prompt 见 [内容制作说明](../../../docs/content-workflow.md)。
 
 ## 稿件导航
 

@@ -22,8 +22,8 @@
 
 确认后打开 GitHub Actions 中的 Render content (temporary download) 工作流，选择期次、渠道与已审阅分支，手动运行。它调用 `render-publish.py` 在 runner 临时目录渲染；首图随各平台内页生成，各自保持主题与字体一致，不跨平台复用整套图片。
 
-- 渲染环境：[公众号封面](covers/README.md)、[图卡](text-cards/README.md)。需 Python 依赖、Chromium 和相应字体；必要时指定 `--font`、`--browser`。
-- 输出与下载：[按需渲染](publish.md)。检查通过后以 GitHub Actions Artifact 提供 JPG、预览和 ZIP，保留 1 天；不提交生成图片、不维护 ready/history 永久版本。
+- 渲染环境：[公众号封面](../scripts/covers/README.md)、[图卡](../scripts/text-cards/README.md)。需 Python 依赖、Chromium 和相应字体；必要时指定 `--font`、`--browser`。
+- 输出与下载：[按需渲染](rendering.md)。检查通过后以 GitHub Actions Artifact 提供 JPG、预览和 ZIP，保留 1 天；不提交生成图片、不维护 ready/history 永久版本。
 - 出图后检查文字溢出、遮挡、分页、署名、图片尺寸与完整性；结果在交付回复中说明。
 
 确认公众号配置后的 prompt：

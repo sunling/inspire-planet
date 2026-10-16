@@ -2,7 +2,7 @@
 
 从接住一句话，到让记录服务生活；从重新找到阅读的好奇，到把卡点说具体。
 
-通用步骤与 prompt 见 [内容制作说明](../../../scripts/content-workflow.md)。
+通用步骤与 prompt 见 [内容制作说明](../../../docs/content-workflow.md)。
 
 ## 稿件导航
 

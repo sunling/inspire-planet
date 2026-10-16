@@ -2,7 +2,7 @@
 
 抹茶分享逻辑谬误与记录体验，Nancy 带来社交紧张的应对思路，孙玲分享对巴拿马运河的好奇。
 
-通用步骤与 prompt 见 [内容制作说明](../../../scripts/content-workflow.md)。
+通用步骤与 prompt 见 [内容制作说明](../../../docs/content-workflow.md)。
 
 ## 稿件导航
 

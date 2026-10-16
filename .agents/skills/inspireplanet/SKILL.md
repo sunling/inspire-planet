@@ -28,7 +28,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 ## 路由
 
-- 逐字稿 / 转写 → GitHub Actions，入口与历史补录见 [下载说明](../../../scripts/meeting-content.md)
+- 逐字稿 / 转写 → GitHub Actions，入口与历史补录见 [下载说明](../../../docs/meeting-content.md)
 - 公众号文章 / 标题 / 摘要 / 横版封面 → `inspireplanet-gzh`
 - 小红书 / 图集 / 竖版封面 → `inspireplanet-xhs`
 - 视频号 → `inspireplanet-sph`
@@ -42,23 +42,23 @@ events/{year}/{YYYYMMDD}-epXX/
 
 1. **下载与归档**：通过 GitHub Actions 拉取转写并创建公开 Draft PR，人工审核期次与公开范围后归档为本期 `transcript.txt`。已有转写不重复下载；缺少时提供 Actions 入口，等待转写归档或用户提供原稿。触发下载并公开原稿须有用户授权；仅请求整理内容不视为下载公开授权。
 2. **生成发布包**：全套包括公众号文章、小红书与视频号各自的图文脚本、网站纪要 `summary.json`、金句 `quote-cards.json`，以及 `assets/cover-configs.md`；只要某个渠道时只生成相关交付物。先完成内容，再汇总公众号封面配置，并更新本期 README 的导航与本期命令，此阶段不渲染。公众号配置的布局 `layout` 和配色 `theme` 通过 `scripts/covers/assign_themes.py {本期目录}/assets/cover-configs.md` 将未指定值随机均衡分配为具体组合，保留已有选择。小红书／视频号各篇在脚本中写明 `- 主题：paper` 或 `inspire`，首图内容在第 1 页；没有公众号稿时无需新建独立封面配置。
-3. **确认**：在 README 的稿件导航与“本期命令”中提供文章、`assets/cover-configs.md` 和各篇小红书／视频号脚本的导航、渲染命令；通用 prompt 见 `scripts/content-workflow.md`。确认对应文章、封面文字、视觉命题、图卡每页文字、署名与主题后，才生成公众号封面和分别渲染图卡，再检查。按保存的布局与主题出图，不重新抽选；结果在交付回复中说明。各渠道可分别确认并出图，不必等待无关篇目。
+3. **确认**：在 README 的稿件导航与“本期命令”中提供文章、`assets/cover-configs.md` 和各篇小红书／视频号脚本的导航、渲染命令；通用 prompt 见 `docs/content-workflow.md`。确认对应文章、封面文字、视觉命题、图卡每页文字、署名与主题后，才生成公众号封面和分别渲染图卡，再检查。按保存的布局与主题出图，不重新抽选；结果在交付回复中说明。各渠道可分别确认并出图，不必等待无关篇目。
 4. **发布**：当事人确认具体稿件与公开范围后，下载临时 Artifact 中的图片，检查后人工发布。不直接操作外部平台。
 
 已有渲染确认在脚本未变时继续有效；用户明确确认已有脚本并要求渲染时直接执行。改动图中文字或视觉命题后重新确认受影响部分。
 
-封面与文字卡仍使用原渲染器；确认后手动触发 GitHub Actions `render-content.yml`，在临时 runner 中生成、检查、打包，Artifact 保留 1 天，绝不将生成 JPG 回写仓库或长期保存 ready/history。详细步骤见 `scripts/publish.md`。
+封面与文字卡仍使用原渲染器；确认后手动触发 GitHub Actions `render-content.yml`，在临时 runner 中生成、检查、打包，Artifact 保留 1 天，绝不将生成 JPG 回写仓库或长期保存 ready/history。详细步骤见 `docs/rendering.md`。
 
 ## README.md
 
-通用制作步骤与 prompt 集中在 [内容制作说明](../../../scripts/content-workflow.md)，每期 README 链接该说明，按“稿件导航 → 本期命令 → 发布备注”排列，不复制四步流程或 Mermaid 图。替换下列示例为本期真实日期、路径与篇目，只链接已存在的文件；只列具备配置和脚本的渠道命令。
+通用制作步骤与 prompt 集中在 [内容制作说明](../../../docs/content-workflow.md)，每期 README 链接该说明，按“稿件导航 → 本期命令 → 发布备注”排列，不复制四步流程或 Mermaid 图。替换下列示例为本期真实日期、路径与篇目，只链接已存在的文件；只列具备配置和脚本的渠道命令。
 
 ````md
 # EPXX｜{YYYY-MM-DD}
 
 {一句话概括本期}
 
-通用步骤与 prompt 见 [内容制作说明](../../../scripts/content-workflow.md)。
+通用步骤与 prompt 见 [内容制作说明](../../../docs/content-workflow.md)。
 
 ## 稿件导航
 
