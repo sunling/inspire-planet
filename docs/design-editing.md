@@ -52,4 +52,4 @@
 4. 提交**源文件**改动；如需发布，从临时渲染产物中取图片，不提交成品 JPG。
 5. 新增全局布局或主题时，建议再用一篇短稿和一篇长稿测试，确认已有风格没有回归问题。
 
-参考：[公众号封面说明](../scripts/covers/README.md) · [图卡渲染说明](../scripts/text-cards/README.md) · [内容工作流](../scripts/content-workflow.md)。
+参考：[公众号封面说明](../scripts/covers/README.md) · [图卡渲染说明](../scripts/text-cards/README.md) · [内容工作流](content-workflow.md)。
