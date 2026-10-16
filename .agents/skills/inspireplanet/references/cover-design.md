@@ -16,9 +16,9 @@
 ## 默认生成方式
 
 - 先完成内容与配置，用户明确确认相关脚本后才出图；脚本文字或视觉命题改动后重新确认受影响部分。
-- 配置中的 `asset` 和 `photo` 路径相对本期目录，Markdown 稿件链接相对 `assets/`（如 `../gzh-liying.md`）。
+- 新配置的 `asset` 只写成品文件名（如 `recap-cover-liying.jpg`），由发布工具输出到仓库外 `ready/gzh/`；`photo` 路径相对本期目录，Markdown 稿件链接相对 `assets/`（如 `../gzh-liying.md`）。历史配置兼容保留。
 - 默认使用 HTML/CSS + 浏览器截图，布局在纸张拼贴、杂志排版、大字海报中随机均衡选择，配色在五套主题中独立随机选择，不默认调用图像生成模型。
-- 渲染器和配置格式见仓库根目录 `scripts/covers/README.md`；执行 `python3 scripts/covers/render.py events/{year}/{event}/assets/cover-configs.md`。公众号的完整配置、选定的封面文字与视觉命题统一放入本期 `assets/cover-configs.md`，按公众号篇目分节；不在渠道稿中重复保存配置。
+- 渲染器和配置格式见仓库根目录 `scripts/covers/README.md`；确认后执行 `python3 scripts/render-publish.py events/{year}/{event} --channel gzh`。公众号的完整配置、选定的封面文字与视觉命题统一放入本期 `assets/cover-configs.md`，按公众号篇目分节；不在渠道稿中重复保存配置。
 - 布局 `layout` 为 `collage`、`editorial`、`signal`，配色 `theme` 为 `collage`、`pop`、`garden`、`blueprint`、`night`。生成配置时两项先用 `"random"`，运行 `scripts/covers/assign_themes.py` 分别随机均衡选择并写入具体组合，再交用户确认；已有选择保留，用户可单独指定布局或配色。确认后不重新随机；`--reshuffle` 重新抽选两项，需确认更新后的封面脚本。历史配置未写 `layout` 时仍用拼贴。
 - 真实照片由用户提供并确认使用范围，支持本地照片路径和裁切焦点；先做样张再核对主体是否保留，不用生成图冒充现场。
 - 仅用户明确需要插画等位图视觉时，再使用 imagegen；保留 HTML 文字排版与渠道分工。
@@ -34,6 +34,8 @@
 7. 按下面的规范存 JPEG，并回报实际体积；预览 HTML 和总览放在仓库外，不额外归档。
 
 ## 保存规范（JPEG）
+
+封面成品只保存到仓库外的 `inspire-planet-publish/{期目录}/ready/gzh/`，不复制回仓库。`assets/` 只新增配置与必要原图；历史封面与引用保留原样。
 
 - 一律 JPEG，不交付 PNG；
 - 参数：`quality=88`、`optimize=True`、`progressive=True`；

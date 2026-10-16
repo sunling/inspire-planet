@@ -20,7 +20,6 @@ events/{year}/{YYYYMMDD}-epXX/
   summary.json                  网站单期详情页的分享纪要
   quote-cards.json              金句卡片与周刊数据
   assets/cover-configs.md              公众号横版封面的配置与设计信息
-  assets/recap-cover.jpg        公众号横版封面（多篇时加 -{slug}）
   README.md                     本期导航、命令与发布备注
 ```
 
@@ -47,7 +46,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 已有渲染确认在脚本未变时继续有效；用户明确确认已有脚本并要求渲染时直接执行。改动图中文字或视觉命题后重新确认受影响部分。
 
-封面与文字卡仍分别使用原渲染器，确认后统一通过 `scripts/render-publish.py` 更新仓库旁固定目录 `inspire-planet-publish/{期目录}/`。先临时渲染并检查，成功后更新 `ready/`、`preview.html` 和各渠道 ZIP；旧版存入 `history/`，发布只从 `ready/gzh/`、`ready/xhs/{slug}/`、`ready/sph/{slug}/` 取图。更新单篇用 `--channel xhs|sph --slug {slug}`，其他篇目保留。失败保留原待发布版本，具体命令见 `scripts/publish.md`。公众号若需入库，将 `ready/gzh/` 的必要 JPEG 复制到本期 `assets/`；图卡、预览、ZIP 和历史不入库。小红书与视频号分别编排、审阅和渲染，各自首图随内页生成且主题一致，不跨平台复用成品。制作与检查结果在交付回复中说明，不回写 README 进度；发布授权事项记入发布备注。
+封面与文字卡仍分别使用原渲染器，确认后统一通过 `scripts/render-publish.py` 更新仓库旁固定目录 `inspire-planet-publish/{期目录}/`。先临时渲染并检查，成功后更新 `ready/`、`preview.html` 和各渠道 ZIP；旧版存入 `history/`，发布只从 `ready/gzh/`、`ready/xhs/{slug}/`、`ready/sph/{slug}/` 取图。更新单篇用 `--channel xhs|sph --slug {slug}`，其他篇目保留。失败保留原待发布版本，具体命令见 `scripts/publish.md`。公众号封面、图卡、预览、ZIP 和历史均保存在仓库外，不复制回本期 `assets/`；历史入库封面与引用保留原样。小红书与视频号分别编排、审阅和渲染，各自首图随内页生成且主题一致，不跨平台复用成品。制作与检查结果在交付回复中说明，不回写 README 进度；发布授权事项记入发布备注。
 
 ## README.md
 
@@ -84,6 +83,6 @@ python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph
 - {本期特有的授权、隐私或事实核对事项；详细依据按需用 details 折叠}
 ````
 
-- 每期根目录只保留转写、渠道稿、纪要与金句 JSON、索引及实际需要的历史资料；`assets/` 放公众号封面配置、成品与必要原图。图卡、预览、HTML、ZIP 和生成日志不入库。
+- 每期根目录只保留转写、渠道稿、纪要与金句 JSON、索引及实际需要的历史资料；`assets/` 只新增公众号封面配置与必要原图。公众号封面、图卡、预览、HTML、ZIP 和生成日志不入库；历史封面与引用保留原样。
 - 只列真实存在的文件，不补空小节，不重复文章正文或摘要。稿件链接集中列一次，不另建“本期文件”“这一期有谁”等重复清单。
 - README 不写生成、审稿或渲染进度，不设状态列；制作结果与临时成品链接在交付回复中说明。事实核对和发布授权事项保留在发布备注，长记录折叠。

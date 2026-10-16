@@ -20,7 +20,7 @@
   "layout": "random",
   "theme": "random",
   "format": "wide",
-  "asset": "assets/recap-cover-example.jpg",
+  "asset": "recap-cover-example.jpg",
   "speaker": "分享者",
   "episode": "2026EP38",
   "date": "2026-09-26",
@@ -37,7 +37,7 @@
 - `format`: `wide` 为 1920×817；`portrait` 为 1080×1440，独立构图。
 - 公众号：`headline` 只放 6–14 字的短副标题，按语义断成 1–2 行，`subtitle` 留空。
 - 两组信息表达本篇特有的起点、变化或关系，不套空泛口号；标签、卡片文字也须有内容依据。`value` 建议 2–4 字，`note` 建议 8 字以内。
-- `assets/cover-configs.md` 中的 `asset` 和本地照片 `photo` 路径相对本期目录，例如 `assets/recap-cover-liying.jpg`；Markdown 稿件链接相对 `assets/`，例如 `../gzh-liying.md`。历史稿中的配置路径仍相对稿件目录。文件名沿用原渠道规范；同一文件内不能配置重复的成品路径。已有成品时须显式 `--force`。
+- 新配置的 `asset` 只写成品文件名，例如 `recap-cover-liying.jpg`；发布工具通过 `--out-dir` 指定仓库外的输出目录。历史 `asset` 路径兼容保留，使用输出目录覆盖，不改历史配置。`photo` 仍相对本期目录，例如 `assets/source-photo.jpg`；Markdown 稿件链接相对 `assets/`，例如 `../gzh-liying.md`。同一文件内不能配置重复的成品文件名。直接调试覆盖已有成品时须显式 `--force`。
 
 ## 随机选择主题
 
@@ -51,13 +51,14 @@ python3 scripts/covers/assign_themes.py events/{year}/{event}/assets/cover-confi
 
 ## 固定发布入口
 
-确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，固定输出到仓库旁 `inspire-planet-publish/{期目录}/ready/`；检查成功后更新预览和 ZIP，旧版存 `history/`。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel gzh`，固定输出到仓库旁 `inspire-planet-publish/{期目录}/ready/gzh/`；检查成功后更新预览和 ZIP，旧版存 `history/`。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
 
 ## 运行
 
 ```bash
 python3 -m pip install -r scripts/text-cards/requirements.txt
 python3 scripts/covers/render.py events/{year}/{event}/assets/cover-configs.md \
+  --out-dir /tmp/inspire-planet-cover-debug \
   --browser "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --font /path/to/LXGWWenKai-Regular.ttf
 ```
@@ -102,7 +103,7 @@ python3 scripts/covers/render.py events/{year}/{event}/assets/cover-configs.md \
 
 新增配色使用 `themes/{name}.css`，新增布局使用 `layouts/{name}.css`；同时更新选择池与渲染检查。通过配置中的 `layout`、`theme` 选择组合，`--theme` 可覆盖配色。尺寸、检查、截图和压缩逻辑共享。
 
-仅配置和公众号封面成品存入本期 `assets/`；预览 HTML、总览和 ZIP 输出到仓库外同一批目录。横竖版兼容能力保留用于历史配置与测试，新的小红书／视频号首图由图卡工具生成。
+本期 `assets/` 只新增配置与必要原图；公众号封面成品、预览 HTML、总览和 ZIP 均存仓库外，不复制回仓库。历史封面及已有引用保留原样。横竖版兼容能力保留用于历史配置与测试，新的小红书／视频号首图由图卡工具生成。
 
 ## 验证
 
