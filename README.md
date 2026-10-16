@@ -36,7 +36,7 @@ events/{year}/{YYYYMMDD}-epXX/
   quote-cards.json     金句卡片与周刊数据
   assets/             只保存必要原图、配置与公众号封面
     cover-configs.md   公众号横版封面的配置与设计信息
-    recap-cover-{slug}.jpg  公众号封面成品
+    （渲染成品不存仓库）
 .agents/skills/          生成上述内容的工作流
 .github/workflows/      转写下载、历史补录与内容检查的 GitHub Actions
 scripts/                Actions 调用的转写程序、内容检查与发布包渲染工具
@@ -46,7 +46,7 @@ scripts/                Actions 调用的转写程序、内容检查与发布包
 
 文件名规则：**渠道缩写-分享者英文 slug**（`gzh-liying.md` / `xhs-liying.md` / `sph-liying.md`）。一期选了谁、哪个渠道有内容，看文件名就知道。历史期沿用旧的 `recap.md` / `xiaohongshu.md` / `promo.md` 和 PNG 封面，不追溯改名或转换。
 
-每期根目录放来源、稿件和索引，`assets/` 放必要原图、公众号封面配置与成品。小红书与视频号按平台分别编排图文脚本、选择主题、审阅并渲染整套图卡（含首图）。渲染成品统一使用仓库旁固定目录 `inspire-planet-publish/{YYYYMMDD}-epXX/ready/`，按 `gzh/`、`xhs/{slug}/`、`sph/{slug}/` 分目录交付；固定预览、ZIP 和旧版历史也在仓库外，规则与命令见 [固定发布目录](scripts/publish.md)。每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
+每期根目录放来源、稿件和索引，`assets/` 只放必要的授权原始素材和公众号封面配置，不放渲染成品。小红书与视频号按平台分别编排图文脚本、选择主题、审阅并渲染整套图卡（含首图）。确认后使用 [云端一键渲染](scripts/publish.md) 生成临时 JPG、预览和 ZIP，通过 GitHub Actions Artifact 下载；产物保留 1 天，不归档在仓库或仓库旁的固定目录。每期只保存实际存在的文件，不补空稿。历史资料保留原表达；原始转写可能包含识别错误，不能把它当作经过核实的事实或建议。历史文案中的会议时间和入口只代表当时状态。
 
 ## 网站与周刊数据
 

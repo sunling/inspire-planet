@@ -23,7 +23,7 @@ events/{year}/{YYYYMMDD}-epXX/
   transcript.txt           输入
   gzh-{slug}.md            输出，一位分享者一个文件
   assets/cover-configs.md         公众号横版封面的配置与设计信息
-  assets/recap-cover.jpg   横版封面；一期多篇时用 recap-cover-{slug}.jpg
+  （横版封面 JPEG 只在临时渲染产物中，不提交仓库）
 ```
 
 已有同名文件时更新原文件，不新建 `gzh-{slug}-2.md`。
@@ -114,7 +114,7 @@ events/{year}/{YYYYMMDD}-epXX/
 4. 通读查代词：每个“她/他”只能指向一个人，不能就改成名字或省略主语；
 5. 写「发布信息」；
 6. 内容完成后更新 `assets/cover-configs.md`；整期生成时由总控在全部内容完成后统一汇总。发布信息中标明计划封面路径及待确认、待渲染状态；检查文章未保留封面配置；
-7. 交付文章与封面脚本，在本期 README 的稿件导航提供配置链接，在“本期命令”提供真实路径的渲染命令，通用步骤与 prompt 链接 `scripts/content-workflow.md`；发布渲染用 `scripts/render-publish.py {本期目录} --channel gzh`，将检查通过的封面更新到固定 `ready/gzh/`，旧版存 `history/`；必要入库 JPEG 再从此复制到本期 `assets/`。用户明确确认后才渲染封面、存 JPEG，结果在交付回复中说明，不回写 README 的制作进度；发布授权记入发布备注；
+7. 交付文章与封面配置，在本期 README 的稿件导航提供配置链接，并指向 `scripts/publish.md` 的云端一键渲染流程。确认后运行 GitHub Actions `render-content.yml`，由临时 runner 生成、检查并提供保留 1 天的 Artifact 下载；不将 JPEG 回写到 `assets/`，不长期保留 `ready/` 与 `history/`。发布授权记入发布备注；
 8. 修改已有文章时局部改，并回到转写核对。
 
 稳定的新偏好写进 `LEARNINGS.md`，典型改写样本写进 `EXAMPLES.md`；用户明确要求复盘时才更新。
@@ -123,5 +123,5 @@ events/{year}/{YYYYMMDD}-epXX/
 
 1. 每篇的路径、字数；写了谁，没写谁及原因；
 2. 每篇的标题、备选标题、摘要；
-3. 封面脚本路径、副标题、视觉命题及待确认／已渲染状态；成品已生成时提供实际路径；
+3. 封面脚本路径、副标题、视觉命题及待确认／已渲染状态；成品已生成时提供临时 Artifact 下载链接；
 4. 发布前需要谁过目，哪些事实、授权、时间或隐私仍需确认。

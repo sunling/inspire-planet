@@ -92,7 +92,7 @@ speaker: 孙玲
 
 ## 固定发布入口
 
-确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph`，固定输出到仓库旁 `inspire-planet-publish/{期目录}/ready/`；检查成功后更新预览和 ZIP，旧版存 `history/`。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
+确认脚本后用 `python3 scripts/render-publish.py {本期目录} --channel xhs --channel sph`，在 GitHub Actions 的临时 runner 中输出；校验成功后以保留 1 天的 Artifact 交付，旧图片不归档。单篇更新、已渲染图片导入与目录规则见 [固定发布目录](../publish.md)。下面的直接渲染命令用于单独调试，发布只认固定 `ready/`。
 
 ## 运行
 
@@ -108,7 +108,7 @@ python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md
 
 - 字体首次运行自动下载到 `~/.cache/inspireplanet-fonts/`（`INSPIRE_FONTS_DIR` 可改；也会查 `~/Library/Fonts/`、`~/.local/share/fonts/`）；离线时用 `--font` 指定霞鹜文楷。
 - 输出目录必须为空。渲染器会拒绝溢出和页眉重叠的页面；遇到溢出先拆页或删重复，不缩字号。
-- 整套图卡包含 `01.jpg` 首图，不单独复制首图到本期 `assets/`。小红书与视频号分别使用各自审阅通过的脚本渲染，同批输出按仓库外 `out_dir/xhs/{slug}/`、`out_dir/sph/{slug}/` 分目录保存；总览和 ZIP 保留渠道分类，不跨平台复用整套成品。
+- 整套图卡包含 `01.jpg` 首图，不单独复制首图到本期 `assets/`。小红书与视频号分别使用各自审阅通过的脚本渲染，同批输出按仓库外 `out_dir/xhs/{slug}/`、`out_dir/sph/{slug}/` 分目录保存；临时 Artifact 的预览和 ZIP 按渠道分类，不跨平台复用整套成品。
 - 卡片图是产物，不提交进仓库；仓库只保留文字稿及其主题设置。
 
 改动渲染器或主题后运行：

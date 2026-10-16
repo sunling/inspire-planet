@@ -1,47 +1,34 @@
-# 固定发布目录
+# 按需云端渲染（不归档成品图片）
 
-先确认对应稿件与封面配置，再从仓库根目录运行：
+**原则：只保存可编辑的源内容。** Git 仓库保存转写、文章、图文脚本、结构化 JSON、封面配置及必要的授权原始素材；渲染生成的 JPEG、HTML 预览与 ZIP 不提交 Git，也不维护永久的仓库外 ready/history。
 
-```bash
-python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX --channel gzh
-python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX --channel xhs --channel sph
-```
+## 浏览器一键出图
 
-需要更新单篇时：
+1. 在 GitHub 打开 **Actions → Render content (temporary download) → Run workflow**。
+2. **Use workflow from** 选择包含已审稿件和配置的分支；填写 `episode`，例如 `20260919-ep37`（只填文件夹名）。
+3. 选择 `channel`：`gzh` 公众号封面、`xhs` 小红书、`sph` 视频号，或 `all` 渲染当前存在的渠道稿。
+4. 运行成功后，在该次 Workflow Run 的 **Artifacts** 下载 `render-...` ZIP。内含 `ready/` JPEG、`preview.html`、按平台 ZIP 和 `all.zip`。
+5. 下载解压后在浏览器打开 `preview.html` 检查版式、溢出、署名、分镜与隐私；人工确认后从 `ready/` 取图发布。
 
-```bash
-python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX --channel xhs --slug liying
-```
+Artifact **仅保留 1 天**，过期后重新运行即可。工作流的 `contents: read` 权限不允许回写仓库；无仓库写入步骤、无长期云端图片存储。没有确认授权的内容不得直接公开发布。
 
-默认输出在仓库旁的 `inspire-planet-publish/{YYYYMMDD}-epXX/`，始终从这里取待发布版本：
+## 本地调试（可选）
 
-```text
-{YYYYMMDD}-epXX/
-  ready/
-    gzh/               公众号封面
-    xhs/{slug}/        小红书整套图卡
-    sph/{slug}/        视频号整套图卡
-  preview.html         当前图片总览
-  gzh.zip              当前公众号封面包（有此渠道时）
-  xhs.zip              当前小红书图片包（有此渠道时）
-  sph.zip              当前视频号图片包（有此渠道时）
-  all.zip              全部当前图片
-  history/             被替换的旧版本，发布时不从这里取图
-```
-
-在临时目录渲染，沿用原渲染器的溢出与重叠检查，再检查图片尺寸和页码连续性、重建预览及 ZIP，全部成功后替换 `ready/`。单篇更新保留其余篇目和平台；失败保留旧版本。更新时不要同时取图或发布，等命令完成后打开固定预览。旧图片与当时的预览、下载包一起存入 `history/`，可以按需手动清理。
-
-`--root <路径>` 可修改仓库外的发布根目录；选定后每次用同一位置。默认目录按仓库位置确定，不使用 `/tmp` 保存长期发布素材。`--font`、`--browser` 传给原渲染器。依赖见 [文字卡说明](text-cards/README.md)，公众号封面需本机霞鹜文楷；其他参数微调应先保存在已审阅的配置或脚本中。
-
-导入已经检查的 JPEG（源目录需包含 `gzh/`、`xhs/{slug}/` 或 `sph/{slug}/`）：
+CI 调用原有渲染器，指定 runner 的临时目录：
 
 ```bash
-python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX \
-  --channel xhs --channel sph --import-dir <已有成品目录>
+python3 scripts/render-publish.py events/2026/20260919-ep37 \
+  --channel gzh --root /tmp/inspire-planet-publish
 ```
 
-导入会检查图片完整性、尺寸与图卡页码，文字和排版需事先审阅。来源目录保留不动，导入后发布只认固定入口。公众号入库需要的 JPEG 可从 `ready/gzh/` 复制到本期 `assets/`；图卡、预览、下载包与历史均不提交 GitHub。
+本地调试若不指定 `--root`，历史兼容行为仍会在仓库旁生成持久目录；需要使用临时路径并在取图后自行清理。CI 不使用该默认路径。
 
-每期 README 的“本期命令”写明固定目录和命令；不记录生成或渲染状态。出图不代表对外发布授权。
+原渲染器继续检查 JPEG 尺寸、文件完整性、图卡页码连续性与页面溢出。公众号封面配置的 `asset` 仅用于定义输出文件名；不代表该 JPEG 要入库。原图或固定二维码若需作为生成输入，应单独核对授权，不与生成成品混淆。
 
-验证：`python3 scripts/test-render-publish.py`（需 Pillow）。
+## 维护与安全
+
+- 手动触发的 `workflow_dispatch` 仅对具有适当仓库操作权限的协作者开放。普通贡献者提交 PR、由维护者审稿后触发。
+- 工作流固定 `contents: read`，不注入发布平台密钥，也不直接发布。不要使用带敏感凭据的高权限工作流来运行未经信任的 PR 代码。
+- 文字或视觉配置修改后，必须重新审核再运行。Artifact 是临时交付物，不是已发布内容的备份；平台发布后的历史由平台本身管理。
+- CI 所需依赖为 Playwright、Chromium、Pillow 和公开发布的中文字体。若字体下载地址改变，工作流会失败，需修复依赖后再运行。
+
