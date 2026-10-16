@@ -103,7 +103,7 @@ jobs:
         run: python3 scripts/latest_transcript.py publish
       - name: Verify checks and scans did not change public files
         if: >-
-          env.CONTENT_OPERATION == 'search'
+          env.CONTENT_OPERATION == '查找未归档会议'
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only plans and transcript caches
         if: always()
