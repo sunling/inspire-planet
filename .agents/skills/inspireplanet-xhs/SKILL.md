@@ -24,7 +24,7 @@ events/{year}/{YYYYMMDD}-epXX/
   xhs-{slug}.md                  输出，一位分享者一个文件
 ```
 
-- 没有 `transcript.txt` 时，提供 [Actions 下载入口与说明](../../../scripts/meeting-content.md)，等待转写归档或用户提供原稿；不凭空补写会议事实，也不因整理请求自行公开原稿；
+- 没有 `transcript.txt` 时，提供 [Actions 下载入口与说明](../../../docs/meeting-content.md)，等待转写归档或用户提供原稿；不凭空补写会议事实，也不因整理请求自行公开原稿；
 - 已有同名文件时更新原文件；
 - 文件只放模板里的内容；待确认事项在完成后的回复里说。
 
@@ -118,7 +118,7 @@ events/{year}/{YYYYMMDD}-epXX/
 python3 scripts/render-publish.py events/{year}/{YYYYMMDD}-epXX --channel xhs --slug {slug}
 ```
 
-浏览器渲染入口与下载规则见 `scripts/publish.md`；主题仍保存在图文脚本里。
+浏览器渲染入口与下载规则见 `docs/rendering.md`；主题仍保存在图文脚本里。
 
 生成或修改稿件后，同步更新本期 README 的稿件导航与云端渲染说明；不要求本地渲染，不维护永久 ready/history；发布注意事项记入发布备注。
 
