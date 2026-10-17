@@ -52,11 +52,11 @@ p { font-size: 48px; line-height: 1.68; margin: 0 0 26px; overflow-wrap: break-w
 .card.layout-story p { font-size:43px; line-height:1.62; }
 .card.layout-story main::after { content:''; display:block; width:112px; height:5px; background:var(--accent); margin-top:46px; opacity:.65; }
 
-.card.layout-journal main { display:flex; flex-direction:column; justify-content:center; }
-.card.layout-journal main::before { content:'FIELD NOTES  /  生活记录'; color:var(--muted); font-size:25px; letter-spacing:3px; margin-bottom:42px; }
-.card.layout-journal h1 { font-size:58px; margin-bottom:48px; }
-.card.layout-journal p { font-size:39px; line-height:1.62; background:var(--cover-background); padding:52px 50px 58px; border-left:7px solid var(--accent); box-shadow:0 14px 36px rgba(35,29,25,.08); transform:rotate(-1deg); }
-.card.layout-journal main::after { content:'✳  从当时的具体画面开始'; align-self:flex-end; color:var(--muted); font-size:27px; margin-top:44px; }
+.card.layout-journal main { display:flex; flex-direction:column; justify-content:center; min-height:0; }
+.card.layout-journal main::before { content:'FIELD NOTES  /  生活记录'; color:var(--muted); font-size:24px; letter-spacing:2px; margin-bottom:22px; flex-shrink:0; }
+.card.layout-journal h1 { font-size:52px; line-height:1.38; margin-bottom:28px; flex-shrink:0; }
+.card.layout-journal p { font-size:36px; line-height:1.55; background:var(--cover-background); padding:32px 34px 36px; border-left:6px solid var(--accent); box-shadow:0 12px 26px rgba(35,29,25,.08); transform:rotate(-.5deg); flex-shrink:0; }
+.card.layout-journal main::after { content:'✳  从当时的具体画面开始'; align-self:flex-end; color:var(--muted); font-size:23px; margin-top:20px; flex-shrink:0; }
 
 .card.layout-dialogue main { display:flex; flex-direction:column; justify-content:center; }
 .card.layout-dialogue h1 { font-size:56px; line-height:1.36; margin-bottom:38px; }
