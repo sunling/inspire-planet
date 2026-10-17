@@ -340,6 +340,37 @@ class LatestTests(unittest.TestCase):
         self.assertEqual(calls[0]['start_time'], '2026-07-19T12:00:00Z')
         with self.assertRaises(m.SafeError): l.discover(Client(), {'title': 'x', 'lookback_days': 91}, now)
 
+    def test_scheduled_beijing_day_never_falls_back_to_last_week(self):
+        l = self.latest()
+        now = datetime(2026, 10, 17, 2, 7, tzinfo=timezone.utc)  # Beijing Sat 10:07
+        last_week = self.row('2026-10-10')
+        current = self.row('2026-10-17')
+        archive = {'keys': set(), 'dates': set(), 'mapping': {}}
+
+        # If today's meeting has not ended, the ended-meetings API only
+        # contains last week's row. Do not draft it in a scheduled run.
+        self.assertEqual(l.scheduled_beijing_occurrences([last_week], now), [])
+        self.assertTrue(l.plan_latest(l.scheduled_beijing_occurrences([last_week], now),
+                                      archive, {})['skip'])
+
+        selected = l.scheduled_beijing_occurrences([last_week, current], now)
+        self.assertEqual(selected, [current])
+        self.assertEqual(l.plan_latest(selected, archive, {})['meeting'], current)
+
+        # Beijing has no DST; avoid UTC-date-only matching at midnight.
+        early = {**last_week, 'start_time': '2026-10-16T17:00:00Z'}
+        self.assertEqual(l.scheduled_beijing_occurrences([early], now), [early])
+
+        # A delayed job landing on Beijing Sunday must not backfill Saturday.
+        late = datetime(2026, 10, 17, 20, tzinfo=timezone.utc)
+        self.assertEqual(l.scheduled_beijing_occurrences([current], late), [])
+
+    def test_scheduled_candidate_filter_requires_timezone_aware_now(self):
+        l = self.latest()
+        with self.assertRaises(m.SafeError):
+            l.scheduled_beijing_occurrences([self.row('2026-10-17')],
+                                              datetime(2026, 10, 17, 2, 7))
+
     def test_no_new_main_and_open_draft_dedupe_never_fall_back(self):
         l = self.latest()
         old, new = self.row('2026-10-10'), self.row('2026-10-17')
