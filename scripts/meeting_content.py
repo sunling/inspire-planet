@@ -364,9 +364,18 @@ def fetch_occurrence(client, meeting):
             if text:
                 transcripts.append(text)
         need(bool(transcripts), '本场录制存在，但尚无非空完整文字转写；稍后重试')
-        need(all(text == transcripts[0] for text in transcripts[1:]),
-             '同场多个录制文件含有不同文字转写；拒绝自动选择或拼接，请人工核对')
-        return transcripts[0]
+        # Compare only actual spoken text, not speaker names or timestamp headers.
+        # Every candidate has passed full pagination validation. If two longest
+        # transcripts differ, no unambiguous winner exists: fail closed.
+        scored = [(sum(len(block['text']) for block in parse_transcript(text)), text)
+                  for text in transcripts]
+        longest = max(length for length, _ in scored)
+        winners = [text for length, text in scored if length == longest]
+        need(all(text == winners[0] for text in winners[1:]),
+             '同场最长文字转写出现并列且内容不同；请人工核对')
+        print(f'同场录制文件={len(native)}；非空完整转写={len(transcripts)}；'
+              f'选择最长正文，字数={longest}；未输出原始转写。')
+        return winners[0]
     candidates = [r for r in records if '转写' in r.get('type', '') and r.get('record_file_id')]
     def duration(r):
         value = r.get('duration')
