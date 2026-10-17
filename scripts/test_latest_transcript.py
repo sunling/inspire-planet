@@ -371,6 +371,42 @@ class LatestTests(unittest.TestCase):
             l.scheduled_beijing_occurrences([self.row('2026-10-17')],
                                               datetime(2026, 10, 17, 2, 7))
 
+    def test_schedule_prepare_skips_old_unarchived_meeting_manual_can_backfill(self):
+        l = self.latest()
+        import tempfile, json
+        from unittest.mock import patch
+        config = {'title': '启发星球，互相赋能', 'lookback_days': 90,
+                  'anchor': {'date': '2026-10-10', 'episode': '40', 'meeting_id': 'series'}}
+        old_row = self.row('2026-10-10')
+        class Client:
+            def call(self, name, args):
+                self_test.assertEqual(name, 'get_user_ended_meetings')
+                return {'meeting_info_list': [old_row], 'has_more': False}
+        self_test = self
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text(json.dumps(config))
+            def run(args):
+                if args[:2] in (['git', 'fetch'], ['git', 'ls-remote']): return ''
+                if args[:3] == ['gh', 'api', '--paginate']: return '[[]]'
+                if args[:2] == ['git', 'ls-tree']: return ''
+                if args[:3] == ['git', 'branch', '--show-current']: return 'main'
+                if args[:2] == ['git', 'rev-parse']: return 'a' * 40
+                if args[:3] == ['git', 'status', '--porcelain']: return ''
+                raise AssertionError(args)
+            now = datetime(2026, 10, 17, 2, 7, tzinfo=timezone.utc)
+            with patch.dict('os.environ', {'GITHUB_EVENT_NAME': 'schedule'}):
+                l.main(['prepare'], root=root, run=run, client_factory=Client, now=now)
+            scheduled = json.loads((root / '.git/latest-plan.json').read_text())
+            self.assertTrue(scheduled['skip'])
+            self.assertEqual(scheduled['reason'], 'no-new')
+            # Manually dispatched backfills remain possible.
+            with patch.dict('os.environ', {'GITHUB_EVENT_NAME': 'workflow_dispatch'}):
+                l.main(['prepare'], root=root, run=run, client_factory=Client, now=now)
+            manual = json.loads((root / '.git/latest-plan.json').read_text())
+            self.assertFalse(manual['skip'])
+            self.assertEqual(manual['metadata']['date'], '2026-10-10')
+
     def test_no_new_main_and_open_draft_dedupe_never_fall_back(self):
         l = self.latest()
         old, new = self.row('2026-10-10'), self.row('2026-10-17')
