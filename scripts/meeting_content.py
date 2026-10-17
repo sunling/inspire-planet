@@ -277,6 +277,44 @@ def fetch_transcript(client, day, subject, meeting_id):
     return fetch_occurrence(client, meeting)
 
 
+def read_file_transcript(client, meeting_id, record_file_id):
+    """Read every page of one recording; return None only when its transcript is empty."""
+    paragraphs, pid, seen = [], 0, set()
+    for _ in range(MAX_PAGES):
+        data = client.call('get_transcripts_details', {'meeting_id': meeting_id, 'record_file_id': record_file_id, 'pid': str(pid), 'limit': 100})
+        if data.get('empty_transcript'):
+            need(not paragraphs, '分页中途返回空转写错误；拒绝截断')
+            break
+        chunk = data.get('minutes', {}).get('paragraphs')
+        need(isinstance(chunk, list) and isinstance(data.get('more'), bool), '转写返回结构不支持；拒绝截断')
+        for p in chunk:
+            try:
+                current = int(p['pid'])
+            except (ValueError, TypeError, KeyError):
+                raise SafeError('转写段落 ID 无效') from None
+            need(current >= pid and current not in seen, '转写分页重复或倒退')
+            seen.add(current)
+        paragraphs.extend(chunk)
+        need(len(paragraphs) <= MAX_PARAGRAPHS, '转写超过段落上限；拒绝截断')
+        if not data['more']:
+            break
+        need(bool(chunk), '转写空页仍有后续；拒绝截断')
+        pid = int(chunk[-1]['pid']) + 1
+    else:
+        raise SafeError('转写超过分页上限；拒绝截断')
+    blocks = []
+    for p in paragraphs:
+        text = ''.join(w['text'] for sentence in p.get('sentences', []) for w in sentence.get('words', [])).strip()
+        if text:
+            speaker = p.get('speaker', {}).get('user_name')
+            need(isinstance(speaker, str) and bool(speaker.strip()) and speaker not in ('未知', 'unknown'), '转写包含未知发言人；请人工处理')
+            need(not re.search(r'[\r\n()]', speaker), '转写发言人格式不支持')
+            blocks.append(f"{speaker}({norm_time(p.get('start_time'))}):\n{text}")
+    if blocks:
+        return '\n\n'.join(blocks) + '\n'
+    return None
+
+
 def fetch_occurrence(client, meeting):
     # Metadata is occurrence-specific, but records_total_count does not equal
     # the occurrence's file count in the live response. Verify coverage against
@@ -297,7 +335,7 @@ def fetch_occurrence(client, meeting):
     metadata = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records]
     native_set, metadata_set = set(native), set(metadata)
     # Count-only diagnostics: do not reveal meeting names, record IDs, or transcript text.
-    if not native or len(native_set) != len(native) or len(metadata_set) != len(metadata) or native_set != metadata_set:
+    if not native or len(native_set) != len(native) or len(metadata_set) != len(metadata) or (metadata and native_set != metadata_set):
         causes = []
         if not native:
             causes.append('native-empty')
@@ -315,6 +353,20 @@ def fetch_occurrence(client, meeting):
                         + f'，仅会议列表={len(metadata_set - native_set)}'
                         + f'，仅录制列表={len(native_set - metadata_set)}'
                         + '）；已安全停止，未跨期选取或截断')
+    if not metadata:
+        # The ended-meetings API may return records=[] even when the full
+        # recording endpoint has completed files. Never search beyond the
+        # exact meeting_id + sub_meeting_id established above.
+        need(len(native) <= 8, '本场录制文件超过备用读取上限；拒绝遗漏并需人工核对')
+        transcripts = []
+        for _, file_id in sorted(native):
+            text = read_file_transcript(client, meeting['meeting_id'], file_id)
+            if text:
+                transcripts.append(text)
+        need(bool(transcripts), '本场录制存在，但尚无非空完整文字转写；稍后重试')
+        need(all(text == transcripts[0] for text in transcripts[1:]),
+             '同场多个录制文件含有不同文字转写；拒绝自动选择或拼接，请人工核对')
+        return transcripts[0]
     candidates = [r for r in records if '转写' in r.get('type', '') and r.get('record_file_id')]
     def duration(r):
         value = r.get('duration')
@@ -323,39 +375,9 @@ def fetch_occurrence(client, meeting):
         return h * 3600 + minute * 60 + second
     candidates.sort(key=duration, reverse=True)
     for record in candidates:
-        paragraphs, pid, seen = [], 0, set()
-        for _ in range(MAX_PAGES):
-            data = client.call('get_transcripts_details', {'meeting_id': meeting['meeting_id'], 'record_file_id': record['record_file_id'], 'pid': str(pid), 'limit': 100})
-            if data.get('empty_transcript'):
-                need(not paragraphs, '分页中途返回空转写错误；拒绝截断')
-                break
-            chunk = data.get('minutes', {}).get('paragraphs')
-            need(isinstance(chunk, list) and isinstance(data.get('more'), bool), '转写返回结构不支持；拒绝截断')
-            for p in chunk:
-                try:
-                    current = int(p['pid'])
-                except (ValueError, TypeError, KeyError):
-                    raise SafeError('转写段落 ID 无效') from None
-                need(current >= pid and current not in seen, '转写分页重复或倒退')
-                seen.add(current)
-            paragraphs.extend(chunk)
-            need(len(paragraphs) <= MAX_PARAGRAPHS, '转写超过段落上限；拒绝截断')
-            if not data['more']:
-                break
-            need(bool(chunk), '转写空页仍有后续；拒绝截断')
-            pid = int(chunk[-1]['pid']) + 1
-        else:
-            raise SafeError('转写超过分页上限；拒绝截断')
-        blocks = []
-        for p in paragraphs:
-            text = ''.join(w['text'] for sentence in p.get('sentences', []) for w in sentence.get('words', [])).strip()
-            if text:
-                speaker = p.get('speaker', {}).get('user_name')
-                need(isinstance(speaker, str) and bool(speaker.strip()) and speaker not in ('未知', 'unknown'), '转写包含未知发言人；请人工处理')
-                need(not re.search(r'[\r\n()]', speaker), '转写发言人格式不支持')
-                blocks.append(f"{speaker}({norm_time(p.get('start_time'))}):\n{text}")
-        if blocks:
-            return '\n\n'.join(blocks) + '\n'
+        text = read_file_transcript(client, meeting['meeting_id'], record['record_file_id'])
+        if text:
+            return text
     raise SafeError('无非空文字转写；等待处理完成后重试')
 from datetime import datetime, timezone
 

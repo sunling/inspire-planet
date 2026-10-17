@@ -165,6 +165,76 @@ class TranscriptTests(unittest.TestCase):
                         'private-group-A', 'private-group-B'):
             self.assertNotIn(private, message)
 
+    def test_empty_meeting_records_falls_back_to_same_occurrence_native_files(self):
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                   'start_time': '2026-10-10T00:00:00Z', 'records': []}
+        paragraph = {'pid': '0', 'start_time': 1000, 'speaker': {'user_name': '合成甲'},
+                     'sentences': [{'words': [{'text': '该场完整转写'}]}]}
+        calls = []
+        class Client:
+            def call(self, name, args):
+                calls.append((name, args))
+                if name == 'get_records_list':
+                    return {'record_meetings': [
+                        {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                         'meeting_record_id': 'group1', 'record_files': [{'record_file_id': 'empty'}]},
+                        {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                         'meeting_record_id': 'group2', 'record_files': [{'record_file_id': 'full'}]},
+                        {'meeting_id': 'series', 'sub_meeting_id': 'different-week',
+                         'meeting_record_id': 'other', 'record_files': [{'record_file_id': 'other-week'}]}
+                    ], 'has_more': False}
+                if name == 'get_transcripts_details':
+                    if args['record_file_id'] == 'empty':
+                        return {'empty_transcript': True}
+                    if args['record_file_id'] == 'full':
+                        return {'minutes': {'paragraphs': [paragraph]}, 'more': False}
+                raise AssertionError('Must never request a different occurrence')
+        result = m.fetch_occurrence(Client(), meeting)
+        self.assertIn('该场完整转写', result)
+        self.assertEqual({x['record_file_id'] for name, x in calls if name == 'get_transcripts_details'},
+                         {'empty', 'full'})
+
+    def test_empty_meeting_records_rejects_multiple_distinct_transcripts(self):
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                   'start_time': '2026-10-10T00:00:00Z', 'records': []}
+        class Client:
+            def call(self, name, args):
+                if name == 'get_records_list':
+                    return {'record_meetings': [{
+                        'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                        'meeting_record_id': 'group',
+                        'record_files': [{'record_file_id': 'first'}, {'record_file_id': 'second'}]
+                    }], 'has_more': False}
+                if name == 'get_transcripts_details':
+                    p = {'pid': '0', 'start_time': 0, 'speaker': {'user_name': '合成甲'},
+                         'sentences': [{'words': [{'text': '私密_' + args['record_file_id']}]}]}
+                    return {'minutes': {'paragraphs': [p]}, 'more': False}
+                raise AssertionError('Unexpected API')
+        with self.assertRaises(m.SafeError) as caught:
+            m.fetch_occurrence(Client(), meeting)
+        self.assertIn('多个录制文件含有不同文字转写', str(caught.exception))
+        self.assertNotIn('私密_', str(caught.exception))
+
+    def test_empty_meeting_records_rejects_ambiguous_native_scope(self):
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                   'start_time': '2026-10-10T00:00:00Z', 'records': []}
+        for case in ('other-week', 'duplicate', 'too-many'):
+            with self.subTest(case=case):
+                class Client:
+                    def call(self, name, args):
+                        if name == 'get_records_list':
+                            ids = (['a', 'a'] if case == 'duplicate' else
+                                   [str(i) for i in range(9)] if case == 'too-many' else ['a'])
+                            return {'record_meetings': [{
+                                'meeting_id': 'series',
+                                'sub_meeting_id': 'different-week' if case == 'other-week' else 'correct-week',
+                                'meeting_record_id': 'group',
+                                'record_files': [{'record_file_id': i} for i in ids]
+                            }], 'has_more': False}
+                        raise AssertionError('Must fail before reading any transcript')
+                with self.assertRaises(m.SafeError):
+                    m.fetch_occurrence(Client(), meeting)
+
     def test_runtime_schema_changes_fail_before_any_tool_call(self):
         import copy
         tools = [{'name': name, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in fields.items()}, 'required': list(fields)}} for name, fields in m.TOOL_FIELDS.items()]
