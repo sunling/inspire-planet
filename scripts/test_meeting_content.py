@@ -543,8 +543,8 @@ class WorkflowTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         flow = (root / '.github/workflows/meeting-content.yml').read_text()
         crons = re.findall(r"cron:\s*'([^']+)'", flow)
-        # 会议北京时间周六 08:00–10:00（UTC 周六 00:00–02:00）；结束后 02:00/02:10/02:20 三次尝试。
-        self.assertEqual(crons, ['0,10,20 2 * * 6'])
+        # 会议北京时间周六 08:00–10:00（UTC 周六 00:00–02:00）；结束后 02:07/02:17/02:27 三次尝试。
+        self.assertEqual(crons, ['7,17,27 2 * * 6'])
 
 
 class EndToEndTests(unittest.TestCase):
