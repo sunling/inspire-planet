@@ -383,7 +383,11 @@ class DraftTests(unittest.TestCase):
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); (root / 'events').mkdir()
-            (root / 'events/README.md').write_text('# 合成索引\n')
+            (root / 'events/README.md').write_text(
+                '# 合成索引\n\n| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+                '|---|---|---|---|---|---|\n'
+                '| 20261010-ep40 | — | [纪要](2026/20261010-ep40/recap.md) | — | — | — |\n'
+                '\n<details>\n<summary>2025 年归档</summary>\n</details>\n')
             event, _ = m.event_identity('2026-10-17', '41')
             text = '合成甲(00:01):\n合成测试\n'
             paths = m.write_draft(root, event, text)
@@ -392,11 +396,68 @@ class DraftTests(unittest.TestCase):
             self.assertEqual((root / event / 'transcript.txt').read_text(), text)
             index = (root / 'events/README.md').read_text()
             self.assertIn(event.removeprefix('events/') + '/transcript.txt', index)
+            self.assertEqual(index.count('| 期次与日期 |'), 1)
+            self.assertLess(index.index('20261017-ep41'), index.index('<details>'))
+            self.assertIn('[纪要](2026/20261010-ep40/recap.md)', index)
             self.assertNotIn('summary.json', index)
             with self.assertRaises(m.SafeError):
                 m.write_draft(root, event, '合成甲(00:01):\nchanged\n')
             self.assertEqual((root / event / 'transcript.txt').read_text(), text)
             self.assertEqual((root / 'events/README.md').read_text(), index)
+
+
+    def test_index_insert_is_ordered_and_preserves_archive(self):
+        original = (
+            '# 合成索引\n\n'
+            '| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+            '|---|---|---|---|---|---|\n'
+            '| 20261010-ep40 | [转写](old.txt) | — | — | — | — |\n'
+            '| 20261031-ep43 | — | — | — | — | — |\n\n'
+            '手写说明保持不动。\n\n<details>\n<summary>2025 金句</summary>\n'
+            '| 20251227-ep50 | [卡片 JSON](somewhere.json) |\n</details>\n'
+        )
+        result = m.update_transcript_index(original, 'events/2026/20261017-ep41')
+        self.assertLess(result.index('20261010-ep40'), result.index('20261017-ep41'))
+        self.assertLess(result.index('20261017-ep41'), result.index('20261031-ep43'))
+        self.assertEqual(result.count('| 期次与日期 |'), 1)
+        self.assertIn('手写说明保持不动。', result)
+        self.assertEqual(result.split('手写说明保持不动。', 1)[1], original.split('手写说明保持不动。', 1)[1])
+
+    def test_index_existing_row_preserves_other_columns(self):
+        original = (
+            '# 合成索引\n\n| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+            '|---|---|---|---|---|---|\n'
+            '| 20261017-ep41 | — | [纪要](recap.md) | [金句](quotes.json) | — | — |\n'
+        )
+        result = m.update_transcript_index(original, 'events/2026/20261017-ep41')
+        self.assertIn('| [转写](2026/20261017-ep41/transcript.txt) | [纪要](recap.md) |', result)
+        self.assertEqual(result.count('20261017-ep41 |'), 1)
+        with self.assertRaisesRegex(m.SafeError, '已有索引转写'):
+            m.update_transcript_index(result, 'events/2026/20261017-ep41')
+
+    def test_index_rejects_orphan_or_broken_schema_before_writing(self):
+        import tempfile
+        header = '| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+        sep = '|---|---|---|---|---|---|\n'
+        for content in (
+            '# Missing primary table\n',
+            '# Broken primary table\n' + header + '| bad | separator |\n',
+            '# Orphan row\n' + header + sep + '\n'
+            '<details>\n</details>\n'
+            '| 20261017-ep41 | [转写](outside/transcript.txt) | — | — | — | — |\n',
+            '# Duplicated row\n' + header + sep +
+            '| 20261017-ep41 | — | — | — | — | — |\n' +
+            '| 20261017-ep41 | — | — | — | — | — |\n',
+        ):
+            with self.subTest(case=content[:25]), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / 'events').mkdir()
+                (root / 'events/README.md').write_text(content)
+                with self.assertRaises(m.SafeError):
+                    m.write_draft(root, 'events/2026/20261017-ep41',
+                                  '合成甲(00:01):\n合成测试\n')
+                self.assertFalse((root / 'events/2026/20261017-ep41/transcript.txt').exists())
+                self.assertEqual((root / 'events/README.md').read_text(), content)
 
 
 class RuntimeTests(unittest.TestCase):
