@@ -4,7 +4,7 @@
 
 ## 1. 日常自动下载
 
-- **计划时间**：北京时间每周六 **10:00、10:10、10:20** 各尝试一次，给腾讯会议生成转写留出时间；GitHub 定时任务可能延迟。
+- **计划时间**：北京时间每周六 **10:07、10:17、10:27** 各尝试一次，给腾讯会议生成转写留出时间；GitHub 定时任务可能延迟。
 - **运行条件**：默认分支上的工作流、仓库变量 `CONTENT_AUTOMATION_ENABLED=true`、有效的 `TENCENT_MEETING_TOKEN`，以及允许 GitHub Actions 创建 Pull Request 的仓库设置。
 - **查看结果**：[Transcript draft](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml) → 选择最新运行查看状态；发现新内容时到 [Pull requests](https://github.com/sunling/inspire-planet/pulls) 查找对应 Draft PR。已归档的会议会跳过，不重复开 PR。
 - **人工审核**：核对会议日期、期次、转写内容和公开授权。期次不确定时，稿件可能暂放 `incoming/meetings/` 等待确认；审核无误再合并。
