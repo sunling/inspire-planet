@@ -102,6 +102,57 @@ def allowed_paths(event):
     return [f'{event}/transcript.txt', 'events/README.md']
 
 
+def update_transcript_index(index_text, event):
+    """Update only the canonical six-column table, never append a second table.
+
+    Preserve hand-edited links and everything following the first table (including
+    older-year archives). Reject unexpected layouts before writing any transcript.
+    """
+    name = event.rsplit('/', 1)[-1]
+    relative = event.removeprefix('events/')
+    link = f'[转写]({relative}/transcript.txt)'
+    lines = index_text.splitlines(keepends=True)
+    header = '| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |'
+    headers = [i for i, line in enumerate(lines) if line.strip() == header]
+    need(len(headers) == 1, '会议索引主表表头缺失或重复；拒绝追加第二张表')
+    header_at = headers[0]
+    need(header_at + 1 < len(lines) and
+         bool(re.fullmatch(r'\|(?:\s*:?-{3,}:?\s*\|){6}', lines[header_at + 1].strip())),
+         '会议索引主表分隔行不支持')
+    begin = header_at + 2
+    end = begin
+    while end < len(lines) and lines[end].lstrip().startswith('|'):
+        end += 1
+
+    entries = []
+    for i in range(begin, end):
+        parts = lines[i].rstrip('\r\n').split('|')
+        need(len(parts) == 8 and bool(re.fullmatch(r'\d{8}-ep\d{2,3}', parts[1].strip())),
+             '会议索引主表行格式不支持')
+        entries.append((parts[1].strip(), i))
+    keys = [key for key, _ in entries]
+    need(keys == sorted(set(keys)), '会议索引主表有重复或日期顺序不正确')
+    # A stale row elsewhere (e.g. after the 2025 <details> archive) must never
+    # be silently duplicated.
+    row_pattern = r'^\|\s*' + re.escape(name) + r'\s*\|'
+    occurrences = [i for i, line in enumerate(lines) if re.match(row_pattern, line)]
+    need(len(occurrences) <= 1 and all(begin <= i < end for i in occurrences),
+         '会议索引行位于主表之外或重复；请先整理')
+
+    if occurrences:
+        i = occurrences[0]
+        parts = lines[i].rstrip('\r\n').split('|')
+        need(parts[2].strip() == '—', '已有索引转写；禁止覆盖')
+        parts[2] = ' ' + link + ' '
+        newline = '\r\n' if lines[i].endswith('\r\n') else '\n'
+        lines[i] = '|'.join(parts) + newline
+    else:
+        position = next((i for key, i in entries if key > name), end)
+        newline = '\r\n' if any(line.endswith('\r\n') for line in lines) else '\n'
+        lines.insert(position, f'| {name} | {link} | — | — | — | — |' + newline)
+    return ''.join(lines)
+
+
 def write_draft(root, event, text):
     paths = allowed_paths(event)
     parse_transcript(text)
@@ -114,26 +165,13 @@ def write_draft(root, event, text):
              not any(p.is_symlink() for p in [path, *path.parents] if p != root.parent),
              '写入路径不是安全常规路径')
     need(not transcript.exists() and not transcript.is_symlink(), '已有转写；禁止覆盖')
-    index_text = index.read_text(encoding='utf-8')
-    relative = event.removeprefix('events/')
-    link = f'[转写]({relative}/transcript.txt)'
-    row_pattern = r'^\|\s*' + re.escape(target.name) + r'\s*\|.*$'
-    if re.search(row_pattern, index_text, re.M):
-        def update_row(match):
-            columns = match[0].split('|')
-            need(len(columns) == 8 and columns[2].strip() == '—', '已有索引转写或列数不支持；请人工整理')
-            columns[2] = ' ' + link + ' '
-            return '|'.join(columns)
-        index_text = re.sub(row_pattern, update_row, index_text, count=1, flags=re.M)
-    else:
-        index_text += '\n| 期次 | 转写 | 纪要 | 卡片 JSON | 文案 | 封面 |\n| --- | --- | --- | --- | --- | --- |\n'
-        index_text += f'| {target.name} | {link} | — | — | — | — |\n'
+    # Compute and validate the index change before creating the transcript.
+    index_text = update_transcript_index(index.read_text(encoding='utf-8'), event)
     target.mkdir(parents=True, exist_ok=True)
     with transcript.open('x', encoding='utf-8') as f:
         f.write(text)
     index.write_text(index_text, encoding='utf-8')
     return paths
-
 
 MAX_TRANSCRIPT_CHARS = 300000
 

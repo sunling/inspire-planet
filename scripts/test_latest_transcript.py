@@ -259,7 +259,8 @@ class LatestTests(unittest.TestCase):
             with self.subTest(mapped=mapped), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir(); (root / 'events').mkdir()
                 (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': row['subject']}))
-                (root / 'events/README.md').write_text('# Synthetic index\n')
+                (root / 'events/README.md').write_text('# Synthetic index\n\n| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+                                                 '|---|---|---|---|---|---|\n')
                 def run(args):
                     if args[:2] in (['git', 'fetch'], ['git', 'ls-remote']): return ''
                     if args[:3] == ['gh', 'api', '--paginate']: return '[[]]'
@@ -463,7 +464,9 @@ class LatestTests(unittest.TestCase):
                 git('init', '--bare', str(remote)); git('init', '-b', 'main')
                 git('config', 'user.name', 'Synthetic'); git('config', 'user.email', 'test@example.invalid')
                 git('remote', 'add', 'origin', str(remote))
-                (root / 'events').mkdir(); (root / 'events/README.md').write_text('# Test\n')
+                (root / 'events').mkdir(); (root / 'events/README.md').write_text(
+                    '# Test\n\n| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+                    '|---|---|---|---|---|---|\n')
                 git('add', '.'); git('commit', '-m', 'baseline'); git('push', 'origin', 'main')
                 metadata = l.instance(self.row('2026-10-17'))
                 event = m.event_identity(metadata['date'], episode)[0] if episode else 'incoming/meetings/' + metadata['instance_key']
