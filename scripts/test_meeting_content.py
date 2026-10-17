@@ -143,6 +143,28 @@ class TranscriptTests(unittest.TestCase):
         for value in (-1, True, 4.5):
             with self.assertRaises(m.SafeError): m.norm_time(value)
 
+    def test_record_coverage_error_is_count_only_and_still_fail_closed(self):
+        record = {'record_file_id': 'private-file-A', 'meeting_record_id': 'private-group-A',
+                  'type': '转写', 'duration': '01:00'}
+        meeting = {'meeting_id': 'private-meeting', 'sub_meeting_id': 'private-sub',
+                   'start_time': '2026-10-10T00:00:00Z', 'records': [record]}
+        class Client:
+            def call(self, name, args):
+                if name == 'get_records_list':
+                    return {'record_meetings': [{'meeting_id': 'private-meeting',
+                             'sub_meeting_id': 'private-sub', 'meeting_record_id': 'private-group-B',
+                             'record_files': [{'record_file_id': 'private-file-B'}]}], 'has_more': False}
+                self.fail('Must never fetch transcript after coverage mismatch')
+        with self.assertRaises(m.SafeError) as caught:
+            m.fetch_occurrence(Client(), meeting)
+        message = str(caught.exception)
+        self.assertIn('metadata-not-in-native', message)
+        self.assertIn('native-not-in-metadata', message)
+        self.assertIn('会议列表=1', message)
+        for private in ('private-meeting', 'private-file-A', 'private-file-B',
+                        'private-group-A', 'private-group-B'):
+            self.assertNotIn(private, message)
+
     def test_runtime_schema_changes_fail_before_any_tool_call(self):
         import copy
         tools = [{'name': name, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in fields.items()}, 'required': list(fields)}} for name, fields in m.TOOL_FIELDS.items()]

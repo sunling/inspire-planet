@@ -295,8 +295,26 @@ def fetch_occurrence(client, meeting):
             need(isinstance(file.get('record_file_id'), str) and bool(file['record_file_id']), '录制文件缺少 ID')
             native.append((group['meeting_record_id'], file['record_file_id']))
     metadata = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records]
-    need(bool(native) and len(set(native)) == len(native) and len(set(metadata)) == len(metadata)
-         and set(native) == set(metadata), '本场录制列表不完整或重复；拒绝跨期选择或截断')
+    native_set, metadata_set = set(native), set(metadata)
+    # Count-only diagnostics: do not reveal meeting names, record IDs, or transcript text.
+    if not native or len(native_set) != len(native) or len(metadata_set) != len(metadata) or native_set != metadata_set:
+        causes = []
+        if not native:
+            causes.append('native-empty')
+        if len(native_set) != len(native):
+            causes.append('native-duplicate')
+        if len(metadata_set) != len(metadata):
+            causes.append('metadata-duplicate')
+        if metadata_set - native_set:
+            causes.append('metadata-not-in-native')
+        if native_set - metadata_set:
+            causes.append('native-not-in-metadata')
+        raise SafeError('本场录制列表校验失败（'
+                        + ','.join(causes)
+                        + f'；会议列表={len(metadata)}，录制列表={len(native)}'
+                        + f'，仅会议列表={len(metadata_set - native_set)}'
+                        + f'，仅录制列表={len(native_set - metadata_set)}'
+                        + '）；已安全停止，未跨期选取或截断')
     candidates = [r for r in records if '转写' in r.get('type', '') and r.get('record_file_id')]
     def duration(r):
         value = r.get('duration')
