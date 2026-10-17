@@ -45,3 +45,22 @@ p { font-size: 48px; line-height: 1.68; margin: 0 0 26px; overflow-wrap: break-w
 .list ul { list-style: none; margin: 0; padding: 0; }
 .list li { font-size: 46px; line-height: 1.6; margin: 0 0 34px; padding-left: 52px; position: relative; overflow-wrap: break-word; line-break: strict; }
 .list li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); }
+
+/* Optional editorial variants for script pages. Legacy pages remain unchanged. */
+.card.layout-story main { display:flex; flex-direction:column; justify-content:center; }
+.card.layout-story h1 { max-width:850px; font-size:60px; margin-bottom:42px; }
+.card.layout-story p { font-size:43px; line-height:1.62; }
+.card.layout-story main::after { content:''; display:block; width:112px; height:5px; background:var(--accent); margin-top:46px; opacity:.65; }
+
+.card.layout-journal main { display:flex; flex-direction:column; justify-content:center; }
+.card.layout-journal main::before { content:'FIELD NOTES  /  生活记录'; color:var(--muted); font-size:25px; letter-spacing:3px; margin-bottom:42px; }
+.card.layout-journal h1 { font-size:58px; margin-bottom:48px; }
+.card.layout-journal p { font-size:39px; line-height:1.62; background:var(--cover-background); padding:52px 50px 58px; border-left:7px solid var(--accent); box-shadow:0 14px 36px rgba(35,29,25,.08); transform:rotate(-1deg); }
+.card.layout-journal main::after { content:'✳  从当时的具体画面开始'; align-self:flex-end; color:var(--muted); font-size:27px; margin-top:44px; }
+
+.card.layout-dialogue main { display:flex; flex-direction:column; justify-content:center; }
+.card.layout-dialogue h1 { font-size:56px; line-height:1.36; margin-bottom:38px; }
+.card.layout-dialogue .dialogue-lines { display:flex; flex-direction:column; gap:26px; margin-bottom:32px; }
+.card.layout-dialogue .dialogue-bubble { background:var(--cover-background); border:1px solid var(--rule); border-radius:24px 24px 24px 4px; padding:34px 42px; font-size:40px; line-height:1.5; }
+.card.layout-dialogue .dialogue-bubble:nth-child(2) { margin-left:72px; border-radius:24px 24px 4px 24px; border-left:5px solid var(--accent); }
+.card.layout-dialogue p { font-size:35px; line-height:1.5; color:var(--muted-strong); }

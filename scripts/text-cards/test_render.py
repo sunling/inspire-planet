@@ -28,12 +28,16 @@ site:
 - 左上署名：启发星球 · 第 39 期
 
 #### 第 2 页
+- 版式：journal
 - 图上大字：第二页大字
 - 小字：第一段小字。
   续行也算。
 - 小字：第二段小字。
 
 #### 第 3 页（原声）
+- 版式：dialogue
+- 对话一：甲：我们一起去排队。
+- 对话二：乙：好，一起说说话。
 - 图上大字：原声页
 - 小字：这一页应是深色。
 '''
@@ -73,6 +77,8 @@ def main():
         assert results[0]['theme'] == 'paper' and len(results[0]['cards']) == 3
         assert 'card text dark' in document and '启发星球 · 第 39 期' in document
         assert '李影 · 2026年10月3日' in document and 'class="site">inspireplanet.cc<' not in document, '图集脚本 frontmatter / 篇目级设置'
+        assert 'layout-journal' in document and 'layout-dialogue' in document and 'dialogue-bubble' in document
+        assert '甲：我们一起去排队。' in document
         assert '第一段小字。续行也算。' in document and '第二段小字。' in document
         results = render(source, t / 'script-inspire', theme='inspire', **kw)
         assert results[0]['theme'] == 'inspire'
