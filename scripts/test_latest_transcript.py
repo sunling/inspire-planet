@@ -24,9 +24,10 @@ class LatestTests(unittest.TestCase):
         # Same user local calendar day 2025-12-13, seen from three zones:
         # 2025-12-13T02:00Z (UTC), 2025-12-13T10:00+08:00 (Beijing) and
         # 2025-12-13T17:00-08:00 = 2025-12-14T01:00Z (Los Angeles).
-        for label, start in (('utc', '2025-12-13T02:00:00Z'),
-                             ('shanghai', '2025-12-12T17:00:00Z'),
-                             ('la', '2025-12-14T01:00:00Z')):
+        for label, zone, start, expected_start, expected_end in (
+                ('utc', 'UTC', '2025-12-13T02:00:00Z', '2025-12-13T00:00:00Z', '2025-12-14T00:00:00Z'),
+                ('shanghai', 'Asia/Shanghai', '2025-12-12T17:00:00Z', '2025-12-12T16:00:00Z', '2025-12-13T16:00:00Z'),
+                ('la', 'America/Los_Angeles', '2025-12-14T01:00:00Z', '2025-12-13T08:00:00Z', '2025-12-14T08:00:00Z')):
             with self.subTest(label=label), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
                 (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': '启发星球，互相赋能'}))
@@ -45,14 +46,14 @@ class LatestTests(unittest.TestCase):
                         return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0,
                             'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成全文'}]}]}]}, 'more': False}
                 with patch.object(m, 'event_identity', side_effect=AssertionError('EP must not gate check')):
-                    l.main(['fetch-check', '--date', '2025-12-13'], root=root, client_factory=Client,
+                    l.main(['fetch-check', '--date', '2025-12-13', '--timezone', zone], root=root, client_factory=Client,
                            run=lambda args: self.fail('fetch-check must not need GitHub'))
                 self.assertIn('合成全文', (root / '.git/meeting-content-fetch-check.txt').read_text())
                 self.assertEqual([n for n, _ in calls],
                                  ['get_user_ended_meetings', 'get_records_list', 'get_transcripts_details'])
                 # Window must span the union of all three local days, not UTC only.
-                self.assertEqual(calls[0][1]['start_time'], '2025-12-12T16:00:00Z')
-                self.assertEqual(calls[0][1]['end_time'], '2025-12-14T08:00:00Z')
+                self.assertEqual(calls[0][1]['start_time'], expected_start)
+                self.assertEqual(calls[0][1]['end_time'], expected_end)
 
     def test_history_local_date_same_day_multiple_or_none_stops(self):
         l = self.latest()
@@ -305,24 +306,20 @@ class LatestTests(unittest.TestCase):
         workflow = (Path(__file__).parents[1] / '.github/workflows/content-ci.yml').read_text()
         self.assertNotIn('CONTENT_MEETING_ID', workflow)
         self.assertNotIn('--episode', workflow)
-        self.assertIn('scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"', workflow)
         self.assertIn('scripts/latest_transcript.py scan', workflow)
 
-    def test_history_workflow_date_or_blank_scan_no_episode_input(self):
+    def test_history_workflow_timezone_and_operation(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
-        for forbidden in ('inputs.subject', 'inputs.meeting_id', 'CONTENT_MEETING_SUBJECT', 'CONTENT_MEETING_ID',
-                          'inputs.episode', 'CONTENT_EPISODE', 'CONTENT_YEAR', '--episode', '--year',
-                          'scripts/meeting_content.py prepare', 'scripts/meeting_content.py fetch-check',
-                          'validate'):
-            self.assertNotIn(forbidden, workflow)
-        for required in ('inputs.date', 'inputs.pick', 'default: draft',
+        for required in ('inputs.operation', 'inputs.date', 'inputs.timezone',
+                         'default: Asia/Shanghai', 'default: 查找未归档会议',
                          'scripts/latest_transcript.py scan',
-                         'scripts/latest_transcript.py prepare --pick "$CONTENT_PICK" --date "$CONTENT_DATE"',
-                         'scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"',
+                         'scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
-                         'scripts/latest_transcript.py publish', 'scripts/meeting_content.py connectivity',
-                         "if: always()", 'rm -f .git/'):
+                         'scripts/latest_transcript.py publish', 'if: always()'):
             self.assertIn(required, workflow)
+        for forbidden in ('inputs.pick', 'inputs.mode', 'CONTENT_PICK', 'CONTENT_MODE',
+                          'inputs.episode', '--episode', 'CONTENT_YEAR'):
+            self.assertNotIn(forbidden, workflow)
 
     def test_complete_pagination_exact_title_true_utc_window_latest(self):
         l = self.latest()

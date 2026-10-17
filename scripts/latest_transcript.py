@@ -2,9 +2,9 @@
 """Zero-input project discovery; deterministic transcript-only public drafts.
 
 Historical selection is occurrence-based and never uses an episode number as an
-input. The user gives their own local calendar date (auto-matched across UTC /
-Asia-Shanghai / America-Los_Angeles), or leaves it blank for a bounded read-only
-scan that numbers unarchived project occurrences so a later run can pick=N one.
+input. The user provides a calendar date and its explicit time zone (default
+Asia/Shanghai), or runs a bounded read-only scan. A maintainer CLI can also
+choose an unarchived occurrence by its latest scan number with pick=N.
 EP numbers are at most a display hint derived from existing directories; they
 reset every year and some directory dates are migration artifacts, so fetch
 dates come from real Tencent occurrence data only.
@@ -17,10 +17,8 @@ import re
 from zoneinfo import ZoneInfo
 import meeting_content as m
 
-# A user's local calendar day is matched in any of these zones; Tencent has no
-# notion of a "local day", so the same occurrence may fall on a different UTC
-# date depending on where the user lives. Asia-Shanghai and America/Los_Angeles
-# are the two communities this project is run for.
+# The user explicitly selects one of these calendar zones; never union them.
+# The same meeting may have different calendar dates across zones.
 LOCAL_ZONES = ('UTC', 'Asia/Shanghai', 'America/Los_Angeles')
 
 # Bounded read-only scan limits (no bodies, no public writes).
@@ -56,36 +54,30 @@ def discover(client, config, now):
     return sorted(selected, key=lambda r: timestamp(r['start_time']))
 
 
-def local_window(day):
-    """UTC window covering local calendar day `day` in every LOCAL_ZONES zone."""
+def local_window(day, zone='Asia/Shanghai'):
+    """UTC bounds of one calendar date in the explicitly selected time zone."""
+    m.need(zone in LOCAL_ZONES, '不支持的会议时区')
     try:
         d = datetime.strptime(day, '%Y-%m-%d').date()
     except ValueError:
         raise m.SafeError('日期无效') from None
     nxt = d + timedelta(days=1)
-    starts, ends = [], []
-    for zone in LOCAL_ZONES:
-        tz = ZoneInfo(zone)
-        starts.append(datetime(d.year, d.month, d.day, tzinfo=tz).astimezone(timezone.utc))
-        ends.append(datetime(nxt.year, nxt.month, nxt.day, tzinfo=tz).astimezone(timezone.utc))
-    return min(starts), max(ends)
+    tz = ZoneInfo(zone)
+    return (datetime(d.year, d.month, d.day, tzinfo=tz).astimezone(timezone.utc),
+            datetime(nxt.year, nxt.month, nxt.day, tzinfo=tz).astimezone(timezone.utc))
 
 
-def historical_local(client, config, day):
-    """Exact project occurrence starting within local calendar day `day`.
-
-    The user provides their own local date and never needs to know UTC; the
-    occurrence is matched in any of LOCAL_ZONES so long as it is unique.
-    """
+def historical_local(client, config, day, zone='Asia/Shanghai'):
+    """Match only the requested zone's calendar date; fail on zero or multiple."""
     m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
+    start, end = local_window(day, zone)
     d = datetime.strptime(day, '%Y-%m-%d').date()
-    start, end = local_window(day)
     rows = m.token_pages(client, 'get_user_ended_meetings',
                         {'start_time': iso(start), 'end_time': iso(end)}, 'meeting_info_list')
-    zones = [ZoneInfo(z) for z in LOCAL_ZONES]
+    tz = ZoneInfo(zone)
     matches = [r for r in rows if r.get('subject') == config['title']
-               and any(timestamp(r.get('start_time')).astimezone(z).date() == d for z in zones)]
-    m.need(len(matches) == 1, '本地日期必须唯一命中一场项目会议；同日多场或没有则停止')
+               and timestamp(r.get('start_time')).astimezone(tz).date() == d]
+    m.need(len(matches) == 1, '所选时区的当天必须唯一命中一场项目会议；同日多场或没有则停止')
     return matches[0]
 
 
@@ -347,7 +339,8 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     import subprocess
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['readonly', 'scan', 'prepare', 'fetch-check', 'fetch', 'write', 'publish'])
-    parser.add_argument('--date', help='你的本地日历日期 YYYY-MM-DD；自动匹配 UTC/北京/美西当天的项目会议')
+    parser.add_argument('--date', help='会议日期 YYYY-MM-DD；配合 --timezone 精确匹配')
+    parser.add_argument('--timezone', choices=LOCAL_ZONES, default='Asia/Shanghai', help='会议日期所属时区（默认北京时间）')
     parser.add_argument('--pick', help='从只读扫描编号中选择一场未归档项目会议（如 3）；仅用于 prepare')
     args = parser.parse_args(argv)
     command = args.command
@@ -388,7 +381,7 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     if command == 'fetch-check':
         config = json.loads((root / 'scripts/meeting-project.json').read_text(encoding='utf-8'))
         client = client_factory()
-        meeting = historical_local(client, config, date)
+        meeting = historical_local(client, config, date, args.timezone)
         text = m.fetch_occurrence(client, meeting)
         blocks = m.parse_transcript(text)
         check_cache = root / '.git/meeting-content-fetch-check.txt'
@@ -413,7 +406,7 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
             m.need(run(['git', 'rev-parse', 'HEAD']).strip() == run(['git', 'rev-parse', 'origin/main']).strip(), 'main 已变化；请重新运行')
         moment = now or datetime.now(timezone.utc)
         if date:
-            rows = [historical_local(client_factory(), config, date)]
+            rows = [historical_local(client_factory(), config, date, args.timezone)]
         elif pick:
             start, bounds = scan_window(moment)
             items = enumerate_unarchived(client_factory(), config, archive, start, bounds, moment)
