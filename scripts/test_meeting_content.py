@@ -530,7 +530,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn('CONTENT_LLM_', flow)
         self.assertNotIn('CONTENT_SOURCE', flow)
         self.assertNotIn('generate', (root / 'scripts/meeting_content.py').read_text())
-        self.assertEqual(flow.count('cron:'), 1)
+        self.assertEqual(flow.count('cron:'), 2)
         self.assertIn('github.event.repository.default_branch', flow)
         self.assertNotIn('pull_request', flow.split('permissions:')[0])
         self.assertIn('persist-credentials: false', flow)
@@ -539,12 +539,12 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn('run: ${{', flow)
         self.assertNotIn('pull_request_target', flow)
 
-    def test_weekly_schedule_is_three_attempts_ten_minutes_apart_after_meeting(self):
+    def test_weekly_schedule_has_three_attempts_and_late_fallback(self):
         root = Path(__file__).resolve().parents[1]
         flow = (root / '.github/workflows/meeting-content.yml').read_text()
         crons = re.findall(r"cron:\s*'([^']+)'", flow)
-        # 会议北京时间周六 08:00–10:00（UTC 周六 00:00–02:00）；结束后 02:07/02:17/02:27 三次尝试。
-        self.assertEqual(crons, ['7,17,27 2 * * 6'])
+        # 北京时间周六 10:07/10:17/10:27 与 11:07 兜底，共四次。
+        self.assertEqual(crons, ['7,17,27 2 * * 6', '7 3 * * 6'])
 
 
 class EndToEndTests(unittest.TestCase):
