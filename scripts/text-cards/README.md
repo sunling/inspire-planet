@@ -116,3 +116,13 @@ python3 scripts/text-cards/render.py events/{year}/{YYYYMMDD}-epXX/xhs-{slug}.md
 ```bash
 python3 scripts/text-cards/test_render.py --font <字体.ttf> [--browser <浏览器路径>]
 ```
+
+## 编辑式多版式（图集脚本，可选）
+
+在任意**非封面**页面添加 `- 版式：story`、`journal` 或 `dialogue`。未指定时完全使用原模板，主题 `inspire` / `paper` 不变。
+
+- `story`：将标题和主体放在卡片中段，降低正文字号并添加细线尾饰，适合连续叙事。
+- `journal`：使用纸张便签样式、记录标签与小型批注，适合旧日记或个人反思；不自动添加虚构照片。
+- `dialogue`：可增加 `- 对话一：…` 和 `- 对话二：…`，渲染成两条对话气泡；普通 `小字` 作为背景说明仍显示。对话必须来自真实转写；未填写对话时不添加气泡。
+
+三种版式均保留原有页眉、署名、页码与溢出检测；旧脚本完全兼容。图片不由 `图片建议` 自动生成。建议一组卡片根据内容选择 2–3 种版式，不要逐页机械轮换。
