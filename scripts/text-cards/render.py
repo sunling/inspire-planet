@@ -299,6 +299,9 @@ def screenshot(document: str, out: Path, browser_path=None, jpeg=False) -> list[
                 const overlap = spans.length > 1 && spans[0].getBoundingClientRect().right + 24 > spans[1].getBoundingClientRect().left;
                 return {width:c.offsetWidth,height:c.offsetHeight,kind:c.className.replace('card','').trim(),
                     overflow:main.scrollHeight>main.clientHeight || main.scrollWidth>main.clientWidth,
+                    overflowX:main.scrollWidth>main.clientWidth, overflowY:main.scrollHeight>main.clientHeight,
+                    mainClientWidth:main.clientWidth, mainScrollWidth:main.scrollWidth,
+                    mainClientHeight:main.clientHeight, mainScrollHeight:main.scrollHeight,
                     headerOverlap:header.scrollWidth>header.clientWidth || overlap};
             })""")
             if any(c['overflow'] or c['headerOverlap'] for c in checks):
