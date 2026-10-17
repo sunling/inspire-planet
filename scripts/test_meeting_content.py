@@ -194,7 +194,40 @@ class TranscriptTests(unittest.TestCase):
         self.assertEqual({x['record_file_id'] for name, x in calls if name == 'get_transcripts_details'},
                          {'empty', 'full'})
 
-    def test_empty_meeting_records_rejects_multiple_distinct_transcripts(self):
+    def test_empty_meeting_records_selects_longest_spoken_transcript(self):
+        # Two valid but different transcripts in one occurrence: select the
+        # longest spoken content even when it comes from the second recording.
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                   'start_time': '2026-10-10T00:00:00Z', 'records': []}
+        calls = []
+        class Client:
+            def call(self, name, args):
+                calls.append(name)
+                if name == 'get_records_list':
+                    return {'record_meetings': [
+                        {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                         'meeting_record_id': 'group',
+                         'record_files': [{'record_file_id': 'a-short'},
+                                          {'record_file_id': 'z-long'}]},
+                        {'meeting_id': 'series', 'sub_meeting_id': 'other-week',
+                         'meeting_record_id': 'other',
+                         'record_files': [{'record_file_id': 'cross-week'}]}
+                    ], 'has_more': False}
+                if name == 'get_transcripts_details':
+                    if args['record_file_id'] == 'cross-week':
+                        raise AssertionError('Must not read another occurrence')
+                    content = '短' if args['record_file_id'] == 'a-short' else '这是一份更长更完整的会议文字转写'
+                    p = {'pid': '0', 'start_time': 0,
+                         'speaker': {'user_name': '合成甲'},
+                         'sentences': [{'words': [{'text': content}]}]}
+                    return {'minutes': {'paragraphs': [p]}, 'more': False}
+                raise AssertionError('Unexpected API')
+        result = m.fetch_occurrence(Client(), meeting)
+        self.assertIn('这是一份更长更完整的会议文字转写', result)
+        self.assertNotIn('短', result)
+        self.assertEqual(calls.count('get_transcripts_details'), 2)
+
+    def test_empty_meeting_records_rejects_equal_length_distinct_transcripts(self):
         meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
                    'start_time': '2026-10-10T00:00:00Z', 'records': []}
         class Client:
@@ -203,17 +236,19 @@ class TranscriptTests(unittest.TestCase):
                     return {'record_meetings': [{
                         'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
                         'meeting_record_id': 'group',
-                        'record_files': [{'record_file_id': 'first'}, {'record_file_id': 'second'}]
+                        'record_files': [{'record_file_id': 'first'},
+                                         {'record_file_id': 'second'}]
                     }], 'has_more': False}
                 if name == 'get_transcripts_details':
+                    content = '私密甲' if args['record_file_id'] == 'first' else '私密乙'
                     p = {'pid': '0', 'start_time': 0, 'speaker': {'user_name': '合成甲'},
-                         'sentences': [{'words': [{'text': '私密_' + args['record_file_id']}]}]}
+                         'sentences': [{'words': [{'text': content}]}]}
                     return {'minutes': {'paragraphs': [p]}, 'more': False}
                 raise AssertionError('Unexpected API')
         with self.assertRaises(m.SafeError) as caught:
             m.fetch_occurrence(Client(), meeting)
-        self.assertIn('多个录制文件含有不同文字转写', str(caught.exception))
-        self.assertNotIn('私密_', str(caught.exception))
+        self.assertIn('最长文字转写出现并列', str(caught.exception))
+        self.assertNotIn('私密', str(caught.exception))
 
     def test_empty_meeting_records_rejects_ambiguous_native_scope(self):
         meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
