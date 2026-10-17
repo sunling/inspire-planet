@@ -1,0 +1,46 @@
+# EP41｜2026-10-17
+
+从改变的十五分钟、对自己少一点评判，到成语里的不同画面与真实的语言交流。
+
+通用步骤与 prompt 见 [内容制作说明](../../../docs/content-workflow.md)。
+
+## 稿件导航
+
+| 分享者／选题 | 公众号 | 小红书 | 视频号 |
+|---|---|---|---|
+| Wendy：不满还不够，第一步也要够小 | [文章](gzh-wendy.md) | [图文脚本](xhs-wendy.md) | [图文脚本](sph-wendy.md) |
+| 孙玲：把评判变成了解的过程 | [文章](gzh-sunling.md) | [图文脚本](xhs-sunling.md) | [图文脚本](sph-sunling.md) |
+| 李影：一个词语背后的好多幅画 | [文章](gzh-liying.md) | [图文脚本](xhs-liying.md) | [图文脚本](sph-liying.md) |
+
+来源：[原始转写](transcript.txt) · 纪要：[summary.json](summary.json) · 金句：[quote-cards.json](quote-cards.json) · 公众号封面：[配置](assets/cover-configs.md)。
+
+## 本期命令
+
+人工确认各平台文案、署名与封面配置后，从已审阅分支在 GitHub Actions 的 `render-content.yml` 触发临时渲染；在仓库根目录也可运行：
+
+```bash
+python3 scripts/render-publish.py events/2026/20261017-ep41 --channel gzh
+python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --channel sph
+# 单篇、单平台示例
+python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --slug wendy
+```
+
+临时 Artifact 保留 1 天，生成的 JPG、HTML、预览和 ZIP 均不提交仓库。
+
+## 发布备注
+
+- 公众号三篇均采用分享者第一人称口述，需各位本人审阅确认；小红书、视频号和金句也需确认署名及公开范围。未获授权前不得合并到供网站读取的 `main`，也不对外发布。
+- 孙玲篇的日记、长辈经历，Wendy 篇的个人职业及海外计划，以及圆桌里的职场冲突，均需确认是否适合公开；可按本人意愿脱敏，并同步修改多平台稿与两份 JSON。
+- Grace 的科技伦理阅读讨论、小强的英语学习圆桌与 Rebecca 的会议口音经历保留在结构化纪要中；没有替他们生成第一人称社媒长文。Grace 提及的书名及观点存在转写不清处，待本人核实。
+- 现场提到的书名、人物、术语及英文字句可能存在自动转写误差；引用只做轻度文字整理，尚需发言者核对。活动时间与加入方式按 [current.md](../../../current.md) 的已确认信息。
+
+<details>
+<summary>转写核对区间</summary>
+
+- Wendy 的改变公式与提问：00:09:04–00:22:54。
+- 孙玲的评判与辨别以及现场回应：00:24:11–00:40:59。
+- Grace 的科技与伦理阅读：00:41:38–00:50:30。
+- 李影的词语画面：00:50:30–01:06:34。
+- 小强的英语圆桌与各人经历：01:08:30–01:48:54；口音延伸讨论：01:49:44–02:05:35。
+
+</details>
