@@ -661,7 +661,10 @@ class EndToEndTests(unittest.TestCase):
             event, branch = m.event_identity('2026-10-17', '41')
             (root / 'events').mkdir()
             text = '合成甲(00:01):\n我开始记录。这是合成测试。\n'
-            (root / 'events/README.md').write_text('# 合成索引\n')
+            (root / 'events/README.md').write_text(
+                '# 合成索引\n\n| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+                '|---|---|---|---|---|---|\n'
+                '| 20261010-ep40 | — | — | — | — | — |\n')
             git(['add', '.']); git(['commit', '-m', 'synthetic baseline'])
             git(['push', 'origin', 'main'])
             created = []
