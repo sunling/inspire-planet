@@ -12,14 +12,13 @@
 | 孙玲：把评判变成了解的过程 | [文章](gzh-sunling.md) | [图文脚本](xhs-sunling.md) | [图文脚本](sph-sunling.md) |
 | 李影：一个词语背后的好多幅画 | [文章](gzh-liying.md) | [图文脚本](xhs-liying.md) | [图文脚本](sph-liying.md) |
 
-来源：[原始转写](transcript.txt) · 纪要：[summary.json](summary.json) · 金句：[quote-cards.json](quote-cards.json) · 公众号封面：[配置](assets/cover-configs.md)。
+来源：[原始转写](transcript.txt) · 纪要：[summary.json](summary.json) · 金句：[quote-cards.json](quote-cards.json)。
 
 ## 本期命令
 
-人工确认各平台文案、署名与封面配置后，从已审阅分支在 GitHub Actions 的 `render-content.yml` 触发临时渲染；在仓库根目录也可运行：
+小红书／视频号确认脚本后，从已审阅分支运行 `render-content.yml`；本地也可运行：
 
 ```bash
-python3 scripts/render-publish.py events/2026/20261017-ep41 --channel gzh
 python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --channel sph
 # 单篇、单平台示例
 python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --slug wendy
@@ -44,3 +43,4 @@ python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --slug
 - 小强的英语圆桌与各人经历：01:08:30–01:48:54；口音延伸讨论：01:49:44–02:05:35。
 
 </details>
+

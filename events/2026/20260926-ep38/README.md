@@ -22,7 +22,7 @@
 python3 scripts/render-publish.py events/2026/20260926-ep38 --channel xhs --channel sph
 ```
 
-发布目录：`../inspire-planet-publish/20260926-ep38/ready/`。公众号沿用历史稿内配置，重新渲染前需整理到 `assets/cover-configs.md` 并确认。历史竖版封面曾跨平台复用；再次出图按各平台脚本分别渲染，首图随内页生成。
+发布目录：`../inspire-planet-publish/20260926-ep38/ready/`。历史稿内封面配置不再执行。历史竖版封面曾跨平台复用；再次出图按各平台脚本分别渲染，首图随内页生成。
 
 ## 发布备注
 
@@ -91,3 +91,4 @@ python3 scripts/render-publish.py events/2026/20260926-ep38 --channel xhs --chan
 | 分享者 E | 登录卡住，还是来到了圆桌 | 一位分享者登录时遇到账号问题，差点放弃，最后仍带着做事经常中断的困惑来到圆桌。 |
 
 </details>
+

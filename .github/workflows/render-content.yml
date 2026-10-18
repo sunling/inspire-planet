@@ -10,10 +10,9 @@ on:
       channel:
         description: 'Content channel'
         required: true
-        default: gzh
+        default: xhs
         type: choice
         options:
-          - gzh
           - xhs
           - sph
           - all
@@ -49,14 +48,6 @@ jobs:
         run: |
           python -m pip install -r scripts/text-cards/requirements.txt
           python -m playwright install --with-deps chromium
-      - name: Install Chinese font for covers
-        if: inputs.channel == 'gzh' || inputs.channel == 'all'
-        run: |
-          mkdir -p "$RUNNER_TEMP/inspire-fonts"
-          curl --fail --location --retry 3 \
-            'https://github.com/lxgw/LxgwWenKai/releases/download/v1.520/LXGWWenKai-Regular.ttf' \
-            --output "$RUNNER_TEMP/inspire-fonts/LXGWWenKai-Regular.ttf"
-          test "$(wc -c < "$RUNNER_TEMP/inspire-fonts/LXGWWenKai-Regular.ttf")" -gt 100000
       - name: Check content schema
         run: python scripts/check-content.py
       - name: Render into temporary runner storage
@@ -64,29 +55,23 @@ jobs:
         env:
           EPISODE: ${{ inputs.episode }}
           CHANNEL: ${{ inputs.channel }}
-          INSPIRE_FONTS_DIR: ${{ runner.temp }}/inspire-fonts
         run: |
           event="events/2026/$EPISODE"
           test -d "$event" || { echo "::error::Event not found"; exit 1; }
           args=()
           if [ "$CHANNEL" = all ]; then
-            for channel in gzh xhs sph; do
-              case "$channel" in
-                gzh) test -f "$event/assets/cover-configs.md" && args+=(--channel gzh) ;;
-                xhs|sph) compgen -G "$event/${channel}-*.md" > /dev/null && args+=(--channel "$channel") ;;
-              esac
+            for channel in xhs sph; do
+              if compgen -G "$event/${channel}-*.md" > /dev/null; then
+                args+=(--channel "$channel")
+              fi
             done
           else
             args+=(--channel "$CHANNEL")
           fi
           test "${#args[@]}" -gt 0 || { echo "::error::No renderable content"; exit 1; }
-          extra=()
-          if [[ " ${args[*]} " == *" --channel gzh "* ]]; then
-            extra+=(--font "$INSPIRE_FONTS_DIR/LXGWWenKai-Regular.ttf")
-          fi
           python scripts/render-publish.py "$event" \
             --root "$RUNNER_TEMP/inspire-planet-publish" \
-            "${args[@]}" "${extra[@]}"
+            "${args[@]}"
           # upload-artifact already creates a downloadable ZIP. Include just
           # the JPEG directory and its HTML preview; omit nested channel/all ZIPs.
           mkdir -p "$RUNNER_TEMP/deliverable"
@@ -98,3 +83,4 @@ jobs:
           path: ${{ runner.temp }}/deliverable/
           if-no-files-found: error
           retention-days: 1
+

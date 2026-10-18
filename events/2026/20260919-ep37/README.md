@@ -10,14 +10,13 @@
 - 孙玲：[我做的AI记录工具，会让人失去写作能力吗？](gzh-sunling.md)
 - 抹茶：[用AI写代码，我却越来越像它的监工](gzh-mocha.md)
 
-来源：[会议转写](transcript.txt)。纪要：[summary.json](summary.json)。金句：[quote-cards.json](quote-cards.json)。公众号封面：[配置](assets/cover-configs.md)（待确认，尚未渲染）。
+来源：[会议转写](transcript.txt)。纪要：[summary.json](summary.json)。金句：[quote-cards.json](quote-cards.json)。公众号封面：[历史配置](assets/cover-configs.md)（待确认，尚未渲染）。
 
 ## 本期命令
 
 稿件与封面配置确认后，在仓库根目录执行：
 
 ```bash
-python3 scripts/render-publish.py events/2026/20260919-ep37 --channel gzh
 ```
 
 发布目录：`../inspire-planet-publish/20260919-ep37/ready/gzh/`。
@@ -41,3 +40,4 @@ python3 scripts/render-publish.py events/2026/20260919-ep37 --channel gzh
 - 原始转写保持不变。
 
 </details>
+
