@@ -97,8 +97,8 @@ def load_paged(text: str) -> tuple[dict, list[dict]]:
 
 # ---------- input: 图集脚本 ----------
 
-FIELD_MAP = {'左上署名': 'meta', '主标题': 'big', '图上大字': 'big', '副标题': 'small', '小字': 'small', '对话一': 'dialogue_one', '对话二': 'dialogue_two'}
-LAYOUTS = {'story', 'journal', 'dialogue'}
+FIELD_MAP = {'左上署名': 'meta', '主标题': 'big', '图上大字': 'big', '副标题': 'small', '小字': 'small', '对话一': 'dialogue_one', '对话二': 'dialogue_two', '清单一': 'item_1', '清单二': 'item_2', '清单三': 'item_3', '清单四': 'item_4'}
+LAYOUTS = {'story', 'journal', 'dialogue', 'scrapbook'}
 # 图集脚本里页面之外的设置行（脚本标题与第一个「第 N 页」之间），对应 frontmatter 字段
 META_MAP = {'主题': 'theme', '栏目': 'series', '期数': 'episode', '日期': 'date',
             '分享者': 'speaker', '署名': 'signature', '站点': 'site'}
@@ -178,7 +178,8 @@ def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
                             'dark': p.get('dark', False), 'meta': p.get('meta', ''),
                             'layout': p.get('layout', ''),
                             'dialogue_one': p.get('dialogue_one', ''),
-                            'dialogue_two': p.get('dialogue_two', '')} for p in pgs], gm))
+                            'dialogue_two': p.get('dialogue_two', ''),
+                            **{f'item_{i}': p.get(f'item_{i}', '') for i in range(1, 5)}} for p in pgs], gm))
     return [(n, p, m) for n, p, m in out if p]
 
 
@@ -256,6 +257,14 @@ def build(meta: dict, pages: list[dict], theme: str, font=None,
                     ''.join('<div class="dialogue-bubble">' + html.escape(page[k]) + '</div>'
                             for k in ('dialogue_one', 'dialogue_two')) +
                     '</div>' + body)
+        if layout == 'scrapbook':
+            checklist = [page.get(f'item_{j}', '').strip() for j in range(1, 5)]
+            checklist = [x for x in checklist if x]
+            if checklist:
+                body += '<div class="scrap-grid">' + ''.join(
+                    '<div class="scrap-item"><span class="scrap-check" aria-hidden="true">✓</span>'
+                    f'<span class="scrap-label">{html.escape(x)}</span></div>' for x in checklist
+                ) + '</div>'
         classes = ['card', 'cover' if i == 1 else kind] + (['layout-' + layout] if layout and i != 1 else []) + (['dark'] if page.get('dark') else [])
         if i == 1:
             left = ' · '.join(x for x in (signature, cover_date) if x)

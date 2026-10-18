@@ -69,3 +69,13 @@ p { font-size: 48px; line-height: 1.68; margin: 0 0 26px; overflow-wrap: break-w
    Keep the note itself untransformed so both scrollWidth and scrollHeight stay within bounds. */
 
 /* Layouts must never generate editorial prose. Pseudo-elements are decorative only. */
+
+/* Scrapbook: structured, text-accurate paper collage (no generated editorial text). */
+.card.layout-scrapbook { background:#faf6ee; }
+.card.layout-scrapbook main { display:flex; flex-direction:column; justify-content:center; gap:26px; min-height:0; margin-top:28px; }
+.card.layout-scrapbook h1 { font-size:58px; line-height:1.35; margin:0 0 8px; font-weight:normal; }
+.card.layout-scrapbook p { font-size:33px; line-height:1.5; margin:0; padding:28px 32px; background:#fffefa; border-left:6px solid var(--accent); box-shadow:0 8px 22px rgba(35,29,25,.08); }
+.card.layout-scrapbook .scrap-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.card.layout-scrapbook .scrap-item { min-height:170px; padding:24px; background:#fffdf8; border:1px solid #e9dfd2; border-radius:12px; display:flex; flex-direction:column; justify-content:center; gap:16px; box-shadow:0 6px 16px rgba(35,29,25,.06); }
+.card.layout-scrapbook .scrap-check { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; font-size:26px; color:white; background:var(--accent); }
+.card.layout-scrapbook .scrap-label { font-size:33px; line-height:1.4; color:var(--ink); overflow-wrap:break-word; }
