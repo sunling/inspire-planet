@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Zero-input project discovery; deterministic transcript-only public drafts.
+"""Zero-input project discovery; deterministic transcript-only public commits.
 
 Historical selection is occurrence-based and never uses an episode number as an
 input. The user provides a calendar date and its explicit time zone (default
@@ -347,6 +347,33 @@ def write(root, plan, text):
         f.write('\n')
     return paths
 
+def publish_main(root, plan, run):
+    """Commit only this occurrence's validated files directly to main."""
+    paths = allowed_paths(plan)
+    m.need(plan['base'] == 'main' and run(['git', 'branch', '--show-current']).strip() == 'main',
+           '仅允许在 main 分支直接写入')
+    m.need(run(['git', 'rev-parse', 'HEAD']).strip() == plan['head'], '本地 main 基线已变化')
+    run(['git', 'fetch', '--no-tags', 'origin', '+refs/heads/main:refs/remotes/origin/main'])
+    m.need(run(['git', 'rev-parse', 'origin/main']).strip() == plan['head'],
+           '远端 main 已变化；拒绝推送，请重新运行')
+    changed = set(run(['git', 'diff', '--name-only', 'HEAD']).splitlines())
+    changed.update(run(['git', 'ls-files', '--others', '--exclude-standard']).splitlines())
+    m.need(bool(changed) and changed <= set(paths), '改动包含本次转写白名单之外的文件')
+    for relative in paths:
+        path = root / relative
+        m.need(path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(root.resolve()),
+               '提交目标缺失或路径不安全')
+    run(['git', 'add', '--', *sorted(paths)])
+    staged = set(run(['git', 'diff', '--cached', '--name-only']).splitlines())
+    m.need(staged == changed and staged <= set(paths), '暂存区超出本次转写范围')
+    run(['git', '-c', 'user.name=github-actions[bot]',
+         '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
+         'commit', '-m', 'transcript: add ' + plan['date'] + ' meeting record'])
+    commit = run(['git', 'rev-parse', 'HEAD']).strip()
+    run(['git', 'push', 'origin', 'HEAD:refs/heads/main'])
+    remote = run(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/main']).split()
+    m.need(bool(remote) and remote[0] == commit, '无法确认转写已推送至 main')
+    return {'commit': commit, 'paths': sorted(staged)}
 
 def main(argv=None, root=None, run=None, client_factory=None, now=None):
     import argparse
@@ -446,12 +473,6 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
             plan.update(latest=True, event=event, episode=mapped_episode, date=metadata['date'],
                         branch='content/meeting-' + metadata['instance_key'], base='main',
                         head=run(['git', 'rev-parse', 'HEAD']).strip())
-            branches = [plan['branch']]
-            if mapped_episode:
-                branches.append(m.event_identity(metadata['date'], mapped_episode)[1])
-            for branch in branches:
-                if run(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + branch]).strip():
-                    plan.update(skip=True, reason='existing-branch')
         if command == 'prepare':
             state.write_text(json.dumps(plan), encoding='utf-8')
             if os.environ.get('GITHUB_OUTPUT'):
@@ -469,9 +490,9 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     if command == 'fetch':
         # Recheck main/open drafts immediately before the first transcript read.
         archive = archives(run)
+        m.need(run(['git', 'rev-parse', 'origin/main']).strip() == plan['head'], 'main 已变化；请重新运行')
         m.need(not plan_latest([plan['meeting']], archive, {})['skip'], '已归档；停止且不重复拉取')
         m.need(instance(plan['meeting']) == plan['metadata'], '读取实例与计划不一致')
-        m.need(not run(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + plan['branch']]).strip(), '远端草稿分支已存在；不重复拉取')
         m.need(not (root / plan['event'] / 'transcript.txt').exists(), '已有逐字稿；不重复拉取')
         m.need(not cache.exists(), '已有抓取缓存；禁止重复拉取')
         text = m.fetch_occurrence(client_factory(), plan['meeting'])
@@ -482,13 +503,14 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     elif command == 'write':
         m.need(cache.is_file(), '请先执行 fetch')
         write(root, plan, cache.read_text(encoding='utf-8'))
-        print('公开原始转写与持久实例信息已写入；期次不明时待确认，不生成网站数据。')
+        print('转写与实例信息已准备在工作区；期次不明时写入待确认目录，不生成网站数据。')
     elif command == 'publish':
-        m.need(os.environ.get('CONTENT_PUBLISH_ALLOWED') == 'true' and os.environ.get('GITHUB_ACTIONS') == 'true', '仅允许显式授权 Actions 发布')
+        m.need(os.environ.get('CONTENT_MAIN_WRITE_ALLOWED') == 'true' and os.environ.get('GITHUB_ACTIONS') == 'true',
+               '仅允许显式授权 Actions 直接写入 main')
         run(['python3', 'scripts/check-content.py'])
         run(['gh', 'auth', 'setup-git', '--hostname', 'github.com'])
-        m.publish(root, plan, run)
-        print('公开 Draft PR 已创建且回读验证；未合并、未发布。')
+        result = publish_main(root, plan, run)
+        print('逐字稿已直接提交并推送到 main；未创建 PR。commit=' + result['commit'])
 
 
 if __name__ == '__main__':

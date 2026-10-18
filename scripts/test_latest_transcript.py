@@ -311,6 +311,9 @@ class LatestTests(unittest.TestCase):
 
     def test_history_workflow_timezone_and_operation(self):
         workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
+        self.assertIn('CONTENT_MAIN_WRITE_ALLOWED', workflow)
+        self.assertIn('pull-requests: read', workflow)
+        self.assertNotIn('pull-requests: write', workflow)
         for required in ('inputs.operation', 'inputs.date', 'inputs.timezone',
                          'default: Asia/Shanghai', 'default: 查找未归档会议',
                          'scripts/latest_transcript.py scan',
@@ -451,6 +454,38 @@ class LatestTests(unittest.TestCase):
                 self.assertIsNone(l.episode_for(rows[-1], rows, config))
         self.assertIsNone(l.episode_for(dict(new, meeting_id='cycle-changed'),
                                        [anchor, dict(new, meeting_id='cycle-changed')], config))
+
+    def test_latest_publish_commits_only_transcript_to_main_without_pr(self):
+        l = self.latest()
+        import tempfile, subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'repo'; root.mkdir()
+            remote = Path(tmp) / 'remote.git'
+            def git(*args):
+                return subprocess.run(['git', *args], cwd=root, check=True, capture_output=True, text=True).stdout
+            git('init', '--bare', str(remote)); git('init', '-b', 'main')
+            git('config', 'user.name', 'Synthetic'); git('config', 'user.email', 'test@example.invalid')
+            git('remote', 'add', 'origin', str(remote))
+            (root / 'events').mkdir()
+            git('add', '.'); git('commit', '-m', 'baseline'); git('push', 'origin', 'main')
+            metadata = l.instance(self.row('2026-10-17'))
+            event = 'incoming/meetings/' + metadata['instance_key']
+            plan = dict(latest=True, event=event, metadata=metadata, episode=None,
+                        date=metadata['date'], branch='content/meeting-' + metadata['instance_key'],
+                        base='main', head=git('rev-parse', 'HEAD').strip())
+            text = '合成甲(00:01):\n这是合成转写。\n'
+            paths = l.write(root, plan, text)
+            def run(args):
+                self.assertFalse(args[:2] == ['gh', 'pr'])
+                if args[0] == 'git':
+                    return git(*args[1:])
+                raise AssertionError(args)
+            result = l.publish_main(root, plan, run)
+            self.assertEqual(set(result['paths']), set(paths))
+            self.assertEqual(result['commit'], git('ls-remote', 'origin', 'refs/heads/main').split()[0])
+            self.assertEqual(git('show', f'main:{event}/transcript.txt'), text)
+            self.assertFalse(git('ls-remote', '--heads', 'origin', plan['branch']).strip())
+            self.assertEqual(git('status', '--porcelain').strip(), '')
 
     def test_pending_and_known_writes_scoped_real_git_public_draft(self):
         l = self.latest()

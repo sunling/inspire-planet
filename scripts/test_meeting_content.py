@@ -608,7 +608,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn('CONTENT_PUBLISH_ALLOWED', probe)
         self.assertIn('check-content.py', ci)
         self.assertIn("vars.CONTENT_AUTOMATION_ENABLED == 'true'", flow)
-        self.assertIn('name: Transcript draft', flow)
+        self.assertIn('name: Transcript download', flow)
         self.assertNotIn('inputs:', flow)
         self.assertNotIn('CONTENT_DATE', flow)
         self.assertNotIn('CONTENT_EPISODE', flow)
@@ -637,6 +637,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}', flow)
         self.assertNotIn('run: ${{', flow)
         self.assertNotIn('pull_request_target', flow)
+        self.assertNotIn('pull-requests: write', flow)
+        self.assertIn('pull-requests: read', flow)
+        self.assertIn('CONTENT_MAIN_WRITE_ALLOWED', flow)
+        self.assertNotIn('pull-requests: write', flow)
+        self.assertIn('CONTENT_MAIN_WRITE_ALLOWED', flow)
 
     def test_weekly_schedule_has_three_attempts_and_late_fallback(self):
         root = Path(__file__).resolve().parents[1]
