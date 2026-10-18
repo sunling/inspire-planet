@@ -97,7 +97,8 @@ def load_paged(text: str) -> tuple[dict, list[dict]]:
 
 # ---------- input: 图集脚本 ----------
 
-FIELD_MAP = {'左上署名': 'meta', '主标题': 'big', '图上大字': 'big', '副标题': 'small', '小字': 'small'}
+FIELD_MAP = {'左上署名': 'meta', '主标题': 'big', '图上大字': 'big', '副标题': 'small', '小字': 'small', '对话一': 'dialogue_one', '对话二': 'dialogue_two', '清单一': 'item_1', '清单二': 'item_2', '清单三': 'item_3', '清单四': 'item_4'}
+LAYOUTS = {'story', 'journal', 'dialogue', 'scrapbook'}
 # 图集脚本里页面之外的设置行（脚本标题与第一个「第 N 页」之间），对应 frontmatter 字段
 META_MAP = {'主题': 'theme', '栏目': 'series', '期数': 'episode', '日期': 'date',
             '分享者': 'speaker', '署名': 'signature', '站点': 'site'}
@@ -134,7 +135,7 @@ def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
             level, text_ = len(m.group(1)), m.group(2).strip()
             if in_pages and level > script_level and re.match(r'^第\s*\d+\s*页', text_):
                 close_page()
-                page = {'big': '', 'small': '', 'dark': '原声' in text_}
+                page = {'big': '', 'small': '', 'dark': '原声' in text_, 'layout': ''}
                 continue
             if in_pages and level > script_level:
                 continue  # 脚本节内的其他子标题，忽略
@@ -159,6 +160,10 @@ def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
             last_key = key
             if key == '主题':
                 page['dark'] = val == 'dark'
+            elif key == '版式':
+                if val not in LAYOUTS:
+                    raise ValueError(f'未知版式：{val}；可选：{sorted(LAYOUTS)}')
+                page['layout'] = val
             elif key in FIELD_MAP:
                 f = FIELD_MAP[key]
                 page[f] = (page.get(f, '') + '\n' + val).strip() if page.get(f) else val
@@ -170,7 +175,11 @@ def load_script(text: str) -> list[tuple[str, list[dict], dict]]:
     for name, pgs, gm in groups:
         out.append((name, [{'kind': 'text', 'title': p['big'].replace('\n', ' '),
                             'items': [x for x in p['small'].split('\n') if x.strip()],
-                            'dark': p.get('dark', False), 'meta': p.get('meta', '')} for p in pgs], gm))
+                            'dark': p.get('dark', False), 'meta': p.get('meta', ''),
+                            'layout': p.get('layout', ''),
+                            'dialogue_one': p.get('dialogue_one', ''),
+                            'dialogue_two': p.get('dialogue_two', ''),
+                            **{f'item_{i}': p.get(f'item_{i}', '') for i in range(1, 5)}} for p in pgs], gm))
     return [(n, p, m) for n, p, m in out if p]
 
 
@@ -242,7 +251,21 @@ def build(meta: dict, pages: list[dict], theme: str, font=None,
             body = '<ul>' + ''.join('<li>' + html.escape(x) + '</li>' for x in items) + '</ul>'
         else:
             body = ''.join('<p>' + html.escape(x) + '</p>' for x in items)
-        classes = ['card', 'cover' if i == 1 else kind] + (['dark'] if page.get('dark') else [])
+        layout = page.get('layout', '')
+        if layout == 'dialogue' and page.get('dialogue_one') and page.get('dialogue_two'):
+            body = ('<div class="dialogue-lines">' +
+                    ''.join('<div class="dialogue-bubble">' + html.escape(page[k]) + '</div>'
+                            for k in ('dialogue_one', 'dialogue_two')) +
+                    '</div>' + body)
+        if layout == 'scrapbook':
+            checklist = [page.get(f'item_{j}', '').strip() for j in range(1, 5)]
+            checklist = [x for x in checklist if x]
+            if checklist:
+                body += '<div class="scrap-grid">' + ''.join(
+                    '<div class="scrap-item"><span class="scrap-check" aria-hidden="true">✓</span>'
+                    f'<span class="scrap-label">{html.escape(x)}</span></div>' for x in checklist
+                ) + '</div>'
+        classes = ['card', 'cover' if i == 1 else kind] + (['layout-' + layout] if layout and i != 1 else []) + (['dark'] if page.get('dark') else [])
         if i == 1:
             left = ' · '.join(x for x in (signature, cover_date) if x)
             footer = f'<footer><span>{html.escape(left)}</span><span class="site">{html.escape(site)}</span></footer>'
@@ -285,6 +308,9 @@ def screenshot(document: str, out: Path, browser_path=None, jpeg=False) -> list[
                 const overlap = spans.length > 1 && spans[0].getBoundingClientRect().right + 24 > spans[1].getBoundingClientRect().left;
                 return {width:c.offsetWidth,height:c.offsetHeight,kind:c.className.replace('card','').trim(),
                     overflow:main.scrollHeight>main.clientHeight || main.scrollWidth>main.clientWidth,
+                    overflowX:main.scrollWidth>main.clientWidth, overflowY:main.scrollHeight>main.clientHeight,
+                    mainClientWidth:main.clientWidth, mainScrollWidth:main.scrollWidth,
+                    mainClientHeight:main.clientHeight, mainScrollHeight:main.scrollHeight,
                     headerOverlap:header.scrollWidth>header.clientWidth || overlap};
             })""")
             if any(c['overflow'] or c['headerOverlap'] for c in checks):
