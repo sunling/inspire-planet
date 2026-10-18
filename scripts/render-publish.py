@@ -14,7 +14,7 @@ import tempfile
 import zipfile
 
 REPO = Path(__file__).resolve().parents[1]
-CHANNELS = ('gzh', 'xhs', 'sph')
+CHANNELS = ('xhs', 'sph')
 
 
 def external_root(path):
@@ -40,6 +40,8 @@ def locked(root):
 def validate(ready):
     from PIL import Image
     count = 0
+    if any(p.name not in CHANNELS or not p.is_dir() for p in ready.iterdir()):
+        raise ValueError('Only xhs/sph channel directories belong in ready/')
     for channel in CHANNELS:
         folder = ready / channel
         if not folder.exists():
@@ -57,17 +59,16 @@ def validate(ready):
                     raise ValueError(f'Expected JPEG: {f}')
                 im.verify()
             with Image.open(f) as im:
-                expected = (1920, 817) if channel == 'gzh' else (1080, 1440)
+                expected = (1080, 1440)
                 if im.size != expected:
                     raise ValueError(f'Unexpected image dimensions: {f}: {im.size}')
             count += 1
-        if channel != 'gzh':
-            for post in folder.iterdir():
-                if not post.is_dir():
-                    raise ValueError(f'Unexpected file: {post}')
-                names = sorted(p.name for p in post.iterdir())
-                if names != [f'{n:02}.jpg' for n in range(1, len(names) + 1)] or not names:
-                    raise ValueError(f'Non-contiguous image set: {post}')
+        for post in folder.iterdir():
+            if not post.is_dir():
+                raise ValueError(f'Unexpected file: {post}')
+            names = sorted(p.name for p in post.iterdir())
+            if names != [f'{n:02}.jpg' for n in range(1, len(names) + 1)] or not names:
+                raise ValueError(f'Non-contiguous image set: {post}')
     if not count:
         raise ValueError('No publishing images')
     return count
@@ -77,7 +78,7 @@ def package(stage, episode):
     ready = stage / 'ready'
     validate(ready)
     sections = []
-    labels = {'gzh': '公众号', 'xhs': '小红书', 'sph': '视频号'}
+    labels = {'xhs': '小红书', 'sph': '视频号'}
     all_files = []
     for channel in CHANNELS:
         folder = ready / channel
@@ -129,19 +130,22 @@ def promote(root, stage):
 
 
 def run(event, root, channels, slug=None, imported=None, browser=None, font=None):
+    if not channels or any(c not in CHANNELS for c in channels):
+        raise ValueError('Supported render channels: xhs, sph; WeChat covers use AI image generation')
     event = Path(event).resolve()
     if not event.is_dir() or not re.fullmatch(r'\d{8}-ep\d+', event.name):
         raise ValueError('Expected an existing YYYYMMDD-epNN event directory')
-    if slug and ('gzh' in channels or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', slug)):
+    if slug and not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', slug):
         raise ValueError('--slug supports xhs/sph only and requires an ASCII slug')
     root = external_root(root) / event.name
     with locked(root), tempfile.TemporaryDirectory(prefix='.render-', dir=root) as temp:
         stage = Path(temp)
         ready = stage / 'ready'
-        if (root / 'ready').exists():
-            shutil.copytree(root / 'ready', ready)
-        else:
-            ready.mkdir()
+        ready.mkdir()
+        for channel in CHANNELS:
+            previous = root / 'ready' / channel
+            if previous.is_dir():
+                shutil.copytree(previous, ready / channel)
         shared = []
         if browser:
             shared += ['--browser', str(browser)]
@@ -161,25 +165,18 @@ def run(event, root, channels, slug=None, imported=None, browser=None, font=None
                     shutil.rmtree(target)
                 shutil.copytree(source, target)
                 continue
-            if channel == 'gzh':
-                if target.exists():
-                    shutil.rmtree(target)
-                command = [sys.executable, str(REPO / 'scripts/covers/render.py'),
-                    str(event / 'assets/cover-configs.md'), '--out-dir', str(target), *shared]
-                commands = [command]
-            else:
-                scripts = [event / f'{channel}-{slug}.md'] if slug else sorted(event.glob(f'{channel}-*.md'))
-                if not scripts or any(not p.is_file() for p in scripts):
-                    raise ValueError(f'Missing {channel} scripts')
-                if not slug and target.exists():
-                    shutil.rmtree(target)
-                commands = []
-                for script in scripts:
-                    post = target / script.stem[len(channel) + 1:]
-                    if post.exists():
-                        shutil.rmtree(post)
-                    commands.append([sys.executable, str(REPO / 'scripts/text-cards/render.py'),
-                        str(script), str(post), '--jpeg', *shared])
+            scripts = [event / f'{channel}-{slug}.md'] if slug else sorted(event.glob(f'{channel}-*.md'))
+            if not scripts or any(not p.is_file() for p in scripts):
+                raise ValueError(f'Missing {channel} scripts')
+            if not slug and target.exists():
+                shutil.rmtree(target)
+            commands = []
+            for script in scripts:
+                post = target / script.stem[len(channel) + 1:]
+                if post.exists():
+                    shutil.rmtree(post)
+                commands.append([sys.executable, str(REPO / 'scripts/text-cards/render.py'),
+                    str(script), str(post), '--jpeg', *shared])
             for n, command in enumerate(commands):
                 with (stage / f'{channel}-{n}.log').open('w') as log:
                     result = subprocess.run(command, stdout=log, stderr=log)
@@ -209,3 +206,4 @@ if __name__ == '__main__':
             args.import_dir, args.browser, args.font)
     except (ValueError, OSError) as exc:
         parser.exit(1, f'{exc}\n')
+

@@ -1,122 +1,70 @@
-# 渲染与协作指南
+# 出图与协作指南
 
-本项目采用 **源内容入库、图片按需渲染**：长期保留转写、公众号文章、图文脚本、结构化 JSON、封面配置以及必要的授权原始素材；**不提交生成的 JPG、HTML 预览或 ZIP**。
+公众号封面与文字图卡使用两条路径。仓库长期保存文章、脚本、JSON、AI 封面提示词与必要的授权原始素材；不提交生成图片、预览 HTML 或 ZIP。
 
-## GitHub 网页一键渲染（协作者）
+## 公众号：根据文章用 AI 生图
 
-无需 VS Code 或本地 Python 环境。具备仓库 Actions 运行权限的成员可以：
+将本期完整公众号文章交给具备图像生成能力的 AI 工具，使用 [公众号 skill](../.agents/skills/inspireplanet-gzh/SKILL.md) 为每篇生成带字横版封面。提示词与设计检查见 [AI 封面说明](../.agents/skills/inspireplanet/references/cover-design.md)。
 
-1. 打开 [Render content (temporary download)](https://github.com/sunling/inspire-planet/actions/workflows/render-content.yml)，选择 **Run workflow**。
-2. 在 **Use workflow from** 中选择已经审阅、包含内容与配置的分支。
-3. 输入 **episode**，例如 `20260919-ep37`（目前工作流只读取 `events/2026/`）；选择 **channel**：
-   - `gzh`：公众号所有封面（读取 `assets/cover-configs.md`）
-   - `xhs`：该期所有 `xhs-*.md` 图卡
-   - `sph`：该期所有 `sph-*.md` 图卡
-   - `all`：只渲染该期**存在的**渠道材料；全部缺失时会提示 `No renderable content`
-4. 运行成功后打开该次运行，在 **Artifacts** 下载 `render-...`，下载文件本身就是 ZIP。
-5. 解压后，在浏览器中打开 `preview.html` 检查版式；从 `ready/` 中取 JPG 发布。
+- 用户要求生成封面时直接执行；只有明确要求先给方案或暂不出图时才停在提示词。
+- 保存每篇的准确副标题、视觉意图和实际提示词到 `assets/cover-prompts.md`，不再维护程序布局配置。
+- 检查中文字、内容关系、主体裁切和实际尺寸，直接交付 AI 结果。工具不可用时明确说明未生成。
+- GitHub Actions 不调用 AI 生图，也不生成或打包公众号封面；不要在 Actions 中选择 `gzh`。
 
-下载结构（依据所选渠道，缺失渠道不会生成目录）：
+## 图卡：GitHub 网页一键渲染
+
+具备仓库 Actions 权限的成员可以：
+
+1. 打开 [Render content (temporary download)](https://github.com/sunling/inspire-planet/actions/workflows/render-content.yml)，点击 **Run workflow**。
+2. 在 **Use workflow from** 选择已审阅、包含最新脚本的分支。
+3. 输入 **episode**，例如 `20261017-ep41`（当前工作流读取 `events/2026/`），选择 **channel**：
+   - `xhs`：本期所有小红书图卡；
+   - `sph`：本期所有视频号图卡；
+   - `all`：以上两平台中实际存在的脚本；没有可用脚本时提示 `No renderable content`。
+4. 运行成功后，在 **Artifacts** 下载 `render-...`；下载文件本身是 ZIP。
+5. 解压并打开 `preview.html` 检查，从 `ready/` 取图发布。
 
 ```text
 ready/
-  gzh/                # 公众号封面 JPG
-  xhs/{slug}/         # 小红书图卡（01.jpg、02.jpg…）
-  sph/{slug}/         # 视频号图卡
-preview.html          # 本地浏览器可打开的图片总览
+  xhs/{slug}/         # 小红书 01.jpg、02.jpg…
+  sph/{slug}/         # 视频号 01.jpg、02.jpg…
+preview.html
 ```
 
-Artifact 只保留 **1 天**，需要时重新运行即可。云端工作流采用只读权限，不会提交图片回仓库，也不会自动发布。
+Artifact 保留 1 天，到期可重新渲染。工作流使用只读权限，不回写图片，不自动发布。
 
-> 渲染成功不等于可公开发布：稿件、署名、涉及其他人的信息与公开范围仍需要当事人确认。
+## 本地图卡渲染
 
-## Clone 后本地手动渲染（维护者）
-
-适合修改 CSS、模板和图文内容时快速反复检查；与云端工作流共用同一套渲染器。下面命令均从仓库根目录执行。
-
-### 1. 首次安装
+从仓库根目录运行：
 
 ```bash
 python3 -m pip install -r scripts/text-cards/requirements.txt
 python3 -m playwright install chromium
+python3 scripts/render-publish.py events/2026/20261017-ep41 \
+  --channel xhs --channel sph --root /tmp/inspire-planet-publish
+# 单篇示例
+python3 scripts/render-publish.py events/2026/20261017-ep41 \
+  --channel xhs --slug wendy --root /tmp/inspire-planet-publish
 ```
 
-公众号封面还需要 **霞鹜文楷** `LXGWWenKai-Regular.ttf`，本地可放在 `~/Library/Fonts/` 或 `~/.cache/inspireplanet-fonts/`，也可以通过 `--font` 明确指定。字体未安装时，直接渲染公众号封面会报错；图卡工具本身支持首次自动下载所需字体。
+本地 CLI 只接受 `xhs`、`sph`，需要多平台时重复 `--channel`；只传本期存在脚本的渠道。所需中文字体由图卡工具首次自动下载，离线时用 `--font` 指向本机文件；也可用 `--browser` 指定浏览器。
 
-### 2. 按渠道渲染
+临时输出在仓库外，包括 `ready/`、预览和平台 ZIP；本地同一目录重跑可能保留 `history/`。它们不入 Git，取图后可清理。历史公众号输出不会混入新的图卡发布包。
 
-以下以 EP37 为例，指定系统临时目录作为 `--root`，避免将结果放进 Git 仓库。**本地运行结束后可手动清理**：
+### 调试单篇设计
 
 ```bash
-# 公众号封面（字体文件路径按你的电脑调整）
-python3 scripts/render-publish.py events/2026/20260919-ep37 \
-  --channel gzh --root /tmp/inspire-planet-publish \
-  --font ~/Library/Fonts/LXGWWenKai-Regular.ttf
-
-# 小红书
-python3 scripts/render-publish.py events/2026/20260919-ep37 \
-  --channel xhs --root /tmp/inspire-planet-publish
-
-# 视频号
-python3 scripts/render-publish.py events/2026/20260919-ep37 \
-  --channel sph --root /tmp/inspire-planet-publish
-```
-
-该 CLI 支持多个 `--channel`，若各渠道材料**都已存在**，可以一次运行：
-
-```bash
-python3 scripts/render-publish.py events/2026/20261010-ep40 \
-  --channel gzh --channel xhs --channel sph \
-  --root /tmp/inspire-planet-publish \
-  --font ~/Library/Fonts/LXGWWenKai-Regular.ttf
-```
-
-**注意：本地 CLI 不会像云端 `all` 一样自动跳过缺失渠道。** 只传本期实际存在的渠道。其现有打包实现仍会在本地输出 `ready/`、`preview.html`、按渠道 ZIP、`all.zip`，在同一 `--root` 重跑时还可能生成 `history/`；它们都是临时文件，不要提交。云端 Artifact 只上传 `ready/` 与 `preview.html`，不上传重复 ZIP。
-
-本地输出示例：
-
-```text
-/tmp/inspire-planet-publish/20260919-ep37/
-  ready/gzh/
-  preview.html
-  gzh.zip
-  all.zip
-```
-
-### 3. 单独调试设计
-
-调整单个封面模板或图卡时，可以绕开整体发布包，仅调用原始渲染器：
-
-```bash
-# 全部公众号封面：必须指定仓库外输出目录
-python3 scripts/covers/render.py \
-  events/2026/20260919-ep37/assets/cover-configs.md \
-  --out-dir /tmp/ep37-covers \
-  --font ~/Library/Fonts/LXGWWenKai-Regular.ttf
-
-# 单篇小红书图卡：输出目录应为空
 python3 scripts/text-cards/render.py \
-  events/2026/20261010-ep40/xhs-liying.md \
-  /tmp/ep40-xhs-liying --jpeg
-```
-
-修改稿件、字号、主题或设计后，重新渲染，检查文字溢出、遮挡、分页、署名、照片授权与实际浏览器效果。
-
-### 测试与排错
-
-```bash
+  events/2026/20261017-ep41/xhs-wendy.md \
+  /tmp/ep41-xhs-wendy --jpeg
 python3 scripts/check-content.py
 python3 scripts/test-render-publish.py
 ```
 
-如果报缺字体，检查 `--font` 路径；如果报 `No renderable content`，确认期数目录和该渠道的脚本或封面配置是否存在。脚本细节见 [发布与存储规则](rendering.md#发布与存储规则)、[公众号封面渲染器](../scripts/covers/README.md)、[图卡渲染器](../scripts/text-cards/README.md)。
+图卡输出目录须为空。修改文案、字体或 CSS 后检查留白、溢出、遮挡、连续页码、署名、尺寸与预览。脚本与主题细节见 [图卡说明](../scripts/text-cards/README.md)，维护入口见 [设计修改清单](design-editing.md)。
 
-## 发布与存储规则
+## 发布与保存
 
-**源稿为长期资产，生成图为临时输出。** Git 仓库只保存转写、文章、脚本、JSON、封面配置和必要的授权原始素材；不提交生成的 JPG、预览 HTML、ZIP，也不维护永久 `ready/` 或 `history/` 存档。公众号配置的 `asset` 字段仅是输出文件名。
+源稿和提示词可长期维护，生成图片不提交仓库。公众号封面由 AI 生图工具交付，图卡由临时 Artifact 或本地临时目录交付，均不自动发布。
 
-GitHub Actions 使用只读 `contents: read` 权限、不注入社交平台发布密钥。运行成功后 Artifact 中只有 `ready/` 与 `preview.html`，下载文件本身是 ZIP，**保留 1 天**。过期重新运行即可；旧图不会自动归档。所有平台均需人工检查版式和获取当事人明确的公开授权，不会因渲染成功而自动发布。
-
-本地原有 `render-publish.py` 在重复使用同一个 `--root` 时可能保留旧版到 `history/` 并生成内部 ZIP；这是兼容逻辑，并非长期存储要求。建议将 `--root` 指向仓库外临时目录，完成检查或取图后自行删除。本地运行时不传 `--root` 会使用仓库外默认固定目录。
-
-原始照片、二维码等作为渲染输入的素材与生成的图片不同；它们是否可入库应单独核对许可与隐私。公开渠道的发布日期、链接、署名和授权边界写在单期 README 的发布备注中。
+原始照片、二维码与生成图片不同，是否入库要核对许可与隐私。文章、署名、涉及他人的信息及公开范围仍须当事人确认；本期授权与发布链接记录在单期 README。

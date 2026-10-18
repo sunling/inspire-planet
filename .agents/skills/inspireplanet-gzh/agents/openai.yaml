@@ -1,4 +1,4 @@
 interface:
   display_name: "启发星球公众号"
-  short_description: "把会议转写稿写成公众号分享文章，并备好标题、摘要和封面脚本，确认后渲染"
-  default_prompt: "Use $inspireplanet-gzh to turn this episode transcript into a WeChat article with its title, summary and cover configuration; render only after user confirmation."
+  short_description: "把会议分享写成公众号文章，并根据文案直接用 AI 生成横版封面"
+  default_prompt: "Use $inspireplanet-gzh to turn this episode transcript into first-person WeChat articles with titles and summaries, then generate an AI cover image for each article from its content. Keep publication subject to author approval."

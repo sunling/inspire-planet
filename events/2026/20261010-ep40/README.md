@@ -12,14 +12,13 @@
 | 抹茶：回看记录与工作协作 | [文章](gzh-mocha.md) | [图文脚本](xhs-mocha.md) | [图文脚本](sph-mocha.md) |
 | 孙玲：妈妈的微信助手 | [文章](gzh-sunling.md) | [图文脚本](xhs-sunling.md) | [图文脚本](sph-sunling.md) |
 
-来源：[会议转写](transcript.txt)。公众号封面：[配置](assets/cover-configs.md) · [成品](assets/)。纪要：[分享脉络 JSON](summary.json)。金句：[6 条卡片 JSON](quote-cards.json)。
+来源：[会议转写](transcript.txt)。公众号封面：[历史配置](assets/cover-configs.md) · [成品](assets/)。纪要：[分享脉络 JSON](summary.json)。金句：[6 条卡片 JSON](quote-cards.json)。
 
 ## 本期命令
 
 在仓库根目录执行，确认对应稿件、封面配置与图文脚本后再渲染：
 
 ```bash
-python3 scripts/render-publish.py events/2026/20261010-ep40 --channel gzh
 python3 scripts/render-publish.py events/2026/20261010-ep40 --channel xhs --channel sph
 # 只更新一篇：
 python3 scripts/render-publish.py events/2026/20261010-ep40 --channel xhs --slug liying
@@ -47,3 +46,4 @@ python3 scripts/render-publish.py events/2026/20261010-ep40 --channel xhs --slug
 - 封面无真实人物照片或二维码；公众号二维码待使用用户确认的原图。记录营“下一周开始”未进一步确认，不写作招募日期。
 
 </details>
+

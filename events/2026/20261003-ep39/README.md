@@ -21,7 +21,7 @@
 python3 scripts/render-publish.py events/2026/20261003-ep39 --channel xhs --channel sph --slug liying
 ```
 
-发布目录：`../inspire-planet-publish/20261003-ep39/ready/`。公众号封面需先准备并确认 `assets/cover-configs.md`，本期未列公众号出图命令。
+发布目录：`../inspire-planet-publish/20261003-ep39/ready/`。公众号封面按文章直接用 AI 生成，本期不提供公众号代码渲染命令。
 
 ## 发布备注
 
@@ -44,3 +44,4 @@ Grace 带来书里的一句话——“房屋靠智慧建造，靠聪明立稳�
 - 小红书、视频号只选李影：Grace 那段偏讨论，孙玲那段偏工具与现场调研，都更适合公众号；短内容平台选的是脱离上下文也能读懂的一段。
 
 </details>
+

@@ -50,6 +50,26 @@ class BundleTest(unittest.TestCase):
             self.assertFalse((root / '.render.lock').exists())
             self.assertFalse(list(root.glob('.render-*')))
 
+    def test_retired_cover_channel_and_stale_outputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            event = base / '20261017-ep41'
+            event.mkdir()
+            with patch.object(publish.subprocess, 'run') as render:
+                with self.assertRaisesRegex(ValueError, 'AI image generation'):
+                    publish.run(event, base / 'output', ['gzh'])
+                render.assert_not_called()
+            stale = base / 'output' / event.name / 'ready/gzh'
+            stale.mkdir(parents=True)
+            Image.new('RGB', (1920, 817), 'white').save(stale / 'old.jpg')
+            source = base / 'source/xhs/wendy'
+            source.mkdir(parents=True)
+            Image.new('RGB', (1080, 1440), 'white').save(source / '01.jpg')
+            result = publish.run(event, base / 'output', ['xhs'], imported=base / 'source')
+            self.assertFalse((result / 'ready/gzh').exists())
+            with zipfile.ZipFile(result / 'all.zip') as bundle:
+                self.assertEqual(bundle.namelist(), ['xhs/wendy/01.jpg'])
+
     def test_promotion_rolls_back(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -84,3 +104,4 @@ class BundleTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
