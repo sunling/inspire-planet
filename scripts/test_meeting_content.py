@@ -105,14 +105,17 @@ class TranscriptTests(unittest.TestCase):
                 envelope = {'data': {'status_code': 200, 'body': json.dumps(data)}}
             else:
                 self.assertEqual(name, 'get_transcripts_details')
-                self.assertEqual(args['record_file_id'], 'long')
+                self.assertIn(args['record_file_id'], {'short', 'long'})
                 pid = int(args['pid'])
-                data = {'code': 0, 'more': pid == 0, 'minutes': {'paragraphs': [{'pid': str(pid), 'start_time': 4400 if pid == 0 else 3723999, 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成文本'}]}]}]}}
+                spoken = '这是一份更长的合成转写' if args['record_file_id'] == 'short' else '短'
+                data = {'code': 0, 'more': pid == 0, 'minutes': {'paragraphs': [{'pid': str(pid), 'start_time': 4400 if pid == 0 else 3723999, 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': spoken}]}]}]}}
                 envelope = {'status_code': 200, 'headers': {}, 'body': json.dumps(data)}
             return {'id': 1, 'result': {'content': [{'type': 'text', 'text': json.dumps(envelope)}]}}
         text = m.fetch_transcript(m.MCP(transport), '2026-10-10', 'Synthetic', 'recurring')
-        self.assertEqual(text, '合成甲(00:00:04):\n合成文本\n\n合成甲(01:02:03):\n合成文本\n')
-        self.assertEqual([a['pid'] for n, a in calls if n == 'get_transcripts_details'], ['0', '1'])
+        self.assertEqual(text, '合成甲(00:00:04):\n这是一份更长的合成转写\n\n合成甲(01:02:03):\n这是一份更长的合成转写\n')
+        read_calls = [a for n, a in calls if n == 'get_transcripts_details']
+        self.assertEqual({a['record_file_id'] for a in read_calls}, {'short', 'long'})
+        self.assertEqual([a['pid'] for a in read_calls], ['0', '1', '0', '1'])
 
     def test_occurrence_coverage_and_transcript_paging_fail_closed(self):
         from unittest.mock import patch

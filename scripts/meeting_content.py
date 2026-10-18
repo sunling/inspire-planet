@@ -391,41 +391,40 @@ def fetch_occurrence(client, meeting):
                         + f'，仅会议列表={len(metadata_set - native_set)}'
                         + f'，仅录制列表={len(native_set - metadata_set)}'
                         + '）；已安全停止，未跨期选取或截断')
-    if not metadata:
+    # Both meeting-list shapes use the same selection rule. The full native
+    # list is scoped to this exact occurrence above; read every transcript
+    # candidate so recording duration or API ordering cannot choose the winner.
+    need(len(native) <= 8, '本场录制文件超过读取上限；拒绝遗漏并需人工核对')
+    if metadata:
+        candidates = [(r.get('meeting_record_id'), r.get('record_file_id'))
+                      for r in records
+                      if isinstance(r.get('type'), str) and '转写' in r['type']
+                      and isinstance(r.get('record_file_id'), str) and r['record_file_id']]
+        need(bool(candidates), '本场录制存在，但没有可读取的文字转写文件')
+    else:
         # The ended-meetings API may return records=[] even when the full
-        # recording endpoint has completed files. Never search beyond the
-        # exact meeting_id + sub_meeting_id established above.
-        need(len(native) <= 8, '本场录制文件超过备用读取上限；拒绝遗漏并需人工核对')
-        transcripts = []
-        for _, file_id in sorted(native):
-            text = read_file_transcript(client, meeting['meeting_id'], file_id)
-            if text:
-                transcripts.append(text)
-        need(bool(transcripts), '本场录制存在，但尚无非空完整文字转写；稍后重试')
-        # Compare only actual spoken text, not speaker names or timestamp headers.
-        # Every candidate has passed full pagination validation. If two longest
-        # transcripts differ, no unambiguous winner exists: fail closed.
-        scored = [(sum(len(block['text']) for block in parse_transcript(text)), text)
-                  for text in transcripts]
-        longest = max(length for length, _ in scored)
-        winners = [text for length, text in scored if length == longest]
-        need(all(text == winners[0] for text in winners[1:]),
-             '同场最长文字转写出现并列且内容不同；请人工核对')
-        print(f'同场录制文件={len(native)}；非空完整转写={len(transcripts)}；'
-              f'选择最长正文，字数={longest}；未输出原始转写。')
-        return winners[0]
-    candidates = [r for r in records if '转写' in r.get('type', '') and r.get('record_file_id')]
-    def duration(r):
-        value = r.get('duration')
-        need(isinstance(value, str), '录制时长格式不支持')
-        h, minute, second = [int(x) for x in norm_time(value).split(':')]
-        return h * 3600 + minute * 60 + second
-    candidates.sort(key=duration, reverse=True)
-    for record in candidates:
-        text = read_file_transcript(client, meeting['meeting_id'], record['record_file_id'])
+        # recording endpoint has completed files.
+        candidates = sorted(native)
+
+    transcripts = []
+    for _, file_id in candidates:
+        text = read_file_transcript(client, meeting['meeting_id'], file_id)
         if text:
-            return text
-    raise SafeError('无非空文字转写；等待处理完成后重试')
+            transcripts.append(text)
+    need(bool(transcripts), '本场录制存在，但尚无非空完整文字转写；稍后重试')
+
+    # Compare actual spoken text, not speaker names or timestamp headers.
+    # Every candidate has passed full pagination validation. If two longest
+    # transcripts differ, no unambiguous winner exists: fail closed.
+    scored = [(sum(len(block['text']) for block in parse_transcript(text)), text)
+              for text in transcripts]
+    longest = max(length for length, _ in scored)
+    winners = [text for length, text in scored if length == longest]
+    need(all(text == winners[0] for text in winners[1:]),
+         '同场最长文字转写出现并列且内容不同；请人工核对')
+    print(f'同场录制文件={len(native)}；非空完整转写={len(transcripts)}；'
+          f'选择最长正文，字数={longest}；未输出原始转写。')
+    return winners[0]
 from datetime import datetime, timezone
 
 
