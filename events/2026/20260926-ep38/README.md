@@ -22,7 +22,7 @@
 python3 scripts/render-publish.py events/2026/20260926-ep38 --channel xhs --channel sph
 ```
 
-发布目录：`../inspire-planet-publish/20260926-ep38/ready/`。公众号封面重做时按文章直接用 AI 生成，历史稿内配置不再执行。历史竖版封面曾跨平台复用；再次出图按各平台脚本分别渲染，首图随内页生成。
+发布目录：`../inspire-planet-publish/20260926-ep38/ready/`。历史稿内封面配置不再执行。历史竖版封面曾跨平台复用；再次出图按各平台脚本分别渲染，首图随内页生成。
 
 ## 发布备注
 

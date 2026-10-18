@@ -131,7 +131,7 @@ def promote(root, stage):
 
 def run(event, root, channels, slug=None, imported=None, browser=None, font=None):
     if not channels or any(c not in CHANNELS for c in channels):
-        raise ValueError('Supported render channels: xhs, sph; WeChat covers use AI image generation')
+        raise ValueError('Supported render channels: xhs, sph')
     event = Path(event).resolve()
     if not event.is_dir() or not re.fullmatch(r'\d{8}-ep\d+', event.name):
         raise ValueError('Expected an existing YYYYMMDD-epNN event directory')

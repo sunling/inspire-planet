@@ -12,11 +12,11 @@
 | 孙玲：把评判变成了解的过程 | [文章](gzh-sunling.md) | [图文脚本](xhs-sunling.md) | [图文脚本](sph-sunling.md) |
 | 李影：一个词语背后的好多幅画 | [文章](gzh-liying.md) | [图文脚本](xhs-liying.md) | [图文脚本](sph-liying.md) |
 
-来源：[原始转写](transcript.txt) · 纪要：[summary.json](summary.json) · 金句：[quote-cards.json](quote-cards.json) · 公众号封面：[AI 提示词](assets/cover-prompts.md)。
+来源：[原始转写](transcript.txt) · 纪要：[summary.json](summary.json) · 金句：[quote-cards.json](quote-cards.json)。
 
 ## 本期命令
 
-公众号封面根据文章由 AI 直接生成，提示词见上。小红书／视频号确认脚本后，从已审阅分支运行 `render-content.yml`；本地也可运行：
+小红书／视频号确认脚本后，从已审阅分支运行 `render-content.yml`；本地也可运行：
 
 ```bash
 python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --channel sph

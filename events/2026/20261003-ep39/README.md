@@ -21,7 +21,7 @@
 python3 scripts/render-publish.py events/2026/20261003-ep39 --channel xhs --channel sph --slug liying
 ```
 
-发布目录：`../inspire-planet-publish/20261003-ep39/ready/`。公众号封面按文章直接用 AI 生成，本期不提供公众号代码渲染命令。
+发布目录：`../inspire-planet-publish/20261003-ep39/ready/`。
 
 ## 发布备注
 

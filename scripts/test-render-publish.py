@@ -56,7 +56,7 @@ class BundleTest(unittest.TestCase):
             event = base / '20261017-ep41'
             event.mkdir()
             with patch.object(publish.subprocess, 'run') as render:
-                with self.assertRaisesRegex(ValueError, 'AI image generation'):
+                with self.assertRaisesRegex(ValueError, 'Supported render channels'):
                     publish.run(event, base / 'output', ['gzh'])
                 render.assert_not_called()
             stale = base / 'output' / event.name / 'ready/gzh'

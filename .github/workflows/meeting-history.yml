@@ -28,17 +28,17 @@ permissions:
 
 # Share the production lock with zero-input latest discovery.
 concurrency:
-  group: meeting-content-draft
+  group: meeting-content-main-write
   cancel-in-progress: false
 
 jobs:
-  draft:
+  sync:
     if: >-
       github.ref_name == github.event.repository.default_branch &&
       github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
-      pull-requests: write
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -95,11 +95,11 @@ jobs:
       - name: Check content before any commit
         if: steps.plan.outputs.skip == 'false'
         run: python3 scripts/check-content.py
-      - name: Create public transcript Draft PR and verify scope (never merge)
+      - name: Commit verified transcript directly to main
         if: steps.plan.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-          CONTENT_PUBLISH_ALLOWED: 'true'
+          CONTENT_MAIN_WRITE_ALLOWED: 'true'
         run: python3 scripts/latest_transcript.py publish
       - name: Verify checks and scans did not change public files
         if: >-

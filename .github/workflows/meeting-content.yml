@@ -1,4 +1,4 @@
-name: Transcript draft
+name: Transcript download
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
     # UTC 周六 02:07 / 02:17 / 02:27 / 03:07，对应北京时间周六
     # 10:07 / 10:17 / 10:27 / 11:07；最后一次为会议延长或转写处理的兜底。
     # 仅自动处理当天（北京时间周六）开始的已结束会议；缺失时安全跳过。
-    # 已归档时安全跳过，不会重复拉取或重复开 PR。
+    # 已归档时安全跳过，不会重复拉取或重复提交。
     - cron: '7,17,27 2 * * 6'
     - cron: '7 3 * * 6'
 
@@ -15,17 +15,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: meeting-content-draft
+  group: meeting-content-main-write
   cancel-in-progress: false
 
 jobs:
-  draft:
+  sync:
     if: >-
       github.ref_name == github.event.repository.default_branch &&
       (github.event_name == 'workflow_dispatch' || vars.CONTENT_AUTOMATION_ENABLED == 'true')
     permissions:
       contents: write
-      pull-requests: write
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -54,11 +54,11 @@ jobs:
       - name: Check content before commit
         if: steps.plan.outputs.skip == 'false'
         run: python3 scripts/check-content.py
-      - name: Create and verify public Draft PR (never merge)
+      - name: Commit verified transcript directly to main
         if: steps.plan.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-          CONTENT_PUBLISH_ALLOWED: 'true'
+          CONTENT_MAIN_WRITE_ALLOWED: 'true'
         run: python3 scripts/latest_transcript.py publish
       - name: Remove runner-only cache
         if: always()
