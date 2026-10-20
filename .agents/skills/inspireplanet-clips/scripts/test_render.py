@@ -93,8 +93,10 @@ class ClipRendering(unittest.TestCase):
                     plan['source'] = audio.name
                     plan['clips'][0]['crop'] = None
                     plan['clips'][0]['slug'] = 'audio-only'
-                result = subprocess.run([sys.executable, str(script), str(self.save(plan))],
-                                        capture_output=True, text=True)
+                command = [sys.executable, str(script), str(self.save(plan))]
+                if audio_only:
+                    command.append('--cover')
+                result = subprocess.run(command, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 slug = plan['clips'][0]['slug']
                 qa = json.loads((self.base / 'work' / f'{slug}-qa.json').read_text())
@@ -102,7 +104,7 @@ class ClipRendering(unittest.TestCase):
                 self.assertAlmostEqual(qa['seconds'], 2.0, delta=0.15)
                 self.assertEqual((qa['width'], qa['height']), (1080, 1920))
                 self.assertTrue((self.base / f'{slug}.srt').is_file())
-                self.assertTrue((self.base / f'{slug}-cover.jpg').is_file())
+                self.assertEqual((self.base / f'{slug}-cover.jpg').is_file(), audio_only)
         self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(), original)
 
 

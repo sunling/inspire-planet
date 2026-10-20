@@ -216,7 +216,7 @@ def filter_path(path):
     return str(path).replace('\\', '\\\\').replace(':', '\\:').replace("'", "'\\''")
 
 
-def render(plan, clip, source, media, fonts, base):
+def render(plan, clip, source, media, fonts, base, export_cover=False):
     work = private_path(base / 'work')
     work.mkdir(exist_ok=True)
     slug = clip['slug']
@@ -258,22 +258,23 @@ def render(plan, clip, source, media, fonts, base):
                        '-t', str(duration), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21',
                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000',
                        '-movflags', '+faststart', str(target)], work / f'{slug}-render.log')
-    # Export a cover from the rendered layout at a kept source moment, with captions removed.
-    cover_offset = 0.0
-    for a, b in spans:
-        if a <= clip['cover_time'] < b:
-            cover_offset += clip['cover_time'] - a
-            break
-        cover_offset += b-a
-    cover_frame = work / f'{slug}-cover-frame.png'
-    run_ffmpeg(['-ss', str(cover_offset), '-i', str(target), '-frames:v', '1', str(cover_frame)],
-               work / f'{slug}-cover.log')
-    cover = Image.open(cover_frame).convert('RGB')
-    draw = ImageDraw.Draw(cover)
-    draw.rectangle((50, 1290, 1030, 1462), fill=BG)
-    draw.text((540, 1395), clip.get('cover_text', ''), fill=INK,
-              font=ImageFont.truetype(str(fonts[0]), 47), anchor='mm')
-    cover.save(base / f'{slug}-cover.jpg', quality=95)
+    if export_cover:
+        # Export a cover from the rendered layout at a kept source moment, with captions removed.
+        cover_offset = 0.0
+        for a, b in spans:
+            if a <= clip['cover_time'] < b:
+                cover_offset += clip['cover_time'] - a
+                break
+            cover_offset += b-a
+        cover_frame = work / f'{slug}-cover-frame.png'
+        run_ffmpeg(['-ss', str(cover_offset), '-i', str(target), '-frames:v', '1', str(cover_frame)],
+                   work / f'{slug}-cover.log')
+        cover = Image.open(cover_frame).convert('RGB')
+        draw = ImageDraw.Draw(cover)
+        draw.rectangle((50, 1290, 1030, 1462), fill=BG)
+        draw.text((540, 1395), clip.get('cover_text', ''), fill=INK,
+                  font=ImageFont.truetype(str(fonts[0]), 47), anchor='mm')
+        cover.save(base / f'{slug}-cover.jpg', quality=95)
     run_ffmpeg(['-ss', str(min(12, duration/2)), '-i', str(target), '-frames:v', '1',
                 str(base / f'{slug}-preview.jpg')], work / f'{slug}-preview.log')
     run_ffmpeg(['-v', 'error', '-i', str(target), '-f', 'null', '-'], work / f'{slug}-decode.log')
@@ -289,6 +290,7 @@ def main():
     parser.add_argument('plan', type=Path)
     parser.add_argument('--slug')
     parser.add_argument('--check', action='store_true')
+    parser.add_argument('--cover', action='store_true', help='按需额外导出独立封面，默认不生成')
     args = parser.parse_args()
     plan, clips, source, media, fonts = validate(args.plan, args.slug)
     if args.check:
@@ -296,7 +298,7 @@ def main():
         return
     require(all(c.get('confirmed') is True for c in clips), '先取得用户的选段确认，再将对应条目 confirmed 设为 true')
     for clip in clips:
-        render(plan, clip, source, media, fonts, args.plan.resolve().parent)
+        render(plan, clip, source, media, fonts, args.plan.resolve().parent, export_cover=args.cover)
 
 
 if __name__ == '__main__':

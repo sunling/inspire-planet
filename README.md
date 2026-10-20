@@ -16,7 +16,7 @@
 
 需要调整图卡布局、字体或渲染器时，另见 [设计与本地维护指南](docs/design-editing.md)。这属于**按需维护**，不是每期必须完成的第四步。
 
-制作会议原声短视频时，使用 [inspireplanet-clips](.agents/skills/inspireplanet-clips/SKILL.md)：手动下载回放 → 推荐选段 → 确认后制作初剪、字幕、封面与两平台文案 → 审片后发布。回放和制作资料放在被 Git 忽略的 `replays/`，不提交 GitHub。
+制作会议原声短视频时，使用 [inspireplanet-clips](.agents/skills/inspireplanet-clips/SKILL.md)：手动下载回放 → 推荐选段 → 确认后制作初剪、字幕与两平台文案（独立封面按需） → 审片后发布。回放和制作资料放在被 Git 忽略的 `replays/`，不提交 GitHub。
 
 ## 浏览与使用内容
 
