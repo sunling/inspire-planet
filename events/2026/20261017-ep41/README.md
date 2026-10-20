@@ -14,19 +14,9 @@
 
 来源：[原始转写](transcript.txt) · 纪要：[summary.json](summary.json) · 金句：[quote-cards.json](quote-cards.json)。
 
-## 本期命令
-
-小红书／视频号确认脚本后，从已审阅分支运行 `render-content.yml`；本地也可运行：
-
-```bash
-python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --channel sph
-# 单篇、单平台示例
-python3 scripts/render-publish.py events/2026/20261017-ep41 --channel xhs --slug wendy
-```
-
-临时 Artifact 保留 1 天，生成的 JPG、HTML、预览和 ZIP 均不提交仓库。
-
 ## 发布备注
+
+- 历史小红书／视频号图文稿保留供查阅，图文 skills 已退役；新的社媒内容使用原声短视频流程，旧图卡工具仅作历史兼容保留。
 
 - 公众号三篇均采用分享者第一人称口述，需各位本人审阅确认；小红书、视频号和金句也需确认署名及公开范围。未获授权前不得合并到供网站读取的 `main`，也不对外发布。
 - 孙玲篇的日记、长辈经历，Wendy 篇的个人职业及海外计划，以及圆桌里的职场冲突，均需确认是否适合公开；可按本人意愿脱敏，并同步修改多平台稿与两份 JSON。

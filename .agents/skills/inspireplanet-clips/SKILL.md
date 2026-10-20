@@ -1,6 +1,6 @@
 ---
 name: inspireplanet-clips
-description: 从启发星球本地会议音视频回放选段，制作原声短视频、字幕、封面与小红书和视频号发布文案。用于回放切片和已有短视频修改；图文图卡使用 inspireplanet-xhs 或 inspireplanet-sph。
+description: 从启发星球本地会议音视频回放选段，制作原声短视频、字幕、封面与小红书和视频号发布文案。用于回放切片和已有短视频修改。
 ---
 
 # 启发星球原声短视频
