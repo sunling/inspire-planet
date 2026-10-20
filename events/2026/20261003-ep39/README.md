@@ -13,17 +13,9 @@
 
 来源：[转写](transcript.txt)。纪要：[JSON](summary.json)。金句：[JSON](quote-cards.json)。
 
-## 本期命令
-
-确认李影的图文脚本后，在仓库根目录执行：
-
-```bash
-python3 scripts/render-publish.py events/2026/20261003-ep39 --channel xhs --channel sph --slug liying
-```
-
-发布目录：`../inspire-planet-publish/20261003-ep39/ready/`。
-
 ## 发布备注
+
+- 历史小红书／视频号图文稿保留供查阅，图文 skills 已退役；新的社媒内容使用原声短视频流程，旧图卡工具和出图工作流已移除。
 
 - 公众号需李影、孙玲分别过目；孙玲稿涉及李影、有林的内容需二人过目。
 - 社交媒体署名：来分享的伙伴已同意把内容发布在社交媒体、文案使用具体人名（李影）。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "启发星球原声短视频"
+  short_description: "从本地会议回放选段、剪辑、制作字幕封面及两平台文案，审阅后发布"
+  default_prompt: "使用 $inspireplanet-clips，检查本期本地回放并推荐选段；确认后制作初剪、字幕及小红书和视频号文案。"

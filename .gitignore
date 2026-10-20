@@ -1,6 +1,7 @@
-scripts/text-cards/__pycache__/render.cpython-39.pyc
 __pycache__/
 *.py[cod]
+# Local meeting replays and working media; never commit to GitHub
+/replays/
 # Generated images and publishing bundles are ephemeral
 inspire-planet-publish/
 **/recap-cover-*.jpg

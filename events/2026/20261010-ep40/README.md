@@ -14,19 +14,9 @@
 
 来源：[会议转写](transcript.txt)。公众号封面：[历史配置](assets/cover-configs.md) · [成品](assets/)。纪要：[分享脉络 JSON](summary.json)。金句：[6 条卡片 JSON](quote-cards.json)。
 
-## 本期命令
-
-在仓库根目录执行，确认对应稿件、封面配置与图文脚本后再渲染：
-
-```bash
-python3 scripts/render-publish.py events/2026/20261010-ep40 --channel xhs --channel sph
-# 只更新一篇：
-python3 scripts/render-publish.py events/2026/20261010-ep40 --channel xhs --slug liying
-```
-
-发布目录：`../inspire-planet-publish/20261010-ep40/ready/`（相对仓库根目录）。
-
 ## 发布备注
+
+- 历史小红书／视频号图文稿保留供查阅，图文 skills 已退役；新的社媒内容使用原声短视频流程，旧图卡工具和出图工作流已移除。
 
 - 公众号为分享者第一人称口述，需本人过目；文中互相引用的回应也需回应者确认。孙玲篇涉及妈妈，需确认妈妈的公开范围。
 - 原始转写含现场个人信息；公开提交前需核对转写的授权与隐私范围。
