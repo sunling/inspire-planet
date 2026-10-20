@@ -8,10 +8,11 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 from common import number, private_path, probe, run_ffmpeg, write_json
 
-INK = '#25382F'
-ACCENT = '#AC7147'
-BG = '#F6F2E9'
-MUTED = '#787A70'
+INK = '#F6F2E9'
+ACCENT = '#D1AA7E'
+BG = '#25382F'
+MUTED = '#BDCAC0'
+RULE = '#526359'
 
 
 def require(condition, message):
@@ -136,7 +137,7 @@ def validate(path, slug=None):
                     '字幕时间无效或相互重叠')
             require(any(a <= start < end <= b for a, b in clip['spans']), '字幕跨越删减点或位于保留范围之外；先拆分')
             require(isinstance(text, str) and text.strip() and len(text.splitlines()) <= 2 and
-                    all(fits(line, 50, 940) for line in text.splitlines()), '字幕过长，先断句或拆分时间段')
+                    all(fits(line, 52, 940) for line in text.splitlines()), '字幕过长，先断句或拆分时间段')
             require(not any(char in text for char in '{}\\'), '字幕不能含 ASS 控制字符')
             previous_end = end
     require(all(not p.is_relative_to(base / 'work') for p in protected),
@@ -154,8 +155,8 @@ def make_template(plan, clip, fonts, work):
         return ImageFont.truetype(str(title_font if bold else regular_font), size)
     im = Image.new('RGB', (1080, 1920), BG)
     draw = ImageDraw.Draw(im)
-    draw.rounded_rectangle((60, 108, 248, 156), radius=24, fill=INK)
-    draw.text((154, 132), '启发星球', font=font(26, True), fill=BG, anchor='mm')
+    draw.rounded_rectangle((60, 108, 248, 156), radius=24, outline=MUTED, width=1)
+    draw.text((154, 132), '启发星球', font=font(26, True), fill=INK, anchor='mm')
     event = plan['event']
     draw.text((1018, 132), f'{event["year"]} / EP{event["episode"]}', font=font(26), fill=MUTED, anchor='rm')
     for index, line in enumerate(clip['title']):
@@ -163,17 +164,19 @@ def make_template(plan, clip, fonts, work):
     draw.rectangle((60, 492, 136, 499), fill=ACCENT)
     draw.text((162, 483), clip.get('label', ''), font=font(30), fill=ACCENT)
     x, y, w, h = clip['video_box']
-    draw.rectangle((x-2, y-2, x+w+2, y+h+2), fill='#D4CEC0')
-    draw.rectangle((x, y, x+w, y+h), fill='#E7E0D3')
+    draw.rectangle((x-2, y-2, x+w+2, y+h+2), fill=RULE)
+    draw.rectangle((x, y, x+w, y+h), fill=BG)
     for index, line in enumerate(clip['title']):
         draw.text((x+w/2, y+h/2-50+index*64), line, font=font(44, True), fill=INK, anchor='mm')
     draw.text((x+w/2, y+h-40), '原声分享', font=font(25), fill=MUTED, anchor='mm')
-    draw.text((60, 1200), clip['speaker'], font=font(38, True), fill=INK)
-    draw.text((1018, 1223), '会议原声', font=font(25), fill=MUTED, anchor='rs')
-    draw.line((60, 1280, 1020, 1280), fill='#D4CEC0', width=2)
-    # Back the platform's white description with dark green, and keep its area empty.
-    draw.rectangle((0, 1560, 1080, 1920), fill=INK)
-    draw.text((60, 1584), plan['brand']['website'], font=font(34, True), fill=BG)
+    draw.text((60, 1198), clip['speaker'], font=font(38, True), fill=INK)
+    draw.text((1018, 1221), '会议原声', font=font(25), fill=MUTED, anchor='rs')
+    draw.line((60, 1270, 1020, 1270), fill=RULE, width=2)
+    # Preserve the original footer arrangement above the platform description.
+    draw.line((60, 1478, 1020, 1478), fill=RULE, width=2)
+    draw.text((60, 1500), '真实的生活 · 具体的分享', font=font(27), fill=MUTED)
+    draw.text((60, 1550), plan['brand']['website'], font=font(34, True), fill=INK)
+    draw.text((1018, 1587), event['date'].replace('-', '.'), font=font(23), fill=MUTED, anchor='rs')
     path = work / f'{clip["slug"]}-template.png'
     im.save(path)
     return path
@@ -195,14 +198,14 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{family},50,&H002F3825,&H002F3825,&H00E9F2F6,&H00000000,0,0,0,0,100,100,0,0,1,0,0,5,65,65,0,1
+Style: Default,{family},52,&H00E9F2F6,&H00E9F2F6,&H002F3825,&H00000000,0,0,0,0,100,100,0,0,1,0,0,5,65,65,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 '''
     for start, end, text in rows:
         text = text.replace('\n', r'\N')
-        ass += f'Dialogue: 0,{timecode(start, True)},{timecode(end, True)},Default,,0,0,0,,{{\\pos(540,1465)}}{text}\n'
+        ass += f'Dialogue: 0,{timecode(start, True)},{timecode(end, True)},Default,,0,0,0,,{{\\pos(540,1395)}}{text}\n'
     path = base / f'{slug}.ass'
     path.write_text(ass, encoding='utf-8')
     return path
@@ -232,7 +235,7 @@ def render(plan, clip, source, media, fonts, base):
         crop = clip.get('crop')
         transform = f'crop={crop[2]}:{crop[3]}:{crop[0]}:{crop[1]},' if crop else ''
         for index in range(n):
-            filters.append(f'[{index}:v]{transform}scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=0xE7E0D3,fps=25,setsar=1,setpts=PTS-STARTPTS[v{index}]')
+            filters.append(f'[{index}:v]{transform}scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=0x25382F,fps=25,setsar=1,setpts=PTS-STARTPTS[v{index}]')
     for index in range(n):
         filters.append(f'[{index}:a]aresample=48000,asetpts=PTS-STARTPTS[a{index}]')
     if visual:
@@ -243,7 +246,7 @@ def render(plan, clip, source, media, fonts, base):
         filters.append(''.join(f'[a{i}]' for i in range(n)) + f'concat=n={n}:v=0:a=1[voice]')
         if clip.get('still'):
             args += ['-loop', '1', '-framerate', '25', '-i', str(local(base, clip['still']))]
-            filters.append(f'[{n+1}:v]scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=0xE7E0D3[still]')
+            filters.append(f'[{n+1}:v]scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=0x25382F[still]')
             filters.append(f'[{n}:v][still]overlay={x}:{y}[layout]')
         else:
             filters.append(f'[{n}:v]null[layout]')
@@ -267,8 +270,8 @@ def render(plan, clip, source, media, fonts, base):
                work / f'{slug}-cover.log')
     cover = Image.open(cover_frame).convert('RGB')
     draw = ImageDraw.Draw(cover)
-    draw.rectangle((50, 1300, 1030, 1545), fill=BG)
-    draw.text((540, 1465), clip.get('cover_text', ''), fill=INK,
+    draw.rectangle((50, 1290, 1030, 1462), fill=BG)
+    draw.text((540, 1395), clip.get('cover_text', ''), fill=INK,
               font=ImageFont.truetype(str(fonts[0]), 47), anchor='mm')
     cover.save(base / f'{slug}-cover.jpg', quality=95)
     run_ffmpeg(['-ss', str(min(12, duration/2)), '-i', str(target), '-frames:v', '1',
