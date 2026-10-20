@@ -170,11 +170,10 @@ def make_template(plan, clip, fonts, work):
     draw.text((x+w/2, y+h-40), '原声分享', font=font(25), fill=MUTED, anchor='mm')
     draw.text((60, 1200), clip['speaker'], font=font(38, True), fill=INK)
     draw.text((1018, 1223), '会议原声', font=font(25), fill=MUTED, anchor='rs')
-    for line_y in [1280, 1664]:
-        draw.line((60, line_y, 1020, line_y), fill='#D4CEC0', width=2)
-    draw.text((60, 1700), '真实的生活 · 具体的分享', font=font(27), fill=MUTED)
-    draw.text((60, 1754), plan['brand']['website'], font=font(34, True), fill=INK)
-    draw.text((1018, 1790), event['date'].replace('-', '.'), font=font(23), fill=MUTED, anchor='rs')
+    draw.line((60, 1280, 1020, 1280), fill='#D4CEC0', width=2)
+    # Back the platform's white description with dark green, and keep its area empty.
+    draw.rectangle((0, 1560, 1080, 1920), fill=INK)
+    draw.text((60, 1584), plan['brand']['website'], font=font(34, True), fill=BG)
     path = work / f'{clip["slug"]}-template.png'
     im.save(path)
     return path
@@ -268,7 +267,7 @@ def render(plan, clip, source, media, fonts, base):
                work / f'{slug}-cover.log')
     cover = Image.open(cover_frame).convert('RGB')
     draw = ImageDraw.Draw(cover)
-    draw.rectangle((50, 1300, 1030, 1640), fill=BG)
+    draw.rectangle((50, 1300, 1030, 1545), fill=BG)
     draw.text((540, 1465), clip.get('cover_text', ''), fill=INK,
               font=ImageFont.truetype(str(fonts[0]), 47), anchor='mm')
     cover.save(base / f'{slug}-cover.jpg', quality=95)
