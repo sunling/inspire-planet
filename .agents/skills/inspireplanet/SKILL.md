@@ -29,7 +29,8 @@ events/{year}/{YYYYMMDD}-epXX/
 - 逐字稿 / 转写 → GitHub Actions，入口与历史补录见 [下载说明](../../../docs/meeting-content.md)
 - 公众号文章 / 标题 / 摘要 → `inspireplanet-gzh`
 - 小红书 / 图集 / 竖版封面 → `inspireplanet-xhs`
-- 视频号 → `inspireplanet-sph`
+- 视频号图文 → `inspireplanet-sph`
+- 本地会议回放 / 原声短视频 / 音视频切片 → `inspireplanet-clips`（独立于图文发布包，按请求制作）
 - 网站纪要 / summary.json → `inspireplanet-summary`
 - 金句 / 卡片 JSON → `inspireplanet-cards`
 - 本期导航 / 命令 / 发布备注 → 本 Skill
