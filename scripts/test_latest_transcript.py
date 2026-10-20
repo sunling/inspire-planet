@@ -467,6 +467,9 @@ class LatestTests(unittest.TestCase):
             git('config', 'user.name', 'Synthetic'); git('config', 'user.email', 'test@example.invalid')
             git('remote', 'add', 'origin', str(remote))
             (root / 'events').mkdir()
+            # Git does not track empty directories; provide a real baseline file.
+            baseline = '# Synthetic index\n'
+            (root / 'events/README.md').write_text(baseline, encoding='utf-8')
             git('add', '.'); git('commit', '-m', 'baseline'); git('push', 'origin', 'main')
             metadata = l.instance(self.row('2026-10-17'))
             event = 'incoming/meetings/' + metadata['instance_key']
@@ -484,6 +487,7 @@ class LatestTests(unittest.TestCase):
             self.assertEqual(set(result['paths']), set(paths))
             self.assertEqual(result['commit'], git('ls-remote', 'origin', 'refs/heads/main').split()[0])
             self.assertEqual(git('show', f'main:{event}/transcript.txt'), text)
+            self.assertEqual(git('show', 'main:events/README.md'), baseline)
             self.assertFalse(git('ls-remote', '--heads', 'origin', plan['branch']).strip())
             self.assertEqual(git('status', '--porcelain').strip(), '')
 
