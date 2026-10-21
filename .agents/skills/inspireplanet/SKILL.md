@@ -1,6 +1,6 @@
 ---
 name: inspireplanet
-description: 启发星球内容总控：按需从会议转写整理公众号文章、网站纪要与金句，维护本期导航；有本地回放时交给 inspireplanet-clips 制作原声短视频及两平台文案。
+description: 启发星球内容总控：按需从会议转写整理公众号文章、网站纪要与金句，维护本期导航；有本地回放时按需制作原声短视频或一期一集的轻剪播客。
 ---
 
 # Inspire Planet
@@ -20,7 +20,7 @@ events/{year}/{YYYYMMDD}-epXX/
   README.md          导航、实际可用的命令和发布备注
 ```
 
-历史图文稿保留供查阅，不再创建新图文脚本。短视频制作资料全部放在本地被忽略的 `replays/`，不放进公开单期目录。
+历史图文稿保留供查阅，不再创建新图文脚本。短视频与播客制作资料全部放在本地被忽略的 `replays/`，不放进公开单期目录。
 
 ## 路由
 
@@ -29,6 +29,7 @@ events/{year}/{YYYYMMDD}-epXX/
 - 网站纪要 → `inspireplanet-summary`。
 - 金句 JSON → `inspireplanet-cards`。网站金句展示与导出继续使用 JSON 数据。
 - 小红书／视频号原声短视频及发布文案 → `inspireplanet-clips`。缺少回放时先请求本地素材路径；有素材时先推荐选段，确认后初剪。
+- 整期播客、播客音频轻剪及话题时间轴 → `inspireplanet-podcast`。一期一集，默认保留现场开场与道别，不额外添加配音或音乐；本地交付后再审听与确认公开范围。
 - 多项整理 → 只组合用户需要的交付物，按 [内容数据约定](../../../events/data-contract.md) 保持字段与审核边界。
 
 ## 内容质量与审核
