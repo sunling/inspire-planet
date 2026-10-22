@@ -5,7 +5,7 @@
 ## 1. 日常自动下载
 
 - **计划时间**：北京时间每周六 **10:07、10:17、10:27、11:07** 各尝试一次；11:07 为会议延长或转写处理延迟提供兜底。GitHub 定时任务仍可能延迟。
-- **运行条件**：默认分支上的工作流、仓库变量 `CONTENT_AUTOMATION_ENABLED=true`、有效的 `TENCENT_MEETING_TOKEN`，以及 GitHub Actions 的 `contents: write`（直接提交）和 `pull-requests: read`（检查现有草稿以免重复）权限。
+- **运行条件**：默认分支上的工作流、有效的 `TENCENT_MEETING_TOKEN`，以及 GitHub Actions 的 `contents: write`（直接提交）和 `pull-requests: read`（检查现有草稿以免重复）权限。定时运行还要求仓库变量 `CONTENT_AUTOMATION_ENABLED=true`；在默认分支手动运行不受这个定时开关限制，仍须先确认转写可公开。
 - **查看结果**：[Transcript download](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml) → 查看最新运行和 `main` 提交记录。新转写写入 `events/` 或 `incoming/meetings/`。定时任务仅考虑**北京时间当周六开始且已结束**的会议；新会议尚未结束时不会自动选择上周未归档的稿件。已归档的会议会跳过，不重复提交。
 - **期次核对**：核对会议日期和期次。期次不确定时，转写会写入 `incoming/meetings/` 等待后续整理。由于文件直接进入公开 `main`，运行工作流前需确认转写可公开；本流程没有 PR 审核门槛。
 
