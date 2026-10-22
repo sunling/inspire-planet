@@ -12,7 +12,7 @@
 | 视频 | 视频号、小红书 | 原声切片、字幕、两平台标题与文案；独立封面按需制作 | [短视频 skill](.agents/skills/inspireplanet-clips/SKILL.md) |
 | 音频 | 暂时以小宇宙为唯一发布去向 | 一期一集的轻剪播客、标题、简介与成品时间轴 | [播客 skill](.agents/skills/inspireplanet-podcast/SKILL.md) |
 
-知乎开通后再明确适配与发布方式，当前不要求每篇另出知乎稿。小红书／视频号新增内容统一使用原声短视频，历史图文只作存档。以上是渠道安排，不代表每期均已制作或发布；最新安排以 [current.md](current.md) 为准。
+知乎开通后再明确适配与发布方式，当前不要求每篇另出知乎稿。小红书／视频号新增内容统一使用原声短视频，旧图文渲染脚本已清理，历史版本可从 Git 查阅。以上是渠道安排，不代表每期均已制作或发布；最新安排以 [current.md](current.md) 为准。
 
 网站另按需使用 `summary.json` 展示单期纪要、`quote-cards.json` 展示金句与周刊数据，见 [内容数据约定](events/data-contract.md)。
 
