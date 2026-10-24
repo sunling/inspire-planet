@@ -71,7 +71,7 @@ def validate(path, slug=None):
     require(isinstance(website, str) and re.fullmatch(r'[a-z0-9.-]+\.[a-z]{2,}', website),
             'brand.website 只填写已确认的简短域名')
     style = plan.get('style', {})
-    margin = style.get('footer_bottom_margin', 108)
+    margin = style.get('footer_bottom_margin', 300)
     require(type(margin) is int and 60 <= margin <= 333, 'footer_bottom_margin 须为 60–333 整数像素')
     title_font = choose_font(base, style.get('font'))
     light = Path('/System/Library/Fonts/STHeiti Light.ttc')
@@ -193,14 +193,14 @@ def make_template(plan, clip, fonts, work):
     draw.text((60, 1198), clip['speaker'], font=font(38, True), fill=INK)
     draw.text((1018, 1221), '会议原声', font=font(25), fill=MUTED, anchor='rs')
     draw.line((60, 1270, 1020, 1270), fill=RULE, width=2)
-    # Keep the footer order; place its visible bottom symmetrically by default.
+    # Keep the footer order; reserve room below its visible bottom for platform descriptions.
     draw.line((60, 1478, 1020, 1478), fill=RULE, width=2)
     draw.text((60, 1500), '真实的生活 · 具体的分享', font=font(27), fill=MUTED)
     draw.text((60, 1550), plan['brand']['website'], font=font(34, True), fill=INK)
     draw.text((1018, 1587), event['date'].replace('-', '.'), font=font(23), fill=MUTED, anchor='rs')
     footer = im.crop((0, 1478, 1080, 1920))
     bounds = ImageChops.difference(footer, Image.new('RGB', footer.size, BG)).getbbox()
-    margin = plan.get('style', {}).get('footer_bottom_margin', 108)
+    margin = plan.get('style', {}).get('footer_bottom_margin', 300)
     shift = 1920 - margin - (1478 + bounds[3])
     im.paste(Image.new('RGB', footer.size, BG), (0, 1478))
     im.paste(footer.crop((0, 0, 1080, bounds[3])), (0, 1478 + shift))
