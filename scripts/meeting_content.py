@@ -269,7 +269,16 @@ class MCP:
             need(data.get('code', 0) == 0, 'MCP 业务失败（响应已隐藏）')
             if 'status_code' in data or 'body' in data:
                 status = data.get('status_code')
-                need(type(status) is int and status == 200, 'MCP 上游 HTTP 失败（响应已隐藏）')
+                if type(status) is not int or status != 200:
+                    code = None
+                    try:
+                        body = json.loads(data.get('body', ''))
+                        if isinstance(body, dict) and type(body.get('code')) is int:
+                            code = body['code']
+                    except (ValueError, TypeError):
+                        pass
+                    safe_status = status if type(status) is int else 'invalid'
+                    raise SafeError(f'MCP 上游 HTTP 失败：tool={name}，status={safe_status}，code={code}（响应已隐藏）')
                 need(isinstance(data.get('body'), str), 'MCP HTTP body 结构不支持')
                 try:
                     data = json.loads(data['body'])
@@ -378,7 +387,8 @@ def fetch_occurrence(client, meeting):
     candidates = sorted(native)
 
     transcripts = []
-    for _, file_id in candidates:
+    for index, (_, file_id) in enumerate(candidates, 1):
+        print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。')
         text = read_file_transcript(client, meeting['meeting_id'], file_id)
         if text:
             transcripts.append(text)
