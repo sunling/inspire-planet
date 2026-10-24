@@ -354,9 +354,8 @@ def read_file_transcript(client, meeting_id, record_file_id):
 
 
 def fetch_occurrence(client, meeting):
-    # Metadata is occurrence-specific, but records_total_count does not equal
-    # the occurrence's file count in the live response. Verify coverage against
-    # native record_meetings list, scoped by BOTH meeting and sub-meeting IDs.
+    # The ended-meetings records are a stale/incomplete summary. Use the fully
+    # paginated recording endpoint as authority, scoped by BOTH occurrence IDs.
     records = meeting.get('records')
     sub = meeting.get('sub_meeting_id')
     need(isinstance(records, list) and isinstance(sub, str) and bool(sub), '本场录制列表或子会议身份缺失')
@@ -370,41 +369,13 @@ def fetch_occurrence(client, meeting):
         for file in files:
             need(isinstance(file.get('record_file_id'), str) and bool(file['record_file_id']), '录制文件缺少 ID')
             native.append((group['meeting_record_id'], file['record_file_id']))
-    metadata = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records]
-    native_set, metadata_set = set(native), set(metadata)
-    # Count-only diagnostics: do not reveal meeting names, record IDs, or transcript text.
-    if not native or len(native_set) != len(native) or len(metadata_set) != len(metadata) or (metadata and native_set != metadata_set):
-        causes = []
-        if not native:
-            causes.append('native-empty')
-        if len(native_set) != len(native):
-            causes.append('native-duplicate')
-        if len(metadata_set) != len(metadata):
-            causes.append('metadata-duplicate')
-        if metadata_set - native_set:
-            causes.append('metadata-not-in-native')
-        if native_set - metadata_set:
-            causes.append('native-not-in-metadata')
-        raise SafeError('本场录制列表校验失败（'
-                        + ','.join(causes)
-                        + f'；会议列表={len(metadata)}，录制列表={len(native)}'
-                        + f'，仅会议列表={len(metadata_set - native_set)}'
-                        + f'，仅录制列表={len(native_set - metadata_set)}'
-                        + '）；已安全停止，未跨期选取或截断')
-    # Both meeting-list shapes use the same selection rule. The full native
-    # list is scoped to this exact occurrence above; read every transcript
-    # candidate so recording duration or API ordering cannot choose the winner.
+    need(bool(native), '本场没有可验证的原生录制文件；停止且不跨期查找')
+    # read_file_transcript addresses files by file ID, so IDs must be unique
+    # even across recording groups within this occurrence.
+    need(len({file_id for _, file_id in native}) == len(native),
+         '本场录制文件 ID 重复；需人工核对')
     need(len(native) <= 8, '本场录制文件超过读取上限；拒绝遗漏并需人工核对')
-    if metadata:
-        candidates = [(r.get('meeting_record_id'), r.get('record_file_id'))
-                      for r in records
-                      if isinstance(r.get('type'), str) and '转写' in r['type']
-                      and isinstance(r.get('record_file_id'), str) and r['record_file_id']]
-        need(bool(candidates), '本场录制存在，但没有可读取的文字转写文件')
-    else:
-        # The ended-meetings API may return records=[] even when the full
-        # recording endpoint has completed files.
-        candidates = sorted(native)
+    candidates = sorted(native)
 
     transcripts = []
     for _, file_id in candidates:

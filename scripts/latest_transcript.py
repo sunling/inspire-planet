@@ -54,21 +54,6 @@ def discover(client, config, now):
     return sorted(selected, key=lambda r: timestamp(r['start_time']))
 
 
-def scheduled_beijing_occurrences(rows, now):
-    """Only today's already-ended Saturday meetings are eligible for scheduled drafts.
-
-    Do not fall back to an older week's transcript while this week's meeting is
-    still running or while its recording is being processed. Manual runs and
-    explicit historical backfills keep their existing behavior.
-    """
-    m.need(now.tzinfo is not None, '排程时间必须带时区')
-    local = now.astimezone(ZoneInfo('Asia/Shanghai'))
-    if local.weekday() != 5:  # Saturday; a very delayed run must not backfill.
-        return []
-    return [row for row in rows
-            if timestamp(row['start_time']).astimezone(ZoneInfo('Asia/Shanghai')).date() == local.date()]
-
-
 def local_window(day, zone='Asia/Shanghai'):
     """UTC bounds of one calendar date in the explicitly selected time zone."""
     m.need(zone in LOCAL_ZONES, '不支持的会议时区')
@@ -457,11 +442,7 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
             rows = [items[index][1]]
         else:
             rows = discover(client_factory(), config, moment)
-        candidates = (scheduled_beijing_occurrences(rows, moment)
-                      if command == 'prepare' and not (date or pick)
-                      and os.environ.get('GITHUB_EVENT_NAME') == 'schedule'
-                      else rows)
-        plan = plan_latest(candidates, archive, config)
+        plan = plan_latest(rows, archive, config)
         if not plan['skip']:
             metadata = plan['metadata']
             if date or pick:
