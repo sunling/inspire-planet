@@ -18,6 +18,12 @@
 
 转写未生成时稍后手动重试；凭据失效、权限不足或实例不明确时由维护者核对，不猜期数、不跨期取文件。
 
+### 已归档会议也能做只读实测
+
+打开 [Content CI](https://github.com/sunling/inspire-planet/actions/workflows/content-ci.yml)，点 **Run workflow**，在 `check_date` 填北京时间会议日期（EP42 为 `2026-10-24`）。测试分支尚未合入时选择 `codex/manual-transcript-check`，合入后选择 `main`。
+
+`ep40-readonly` 是沿用的内部 job ID，实际读取日期以 `check_date` 为准。该步骤强制重新读取远程完整转写，不因已归档而跳过；随后与该日期唯一归档比较发言人、时间及忽略空白后的正文，日志仅显示段落数量与是否一致。内容不同会提示另行核对，不覆盖归档；读取失败则测试失败。全文只存 runner 临时缓存并始终清理；没有发布步骤，权限仅为读取。
+
 ## 3. 历史会议转写：查找或按日期补录
 
 打开 [历史会议转写 · 查找与补录](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)，点 **Run workflow**，在 **Use workflow from** 选择 `main`。
