@@ -384,7 +384,24 @@ def fetch_occurrence(client, meeting):
     need(len({file_id for _, file_id in native}) == len(native),
          '本场录制文件 ID 重复；需人工核对')
     need(len(native) <= 8, '本场录制文件超过读取上限；拒绝遗漏并需人工核对')
-    candidates = sorted(native)
+    # Transcript IDs in occurrence metadata can be distinct from native media
+    # IDs. Prefer the explicitly typed transcript artifacts of this occurrence;
+    # do not send audio/video file IDs to the transcript endpoint unnecessarily.
+    typed = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records
+             if isinstance(r.get('type'), str) and '转写' in r['type']]
+    if typed:
+        ids = [file_id for _, file_id in typed]
+        need(all(isinstance(file_id, str) and bool(file_id) for file_id in ids)
+             and len(set(ids)) == len(ids) and len(ids) <= 8,
+             '本场转写文件身份缺失、重复或超过上限')
+        other_ids = {file.get('record_file_id') for group in groups
+                     if (group.get('meeting_id'), group.get('sub_meeting_id')) !=
+                        (meeting['meeting_id'], sub)
+                     for file in group.get('record_files', [])}
+        need(not (set(ids) & other_ids), '转写文件归属与其他会议冲突；停止')
+        candidates = typed
+    else:
+        candidates = sorted(native)
 
     transcripts = []
     for index, (_, file_id) in enumerate(candidates, 1):

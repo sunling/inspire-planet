@@ -171,6 +171,18 @@ class TranscriptTests(unittest.TestCase):
         self.assertIn('完整转写', text)
         self.assertEqual({call.args[2] for call in reader.call_args_list}, {'shared', 'audio', 'new'})
 
+    def test_explicit_transcript_artifact_can_differ_from_native_media_id(self):
+        from unittest.mock import patch
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'this-week',
+                   'records': [{'record_file_id': 'transcript', 'meeting_record_id': 'text', 'type': '转写'}]}
+        class Client:
+            def call(self, name, args):
+                return {'record_meetings': [{'meeting_id': 'series', 'sub_meeting_id': 'this-week',
+                    'meeting_record_id': 'media', 'record_files': [{'record_file_id': 'video'}]}], 'has_more': False}
+        with patch.object(m, 'read_file_transcript', return_value='合成甲(00:00):\n全文。\n') as read:
+            m.fetch_occurrence(Client(), meeting)
+        read.assert_called_once_with(unittest.mock.ANY, 'series', 'transcript')
+
     def test_empty_meeting_records_falls_back_to_same_occurrence_native_files(self):
         meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
                    'start_time': '2026-10-10T00:00:00Z', 'records': []}
