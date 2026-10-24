@@ -5,7 +5,7 @@ from datetime import date
 import json
 from pathlib import Path
 import re
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 from common import number, private_path, probe, run_ffmpeg, write_json
 
 INK = '#F6F2E9'
@@ -71,6 +71,8 @@ def validate(path, slug=None):
     require(isinstance(website, str) and re.fullmatch(r'[a-z0-9.-]+\.[a-z]{2,}', website),
             'brand.website 只填写已确认的简短域名')
     style = plan.get('style', {})
+    margin = style.get('footer_bottom_margin', 108)
+    require(type(margin) is int and 60 <= margin <= 333, 'footer_bottom_margin 须为 60–333 整数像素')
     title_font = choose_font(base, style.get('font'))
     light = Path('/System/Library/Fonts/STHeiti Light.ttc')
     regular_font = choose_font(base, style.get('regular_font') or
@@ -129,6 +131,25 @@ def validate(path, slug=None):
             protected.add(still)
             with Image.open(still) as im:
                 im.verify()
+        avatar = clip.get('avatar')
+        if avatar is not None:
+            require(isinstance(avatar, dict) and avatar.get('kind') == 'static-source-portrait',
+                    'avatar 须标明静态来源人像 kind=static-source-portrait')
+            require(media['width'] and not clip.get('still'), 'avatar 仅用于视频共享页组合')
+            image = private_path(local(base, avatar['path']))
+            require(image.is_file(), '静态头像文件不存在')
+            protected.add(image)
+            with Image.open(image) as im:
+                im.verify()
+            require(number(avatar.get('source_time')) and
+                    0 <= avatar['source_time'] < media['seconds'], '记录头像在原回放中的实际取帧秒数')
+            avatar_box = avatar['box']
+            require(isinstance(avatar_box, list) and len(avatar_box) == 4 and
+                    all(type(v) is int for v in avatar_box), 'avatar.box 须为四个整数')
+            ax, ay, aw, ah = avatar_box
+            require(aw > 0 and ah > 0 and aw % 2 == 0 and ah % 2 == 0 and
+                    x <= ax < ax+aw <= x+w and y <= ay < ay+ah <= y+h,
+                    '头像必须放在 video_box 内，不侵占字幕与署名')
         cues = clip['captions']
         require(isinstance(cues, list) and cues, '字幕不能为空；先对齐实际原声')
         previous_end = -1.0
@@ -172,11 +193,17 @@ def make_template(plan, clip, fonts, work):
     draw.text((60, 1198), clip['speaker'], font=font(38, True), fill=INK)
     draw.text((1018, 1221), '会议原声', font=font(25), fill=MUTED, anchor='rs')
     draw.line((60, 1270, 1020, 1270), fill=RULE, width=2)
-    # Preserve the original footer arrangement above the platform description.
+    # Keep the footer order; place its visible bottom symmetrically by default.
     draw.line((60, 1478, 1020, 1478), fill=RULE, width=2)
     draw.text((60, 1500), '真实的生活 · 具体的分享', font=font(27), fill=MUTED)
     draw.text((60, 1550), plan['brand']['website'], font=font(34, True), fill=INK)
     draw.text((1018, 1587), event['date'].replace('-', '.'), font=font(23), fill=MUTED, anchor='rs')
+    footer = im.crop((0, 1478, 1080, 1920))
+    bounds = ImageChops.difference(footer, Image.new('RGB', footer.size, BG)).getbbox()
+    margin = plan.get('style', {}).get('footer_bottom_margin', 108)
+    shift = 1920 - margin - (1478 + bounds[3])
+    im.paste(Image.new('RGB', footer.size, BG), (0, 1478))
+    im.paste(footer.crop((0, 0, 1080, bounds[3])), (0, 1478 + shift))
     path = work / f'{clip["slug"]}-template.png'
     im.save(path)
     return path
@@ -250,7 +277,16 @@ def render(plan, clip, source, media, fonts, base, export_cover=False):
             filters.append(f'[{n}:v][still]overlay={x}:{y}[layout]')
         else:
             filters.append(f'[{n}:v]null[layout]')
-    filters.append(f"[layout]ass=filename='{filter_path(ass)}':fontsdir='{filter_path(fonts[0].parent)}'[outv]")
+    layout = 'layout'
+    if clip.get('avatar'):
+        avatar = clip['avatar']
+        ax, ay, aw, ah = avatar['box']
+        args += ['-loop', '1', '-framerate', '25', '-i', str(local(base, avatar['path']))]
+        filters.append(f'[{n+1}:v]scale={aw}:{ah}:force_original_aspect_ratio=decrease,'
+                       f'pad={aw}:{ah}:(ow-iw)/2:(oh-ih)/2:color=0x25382F,setsar=1[portrait]')
+        filters.append(f'[layout][portrait]overlay={ax}:{ay}:shortest=1[withportrait]')
+        layout = 'withportrait'
+    filters.append(f"[{layout}]ass=filename='{filter_path(ass)}':fontsdir='{filter_path(fonts[0].parent)}'[outv]")
     filters.append('[voice]loudnorm=I=-16:TP=-1.5:LRA=11[outa]')
     duration = sum(b-a for a, b in spans)
     target = base / f'{slug}-draft.mp4'
