@@ -40,7 +40,7 @@ listing = client.rpc('tools/list', {})
 for tool in listing.get('tools', []):
     if tool.get('name') in ('get_transcripts_details', 'get_transcripts_paragraphs', 'get_record_addresses'):
         schema = tool['inputSchema']
-        print('tool-schema:', json.dumps({'name': tool['name'], 'required': schema.get('required', []), 'properties': {key: {k:v for k,v in val.items() if k in ('type','minimum','maximum','default')} for key,val in schema.get('properties', {}).items()}), flush=True)
+        print('tool-schema:', json.dumps({'name': tool['name'], 'required': schema.get('required', []), 'properties': {key: {k:v for k,v in val.items() if k in ('type','minimum','maximum','default')} for key,val in schema.get('properties', {}).items()}}), flush=True)
 config = json.loads(Path('scripts/meeting-project.json').read_text())
 meeting = l.historical_local(client, config, os.environ['CONTENT_DATE'])
 records = meeting.get('records', [])
