@@ -269,7 +269,16 @@ class MCP:
             need(data.get('code', 0) == 0, 'MCP 业务失败（响应已隐藏）')
             if 'status_code' in data or 'body' in data:
                 status = data.get('status_code')
-                need(type(status) is int and status == 200, 'MCP 上游 HTTP 失败（响应已隐藏）')
+                if type(status) is not int or status != 200:
+                    code = None
+                    try:
+                        body = json.loads(data.get('body', ''))
+                        if isinstance(body, dict) and type(body.get('code')) is int:
+                            code = body['code']
+                    except (ValueError, TypeError):
+                        pass
+                    safe_status = status if type(status) is int else 'invalid'
+                    raise SafeError(f'MCP 上游 HTTP 失败：tool={name}，status={safe_status}，code={code}（响应已隐藏）')
                 need(isinstance(data.get('body'), str), 'MCP HTTP body 结构不支持')
                 try:
                     data = json.loads(data['body'])
@@ -354,9 +363,8 @@ def read_file_transcript(client, meeting_id, record_file_id):
 
 
 def fetch_occurrence(client, meeting):
-    # Metadata is occurrence-specific, but records_total_count does not equal
-    # the occurrence's file count in the live response. Verify coverage against
-    # native record_meetings list, scoped by BOTH meeting and sub-meeting IDs.
+    # The ended-meetings records are a stale/incomplete summary. Use the fully
+    # paginated recording endpoint as authority, scoped by BOTH occurrence IDs.
     records = meeting.get('records')
     sub = meeting.get('sub_meeting_id')
     need(isinstance(records, list) and isinstance(sub, str) and bool(sub), '本场录制列表或子会议身份缺失')
@@ -370,44 +378,34 @@ def fetch_occurrence(client, meeting):
         for file in files:
             need(isinstance(file.get('record_file_id'), str) and bool(file['record_file_id']), '录制文件缺少 ID')
             native.append((group['meeting_record_id'], file['record_file_id']))
-    metadata = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records]
-    native_set, metadata_set = set(native), set(metadata)
-    # Count-only diagnostics: do not reveal meeting names, record IDs, or transcript text.
-    if not native or len(native_set) != len(native) or len(metadata_set) != len(metadata) or (metadata and native_set != metadata_set):
-        causes = []
-        if not native:
-            causes.append('native-empty')
-        if len(native_set) != len(native):
-            causes.append('native-duplicate')
-        if len(metadata_set) != len(metadata):
-            causes.append('metadata-duplicate')
-        if metadata_set - native_set:
-            causes.append('metadata-not-in-native')
-        if native_set - metadata_set:
-            causes.append('native-not-in-metadata')
-        raise SafeError('本场录制列表校验失败（'
-                        + ','.join(causes)
-                        + f'；会议列表={len(metadata)}，录制列表={len(native)}'
-                        + f'，仅会议列表={len(metadata_set - native_set)}'
-                        + f'，仅录制列表={len(native_set - metadata_set)}'
-                        + '）；已安全停止，未跨期选取或截断')
-    # Both meeting-list shapes use the same selection rule. The full native
-    # list is scoped to this exact occurrence above; read every transcript
-    # candidate so recording duration or API ordering cannot choose the winner.
+    need(bool(native), '本场没有可验证的原生录制文件；停止且不跨期查找')
+    # read_file_transcript addresses files by file ID, so IDs must be unique
+    # even across recording groups within this occurrence.
+    need(len({file_id for _, file_id in native}) == len(native),
+         '本场录制文件 ID 重复；需人工核对')
     need(len(native) <= 8, '本场录制文件超过读取上限；拒绝遗漏并需人工核对')
-    if metadata:
-        candidates = [(r.get('meeting_record_id'), r.get('record_file_id'))
-                      for r in records
-                      if isinstance(r.get('type'), str) and '转写' in r['type']
-                      and isinstance(r.get('record_file_id'), str) and r['record_file_id']]
-        need(bool(candidates), '本场录制存在，但没有可读取的文字转写文件')
+    # Transcript IDs in occurrence metadata can be distinct from native media
+    # IDs. Prefer the explicitly typed transcript artifacts of this occurrence;
+    # do not send audio/video file IDs to the transcript endpoint unnecessarily.
+    typed = [(r.get('meeting_record_id'), r.get('record_file_id')) for r in records
+             if isinstance(r.get('type'), str) and '转写' in r['type']]
+    if typed:
+        ids = [file_id for _, file_id in typed]
+        need(all(isinstance(file_id, str) and bool(file_id) for file_id in ids)
+             and len(set(ids)) == len(ids) and len(ids) <= 8,
+             '本场转写文件身份缺失、重复或超过上限')
+        other_ids = {file.get('record_file_id') for group in groups
+                     if (group.get('meeting_id'), group.get('sub_meeting_id')) !=
+                        (meeting['meeting_id'], sub)
+                     for file in group.get('record_files', [])}
+        need(not (set(ids) & other_ids), '转写文件归属与其他会议冲突；停止')
+        candidates = typed
     else:
-        # The ended-meetings API may return records=[] even when the full
-        # recording endpoint has completed files.
         candidates = sorted(native)
 
     transcripts = []
-    for _, file_id in candidates:
+    for index, (_, file_id) in enumerate(candidates, 1):
+        print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。')
         text = read_file_transcript(client, meeting['meeting_id'], file_id)
         if text:
             transcripts.append(text)

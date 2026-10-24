@@ -146,27 +146,42 @@ class TranscriptTests(unittest.TestCase):
         for value in (-1, True, 4.5):
             with self.assertRaises(m.SafeError): m.norm_time(value)
 
-    def test_record_coverage_error_is_count_only_and_still_fail_closed(self):
-        record = {'record_file_id': 'private-file-A', 'meeting_record_id': 'private-group-A',
-                  'type': '转写', 'duration': '01:00'}
-        meeting = {'meeting_id': 'private-meeting', 'sub_meeting_id': 'private-sub',
-                   'start_time': '2026-10-10T00:00:00Z', 'records': [record]}
+    def test_stale_meeting_summary_uses_only_verified_native_occurrence(self):
+        from unittest.mock import patch
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'this-week',
+                   'records': [{'record_file_id': 'stale', 'meeting_record_id': 'old'},
+                               {'record_file_id': 'shared', 'meeting_record_id': 'group'}]}
         class Client:
             def call(self, name, args):
-                if name == 'get_records_list':
-                    return {'record_meetings': [{'meeting_id': 'private-meeting',
-                             'sub_meeting_id': 'private-sub', 'meeting_record_id': 'private-group-B',
-                             'record_files': [{'record_file_id': 'private-file-B'}]}], 'has_more': False}
-                self.fail('Must never fetch transcript after coverage mismatch')
-        with self.assertRaises(m.SafeError) as caught:
+                self_test.assertEqual(name, 'get_records_list')
+                return {'record_meetings': [
+                    {'meeting_id': 'series', 'sub_meeting_id': 'this-week',
+                     'meeting_record_id': 'group', 'record_files': [
+                         {'record_file_id': f} for f in ('shared', 'audio', 'new')]},
+                    {'meeting_id': 'series', 'sub_meeting_id': 'last-week',
+                     'meeting_record_id': 'other', 'record_files': [{'record_file_id': 'stale'}]}
+                ], 'has_more': False}
+        self_test = self
+        def read(client, meeting_id, file_id):
+            self.assertEqual(meeting_id, 'series')
+            return {'shared': '合成甲(00:00):\n短。\n', 'audio': None,
+                    'new': '合成甲(00:00):\n同一场新生成的完整转写。\n'}[file_id]
+        with patch.object(m, 'read_file_transcript', side_effect=read) as reader:
+            text = m.fetch_occurrence(Client(), meeting)
+        self.assertIn('完整转写', text)
+        self.assertEqual({call.args[2] for call in reader.call_args_list}, {'shared', 'audio', 'new'})
+
+    def test_explicit_transcript_artifact_can_differ_from_native_media_id(self):
+        from unittest.mock import patch
+        meeting = {'meeting_id': 'series', 'sub_meeting_id': 'this-week',
+                   'records': [{'record_file_id': 'transcript', 'meeting_record_id': 'text', 'type': '转写'}]}
+        class Client:
+            def call(self, name, args):
+                return {'record_meetings': [{'meeting_id': 'series', 'sub_meeting_id': 'this-week',
+                    'meeting_record_id': 'media', 'record_files': [{'record_file_id': 'video'}]}], 'has_more': False}
+        with patch.object(m, 'read_file_transcript', return_value='合成甲(00:00):\n全文。\n') as read:
             m.fetch_occurrence(Client(), meeting)
-        message = str(caught.exception)
-        self.assertIn('metadata-not-in-native', message)
-        self.assertIn('native-not-in-metadata', message)
-        self.assertIn('会议列表=1', message)
-        for private in ('private-meeting', 'private-file-A', 'private-file-B',
-                        'private-group-A', 'private-group-B'):
-            self.assertNotIn(private, message)
+        read.assert_called_once_with(unittest.mock.ANY, 'series', 'transcript')
 
     def test_empty_meeting_records_falls_back_to_same_occurrence_native_files(self):
         meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
@@ -599,7 +614,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('run: python3 scripts/latest_transcript.py readonly', latest_probe)
         self.assertNotIn('contents: write', latest_probe)
         self.assertNotIn('pull-requests: write', latest_probe)
-        self.assertIn('CONTENT_DATE: \'2026-10-10\'', probe)
+        self.assertIn("CONTENT_DATE: ${{ inputs.check_date || '2026-10-10' }}", probe)
         self.assertNotIn('CONTENT_EPISODE', probe)
         self.assertIn('run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"', probe)
         self.assertIn('run: test -z "$(git status --porcelain)"', probe)
@@ -607,7 +622,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('rm -f .git/meeting-content-fetch-check.txt', probe)
         self.assertNotIn('CONTENT_PUBLISH_ALLOWED', probe)
         self.assertIn('check-content.py', ci)
-        self.assertIn("vars.CONTENT_AUTOMATION_ENABLED == 'true'", flow)
+        self.assertNotIn("CONTENT_AUTOMATION_ENABLED", flow)
         self.assertIn('name: Transcript download', flow)
         self.assertNotIn('inputs:', flow)
         self.assertNotIn('CONTENT_DATE', flow)
@@ -629,7 +644,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn('CONTENT_LLM_', flow)
         self.assertNotIn('CONTENT_SOURCE', flow)
         self.assertNotIn('generate', (root / 'scripts/meeting_content.py').read_text())
-        self.assertEqual(flow.count('cron:'), 2)
+        self.assertNotIn('cron:', flow)
         self.assertIn('github.event.repository.default_branch', flow)
         self.assertNotIn('pull_request', flow.split('permissions:')[0])
         self.assertIn('persist-credentials: false', flow)
@@ -643,12 +658,12 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn('pull-requests: write', flow)
         self.assertIn('CONTENT_MAIN_WRITE_ALLOWED', flow)
 
-    def test_weekly_schedule_has_three_attempts_and_late_fallback(self):
+    def test_download_is_manual_only(self):
         root = Path(__file__).resolve().parents[1]
         flow = (root / '.github/workflows/meeting-content.yml').read_text()
-        crons = re.findall(r"cron:\s*'([^']+)'", flow)
-        # 北京时间周六 10:07/10:17/10:27 与 11:07 兜底，共四次。
-        self.assertEqual(crons, ['7,17,27 2 * * 6', '7 3 * * 6'])
+        self.assertIn('workflow_dispatch:', flow)
+        self.assertNotIn('schedule:', flow)
+        self.assertIn("github.event_name == 'workflow_dispatch'", flow)
 
 
 class EndToEndTests(unittest.TestCase):
