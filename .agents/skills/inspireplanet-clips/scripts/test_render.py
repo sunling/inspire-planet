@@ -9,7 +9,9 @@ import tempfile
 import unittest
 
 from common import private_path, repository, run_ffmpeg
-from render import mapped_captions, validate
+from render import mapped_captions, validate, make_template, BG
+from PIL import Image, ImageChops
+import av
 
 
 class ClipRendering(unittest.TestCase):
@@ -79,6 +81,46 @@ class ClipRendering(unittest.TestCase):
                                  str(self.save(plan))], capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((self.base / 'not-approved-draft.mp4').exists())
+
+    def test_footer_visible_margin_with_actual_font(self):
+        for margin in [108, 333]:
+            plan = copy.deepcopy(self.plan)
+            plan['style'] = {'footer_bottom_margin': margin}
+            checked, clips, _, _, fonts = validate(self.save(plan))
+            work = self.base / 'work'
+            work.mkdir(exist_ok=True)
+            im = Image.open(make_template(checked, clips[0], fonts, work)).convert('RGB')
+            bounds = ImageChops.difference(im, Image.new('RGB', im.size, BG)).getbbox()
+            self.assertEqual(bounds[1], 108)
+            self.assertEqual(1920 - bounds[3], margin)
+
+    def test_static_portrait_is_visible_and_source_protected(self):
+        portrait = self.base / 'portrait.png'
+        Image.new('RGB', (200, 100), 'red').save(portrait)
+        original = hashlib.sha256(portrait.read_bytes()).hexdigest()
+        plan = copy.deepcopy(self.plan)
+        plan['clips'][0]['avatar'] = {'kind': 'static-source-portrait',
+            'path': portrait.name, 'source_time': 0.5, 'box': [756, 946, 244, 120]}
+        script = Path(__file__).with_name('render.py')
+        result = subprocess.run([sys.executable, str(script), str(self.save(plan))],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with av.open(str(self.base / 'fixture-draft.mp4')) as container:
+            im = next(container.decode(video=0)).to_image()
+            red, green, blue = im.getpixel((870, 1000))
+            self.assertGreater(red, 200)
+            self.assertLess(green, 50)
+            self.assertLess(blue, 50)
+        self.assertEqual(hashlib.sha256(portrait.read_bytes()).hexdigest(), original)
+        plan['clips'][0]['avatar']['box'] = [756, 1390, 244, 120]
+        with self.assertRaises(ValueError):
+            validate(self.save(plan))
+        plan['clips'][0]['avatar']['box'] = [756, 946, 244, 120]
+        protected = self.base / 'fixture-preview.jpg'
+        Image.new('RGB', (200, 100), 'red').save(protected)
+        plan['clips'][0]['avatar']['path'] = protected.name
+        with self.assertRaises(ValueError):
+            validate(self.save(plan))
 
     def test_video_and_audio_only_export_preserve_source(self):
         original = hashlib.sha256(self.source.read_bytes()).hexdigest()
