@@ -34,30 +34,7 @@ jobs:
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
           CONTENT_DATE: ${{ inputs.check_date || '2026-10-10' }}
-        run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
-      - name: Compare fetched transcript with archived copy
-        env:
-          CONTENT_DATE: ${{ inputs.check_date || '2026-10-10' }}
-        run: |
-          python3 - <<'PYTHON'
-          import os, sys
-          from pathlib import Path
-          sys.path.insert(0, 'scripts')
-          import meeting_content as m
-          day = os.environ['CONTENT_DATE']
-          files = list(Path('events').glob(f"{day[:4]}/{day.replace('-', '')}-ep*/transcript.txt"))
-          if len(files) != 1:
-              print('完整下载已验证；本地无唯一日期归档，跳过比对。')
-          else:
-              remote = m.parse_transcript(Path('.git/meeting-content-fetch-check.txt').read_text())
-              local = m.parse_transcript(files[0].read_text())
-              def canonical(blocks):
-                  return [(b['speaker'].strip(), b['time'], ''.join(b['text'].split())) for b in blocks]
-              same = canonical(remote) == canonical(local)
-              print(f'远程段落={len(remote)}；归档段落={len(local)}；忽略空白后内容一致={same}')
-              if not same:
-                  print('下载成功，但与归档内容存在差异；需另行核对，未覆盖归档。')
-          PYTHON
+        run: python3 scripts/diagnose_transcript.py
       - name: Verify public files unchanged
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only transcript cache
