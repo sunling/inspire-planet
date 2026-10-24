@@ -83,16 +83,17 @@ class ClipRendering(unittest.TestCase):
         self.assertFalse((self.base / 'not-approved-draft.mp4').exists())
 
     def test_footer_visible_margin_with_actual_font(self):
-        for margin in [108, 333]:
+        for margin in [None, 108, 300, 333]:
             plan = copy.deepcopy(self.plan)
-            plan['style'] = {'footer_bottom_margin': margin}
+            if margin is not None:
+                plan['style'] = {'footer_bottom_margin': margin}
             checked, clips, _, _, fonts = validate(self.save(plan))
             work = self.base / 'work'
             work.mkdir(exist_ok=True)
             im = Image.open(make_template(checked, clips[0], fonts, work)).convert('RGB')
             bounds = ImageChops.difference(im, Image.new('RGB', im.size, BG)).getbbox()
             self.assertEqual(bounds[1], 108)
-            self.assertEqual(1920 - bounds[3], margin)
+            self.assertEqual(1920 - bounds[3], 300 if margin is None else margin)
 
     def test_static_portrait_is_visible_and_source_protected(self):
         portrait = self.base / 'portrait.png'
