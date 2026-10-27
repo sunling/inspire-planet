@@ -5,6 +5,7 @@ import json
 import re
 from datetime import datetime
 from urllib.parse import unquote
+from validate_publication import validate_publication
 
 ROOT = Path(__file__).resolve().parents[1]
 errors = []
@@ -92,6 +93,13 @@ for p in (ROOT / 'events').rglob('summary.json'):
             require(string_list(data['highlights']), 'highlights must be an array of nonempty strings')
     except ValueError as exc:
         errors.append(f'{p.relative_to(ROOT)}: invalid summary data {exc}')
+for p in (ROOT / 'events').rglob('episode-publication.json'):
+    try:
+        cards_path = p.parent / 'quote-cards.json'
+        cards = json.loads(cards_path.read_text()) if cards_path.is_file() else []
+        validate_publication(json.loads(p.read_text()), len(cards))
+    except (ValueError, TypeError) as exc:
+        errors.append(f'{p.relative_to(ROOT)}: invalid publication data {exc}')
 episodes = [p for p in (ROOT / 'events').glob('*/*-ep*') if p.is_dir()]
 for d in episodes:
     date_prefix = d.name.split('-')[0]
