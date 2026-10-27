@@ -35,9 +35,15 @@ def validate_publication(value, card_count):
     if 'newsletter' in value:
         newsletter = value['newsletter']
         require(isinstance(newsletter, dict), 'newsletter must be an object')
-        require(set(newsletter) <= {'intro', 'featuredQuoteIndex'}, 'unknown newsletter fields')
+        require(set(newsletter) <= {'intro', 'featuredQuoteIndex', 'featuredQuoteIndices'}, 'unknown newsletter fields')
         if 'intro' in newsletter:
             require(text(newsletter['intro']) and len(newsletter['intro']) <= 1000, 'intro must be nonempty and at most 1000 characters')
         if 'featuredQuoteIndex' in newsletter:
             index = newsletter['featuredQuoteIndex']
             require(type(index) is int and 0 <= index < card_count, 'featuredQuoteIndex must refer to an existing quote card')
+
+        if 'featuredQuoteIndices' in newsletter:
+            indices = newsletter['featuredQuoteIndices']
+            require(isinstance(indices, list) and 1 <= len(indices) <= 3, 'select 1-3 quote indices')
+            require(all(type(index) is int and 0 <= index < card_count for index in indices), 'featuredQuoteIndices must refer to existing quote cards')
+            require(len(set(indices)) == len(indices) and 'featuredQuoteIndex' not in newsletter, 'indices must be unique; do not combine old and new fields')

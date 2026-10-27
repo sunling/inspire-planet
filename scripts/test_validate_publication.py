@@ -7,6 +7,12 @@ class PublicationContractTests(unittest.TestCase):
         validate_publication({}, 0)
         validate_publication({'newsletter': {'featuredQuoteIndex': 0}}, 1)
 
+    def test_three_original_quotes(self):
+        validate_publication({'newsletter': {'featuredQuoteIndices': [0, 2, 3]}}, 4)
+        for indices in [[], [0, 0], [0, 1, 2, 3], [-1], [4], [True]]:
+            with self.subTest(indices=indices), self.assertRaises(ValueError):
+                validate_publication({'newsletter': {'featuredQuoteIndices': indices}}, 4)
+
     def test_real_episode_url_shape(self):
         validate_publication({'podcast': {'title': '标题', 'url': 'https://www.xiaoyuzhoufm.com/episode/' + 'a' * 24, 'durationSeconds': 45, 'publishedAt': '2026-10-27'}}, 0)
 
