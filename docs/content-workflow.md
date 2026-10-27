@@ -74,14 +74,14 @@ Show notes 用本期详情页作为主要内容入口，另附用户已有的固
 | --- | --- | --- |
 | `summary.json` | 围绕具体经历、追问和不同处境整理可简读、可展开的单期回顾 | [纪要 skill](../.agents/skills/inspireplanet-summary/SKILL.md) |
 | `quote-cards.json` | 保留发言归属和可追溯语境，供网站金句卡片使用 | [金句 skill](../.agents/skills/inspireplanet-cards/SKILL.md) |
-| `episode-publication.json` | 已发布播客信息、从转写摘取的 1–2 个真实问题（`newsletter.intro`）与最多三条精选原话索引；详情页与邮件共用 | 播客回填交给播客 skill，问题导语交给纪要 skill |
+| `episode-publication.json` | 已发布播客信息、先概括精华、再带出 1–2 个真实问题的邮件导语（`newsletter.intro`）与最多三条精选原话索引；详情页与邮件共用 | 播客回填交给播客 skill，问题导语交给纪要 skill |
 | `group-message.md` | 从本期选一个能独立读懂的交流片段，配一个已核实回顾链接，便于会后发群 | [回顾与群消息 skill](../.agents/skills/inspireplanet-summary/SKILL.md) |
 
 > 使用 inspireplanet，基于本期转写按需整理文章、纪要或金句，核对事实与署名后更新已有稿件和导航。
 
 回顾与群消息默认一起制作，用户只要求其中一项时只交该项。群消息只保留一个主要入口，不把回顾、金句、播客和文章链接一次全部发群。没有已核实的本期回顾链接时先交无链接正文，在交付说明中列待补项；音频是否已发布、回顾页是否能收听均需核实。只准备消息，不自动发群。
 
-字段与网站同步遵循 [内容数据约定](../events/data-contract.md)。网站从本仓库 `main` 读取内容；未经确认的 JSON 不合入该分支。`podcast.md` 只作文字归档；网站配套功能部署后，从 `episode-publication.json` 自动显示播客入口并填入邮件预览。预览里的链接输入仅用于补漏，不自动回写。问题导语从当期真实讨论中摘取，允许简短转述，不编营销问句；现有网站纪要导语不用改成邮件文案。
+字段与网站同步遵循 [内容数据约定](../events/data-contract.md)。网站从本仓库 `main` 读取内容；未经确认的 JSON 不合入该分支。`podcast.md` 只作文字归档；网站配套功能部署后，从 `episode-publication.json` 自动显示播客入口并填入邮件预览。预览里的链接输入仅用于补漏，不自动回写。邮件导语先简短概括当期交流的精华，再从真实讨论中摘取 1–2 个问题，允许简短转述，不编营销问句；现有网站纪要导语不用改成邮件文案。
 
 ## 6. 存放、审核与发布回填
 
