@@ -1,4 +1,4 @@
 interface:
   display_name: "启发星球单期回顾与群消息"
   short_description: "从真实交流生成有具体场景的单期回顾和一条群消息"
-  default_prompt: "Use $inspireplanet-summary to create or revise this episode's summary.json and one focused group-message.md from the transcript, preserving concrete scenes, speaker attribution, and actual replies."
+  default_prompt: "Use $inspireplanet-summary to create or revise this episode's summary.json and one focused group-message.md from the transcript, preserving concrete scenes, speaker attribution, and actual replies. For a full recap, extract one or two questions actually discussed into episode-publication.json newsletter.intro, preserving existing podcast metadata and quote selections."
