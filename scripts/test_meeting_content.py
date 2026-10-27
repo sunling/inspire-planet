@@ -713,10 +713,13 @@ class EndToEndTests(unittest.TestCase):
             with patch.dict(os.environ, {'CONTENT_DATE': '2026-10-17', 'CONTENT_EPISODE': '41'}, clear=True):
                 m.main(['write'], root=root)
             (root / 'scripts').mkdir()
-            shutil.copy(Path(__file__).with_name('check-content.py'), root / 'scripts/check-content.py')
-            checked = subprocess.run(['python3', 'scripts/check-content.py'], cwd=root, capture_output=True, text=True, check=True)
+            for filename in ('check-content.py', 'validate_publication.py'):
+                shutil.copy(Path(__file__).with_name(filename), root / 'scripts' / filename)
+            checked = subprocess.run(['python3', 'scripts/check-content.py'], cwd=root, capture_output=True, text=True)
+            self.assertEqual(checked.returncode, 0, checked.stderr)
             self.assertIn('Content check passed: 1 episodes', checked.stdout)
-            (root / 'scripts/check-content.py').unlink(); (root / 'scripts').rmdir()
+            # The validator imports a helper, which may also create __pycache__.
+            shutil.rmtree(root / 'scripts')
             result = m.publish(root, plan, run)
             self.assertTrue(result['isDraft'])
             self.assertEqual(len(created), 1)
