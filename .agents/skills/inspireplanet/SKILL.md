@@ -1,6 +1,6 @@
 ---
 name: inspireplanet
-description: 启发星球内容总控：按需从会议转写整理公众号文章、网站纪要与金句，维护本期导航；有本地回放时按需制作原声短视频或一期一集的轻剪播客。
+description: 启发星球内容总控：按需从会议转写整理公众号文章、网站回顾、金句与会后群消息，维护本期导航；有本地回放时按需制作原声短视频或一期一集的轻剪播客。
 ---
 
 # Inspire Planet
@@ -15,7 +15,8 @@ description: 启发星球内容总控：按需从会议转写整理公众号文�
 events/{year}/{YYYYMMDD}-epXX/
   transcript.txt     原始会议转写
   gzh-{slug}.md      公众号文章，文末维护标题和摘要
-  summary.json       网站单期纪要
+  summary.json       网站单期回顾
+  group-message.md   一个现场片段与一个本期链接的群消息
   quote-cards.json   金句与周刊数据
   podcast.md        获准公开的播客最终标题、简介、成品时间轴与发布链接（按需）
   README.md          导航、实际可用的命令和发布备注
@@ -27,7 +28,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 转写下载／历史补录 → [会议转写说明](../../../docs/meeting-content.md)。已有转写不重复下载；下载会提交公开 main，须先确认该场转写的公开授权，整理请求不等于下载公开授权。
 - 公众号文章、标题、摘要 → `inspireplanet-gzh`。知乎计划开通，开通后再明确适配方式，不默认另生成知乎稿。
-- 网站纪要 → `inspireplanet-summary`。
+- 网站回顾与会后群消息 → `inspireplanet-summary`。默认同时生成 `summary.json` 与 `group-message.md`；用户只要其中一项时只做该项。群消息只选一个片段、一个主要入口，不同时堆放多个渠道链接。
 - 金句 JSON → `inspireplanet-cards`。网站金句展示与导出继续使用 JSON 数据。
 - 小红书／视频号原声短视频及发布文案 → `inspireplanet-clips`。缺少回放时先请求本地素材路径；有素材时先推荐选段，确认后初剪。
 - 整期播客、播客音频轻剪及话题时间轴 → `inspireplanet-podcast`。一期一集，默认保留现场开场与道别，不额外添加配音或音乐；本地交付后再审听与确认公开范围，暂时面向小宇宙；获准公开的最终发布文字归档为 `podcast.md`。

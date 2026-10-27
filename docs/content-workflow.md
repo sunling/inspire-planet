@@ -60,16 +60,19 @@
 
 本地工具、剪辑单格式与检查命令见 skill 的 [工具说明](../.agents/skills/inspireplanet-podcast/references/tools.md)。工具产出的是本地文件，不自动上传小宇宙；账号、节目设置与平台当前上传要求在实际发布时核对，不在此固化未经验证的限制。
 
-## 5. 网站：纪要与金句
+## 5. 网站回顾、金句与会后群消息
 
 网站内容独立按需制作，不要求跟文章、短视频或播客同时完成。
 
 | 产物 | 输入与用途 | 制作入口 |
 | --- | --- | --- |
-| `summary.json` | 从转写整理整期分享脉络、现场讨论，供网站单期页展示 | [纪要 skill](../.agents/skills/inspireplanet-summary/SKILL.md) |
-| `quote-cards.json` | 保留发言归属和可追溯语境，供网站金句及周刊使用 | [金句 skill](../.agents/skills/inspireplanet-cards/SKILL.md) |
+| `summary.json` | 围绕具体经历、追问和不同处境整理可简读、可展开的单期回顾 | [纪要 skill](../.agents/skills/inspireplanet-summary/SKILL.md) |
+| `quote-cards.json` | 保留发言归属和可追溯语境，供网站金句卡片使用 | [金句 skill](../.agents/skills/inspireplanet-cards/SKILL.md) |
+| `group-message.md` | 从本期选一个能独立读懂的交流片段，配一个已核实回顾链接，便于会后发群 | [回顾与群消息 skill](../.agents/skills/inspireplanet-summary/SKILL.md) |
 
 > 使用 inspireplanet，基于本期转写按需整理文章、纪要或金句，核对事实与署名后更新已有稿件和导航。
+
+回顾与群消息默认一起制作，用户只要求其中一项时只交该项。群消息只保留一个主要入口，不把回顾、金句、播客和文章链接一次全部发群。没有已核实的本期回顾链接时先交无链接正文，在交付说明中列待补项；音频是否已发布、回顾页是否能收听均需核实。只准备消息，不自动发群。
 
 字段与网站同步遵循 [内容数据约定](../events/data-contract.md)。网站从本仓库 `main` 读取内容；未经确认的 JSON 不合入该分支。新增 `podcast.md` 仅作文字归档，不代表网站已支持展示播客或自动读取音频。
 
