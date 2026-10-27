@@ -17,9 +17,12 @@ events/{year}/{YYYYMMDD}-epXX/
   README.md           输入及导航、发布备注
   gzh-*.md            可选参考
   quote-cards.json    可选参考，不随本任务另造一套金句
+  podcast.md         如有，读取已确认的单集链接、实际时长与发布日期
   summary.json        输出，网站回顾的兼容 JSON
   group-message.md    输出，可直接复制到群里的正文
 ```
+
+完整会后流程通常在播客发布回填后接手，先读当期 `podcast.md` 已确认的发布信息；用户单独要求文字时不等待播客。保留现有 JSON 契约，不擅自加音频字段；需要在详情页展示播客时另行落实站点功能。
 
 默认生成回顾与群消息；用户只要求其中一项时只制作该项。更新当期 README 导航，保持正文各有一份，不把群消息复制成多份长期稿。修改 skill 时同时核对 `agents/openai.yaml`。
 
