@@ -14,7 +14,7 @@
 
 知乎开通后再明确适配与发布方式，当前不要求每篇另出知乎稿。小红书／视频号新增内容统一使用原声短视频，旧图文渲染脚本已清理，历史版本可从 Git 查阅。以上是渠道安排，不代表每期均已制作或发布；最新安排以 [current.md](current.md) 为准。
 
-网站另按需使用 `summary.json` 展示单期纪要、`quote-cards.json` 展示金句与周刊数据，见 [内容数据约定](events/data-contract.md)。
+网站另按需使用 `summary.json` 展示单期回顾、`quote-cards.json` 展示金句卡片。会后群消息保存为 `group-message.md`，选一个具体片段、一个已核实回顾入口，见 [内容数据约定](events/data-contract.md)。
 
 ## 每期怎么做
 
