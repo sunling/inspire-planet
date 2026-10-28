@@ -2,6 +2,19 @@ name: Transcript download
 
 on:
   workflow_dispatch:
+    inputs:
+      date:
+        description: '会议日期 YYYY-MM-DD；留空自动查找最新一期'
+        type: string
+        required: false
+      timezone:
+        description: '会议日期所属时区（默认北京时间）'
+        type: choice
+        options:
+          - Asia/Shanghai
+          - America/Los_Angeles
+          - UTC
+        default: Asia/Shanghai
 
 permissions:
   contents: read
@@ -20,6 +33,9 @@ jobs:
       pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      CONTENT_DATE: ${{ inputs.date }}
+      CONTENT_TIMEZONE: ${{ inputs.timezone || 'Asia/Shanghai' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,12 +44,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Discover latest project occurrence and deduplicate before transcript read
+      - name: Select requested date or latest project occurrence and deduplicate
         id: plan
         env:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
-        run: python3 scripts/latest_transcript.py prepare
+        shell: bash
+        run: |
+          if [ -n "$CONTENT_DATE" ]; then
+            python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"
+          else
+            python3 scripts/latest_transcript.py prepare
+          fi
       - name: Read complete occurrence transcript
         if: steps.plan.outputs.skip == 'false'
         env:

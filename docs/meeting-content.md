@@ -2,11 +2,12 @@
 
 转写下载只在手动运行 GitHub Actions 时执行，已移除全部定时触发。下载成功后直接提交到公开仓库的 `main`，不创建 PR；运行前须确认该场转写可公开。
 
-## 1. 手动下载最新会议
+## 1. 手动下载指定日期或最新会议
 
 1. 打开 [Transcript download](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml)。
-2. 点击 **Run workflow**，选择 `main` 并运行，无需填写参数。
-3. 查看运行日志和 `main` 提交记录。最新会议已归档时正常跳过，不回退下载更早场次。
+2. 点击 **Run workflow**，选择 `main`。
+3. 在 `date` 填会议日期 `YYYY-MM-DD`，例如 `2026-10-24`；`timezone` 默认 `Asia/Shanghai`（北京时间），也可选美西时间或 UTC。日期留空则自动查找最新一期。
+4. 运行后查看日志和 `main` 提交记录。指定日期不会回退到其他日期；已归档会议正常跳过，不覆盖现有转写。
 
 工作流需要有效的 `TENCENT_MEETING_TOKEN` Secret、`contents: write` 和 `pull-requests: read` 权限。原先的 `CONTENT_AUTOMATION_ENABLED` 变量不再使用，可以删除。
 
@@ -34,15 +35,13 @@
 
 完整读取失败后，Content CI 自动执行只读诊断：只检查所选日期内已验证归属的文件，每文件用 `pid=0, limit=1` 单次请求，遇到 HTTP 500 时再用已验证的段落索引接口核验，全部请求合计最多 16 次探测。日志只显示候选来源（转写元数据／原生录制列表／两者共有）、时间、数量与 HTTP 状态，不输出正文、文件 ID 或响应。它用于区分大分页请求失败与文件特定失败；小请求成功不等于整份可读，也不会跳过失败候选、替代完整验证或使任务变绿。若仍需报腾讯支持，提供失败工具、运行时间、状态和这些脱敏结果即可。
 
-## 3. 历史会议转写：查找或按日期补录
+## 3. 指定日期补录与只读查找
 
-打开 [历史会议转写 · 查找与补录](https://github.com/sunling/inspire-planet/actions/workflows/meeting-history.yml)，点 **Run workflow**，在 **Use workflow from** 选择 `main`。
+指定过去日期与日常下载使用同一个 [Transcript download](https://github.com/sunling/inspire-planet/actions/workflows/meeting-content.yml) 入口。填写 `date` 和对应 `timezone` 即可；已移除单独的历史会议工作流。
 
-- **查找未归档会议**：操作选择 `查找未归档会议`（默认），日期留空，运行后在日志查看未归档会议的真实日期。此操作只扫描，不下载全文、不写入 main。
-- **按日期补录**：操作选择 `按日期补录`，填写会议日期 `YYYY-MM-DD`（例如 `2026-09-26`），再选择**该日期所属的时区**：默认 `Asia/Shanghai`（北京时间），也可选择 `America/Los_Angeles`（美西时间）或 `UTC`。运行后只在该日候选中恰好一场达到有效对话门槛时，尝试将选中转写直接提交到 `main`。
-- **提交后检查**：检查 `main` 上新增的转写、日期、来源、期次和公开范围；该工作流不创建 PR。
+会议日期严格按**你选择的时区**解释，不同时用多个时区猜测。同日只有一场达到有效对话门槛才选择，多场达标或仍有歧义时停止。准备阶段只看元数据，读取阶段才下载正文。下载会提交公开 main，已归档会议不会重复下载或覆盖。
 
-会议日期严格按**你选定的时区**解释，不会同时用多个时区猜测。同一当地日期有多场时，在读取阶段按上述有效字数筛选；多份达标、没有匹配、读取不完整或仍有歧义时停止。准备和只读扫描仍只看元数据，不提前下载正文。
+如果需要先查找真实会议日期，可运行 **Content CI** 的只读测试，在 `history-scan-readonly` 日志查看扫描结果，或由维护者运行 `python3 scripts/latest_transcript.py scan`。Content CI 还会执行其他只读检查，均不提交归档。
 
 历史录制可能受 API 可用期限与旧录制归属限制；如失败请交由维护者核对。
 

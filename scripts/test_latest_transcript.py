@@ -309,21 +309,22 @@ class LatestTests(unittest.TestCase):
         self.assertNotIn('--episode', workflow)
         self.assertIn('scripts/latest_transcript.py scan', workflow)
 
-    def test_history_workflow_timezone_and_operation(self):
-        workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').read_text()
+    def test_unified_download_workflow_supports_date_and_latest(self):
+        workflow = (Path(__file__).parents[1] / '.github/workflows/meeting-content.yml').read_text()
         self.assertIn('CONTENT_MAIN_WRITE_ALLOWED', workflow)
         self.assertIn('pull-requests: read', workflow)
         self.assertNotIn('pull-requests: write', workflow)
-        for required in ('inputs.operation', 'inputs.date', 'inputs.timezone',
-                         'default: Asia/Shanghai', 'default: 查找未归档会议',
-                         'scripts/latest_transcript.py scan',
-                         'scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"',
+        for required in ('inputs.date', 'inputs.timezone', 'default: Asia/Shanghai',
+                         'if [ -n "$CONTENT_DATE" ]; then',
+                         'python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"',
+                         'python3 scripts/latest_transcript.py prepare',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
                          'scripts/latest_transcript.py publish', 'if: always()'):
             self.assertIn(required, workflow)
-        for forbidden in ('inputs.pick', 'inputs.mode', 'CONTENT_PICK', 'CONTENT_MODE',
-                          'inputs.episode', '--episode', 'CONTENT_YEAR'):
+        for forbidden in ('inputs.pick', 'inputs.mode', 'inputs.operation',
+                          'inputs.episode', '--episode', 'CONTENT_YEAR', 'run: ${{'):
             self.assertNotIn(forbidden, workflow)
+        self.assertFalse((Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').exists())
 
     def test_complete_pagination_exact_title_true_utc_window_latest(self):
         l = self.latest()

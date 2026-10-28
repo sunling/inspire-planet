@@ -2,9 +2,9 @@
 
 > 本文供维护者排错和验证使用。日常下载、人工审核与历史补录入口请先看 [会议转写操作指南](../docs/meeting-content.md)。
 
-## 日常：不填日期、EP 或过滤器
+## 统一下载入口：指定日期或留空找最新
 
-- Actions → **Transcript download** → Run workflow → 选择 `main`。日常入口没有输入框；API 也不需要 EP。
+- Actions → **Transcript download** → Run workflow → 选择 `main`。可选填 date（YYYY-MM-DD）与 timezone（默认北京时间）；date 留空时自动找最新，始终不需要 EP。
 - 一次配置在 [meeting-project.json](../scripts/meeting-project.json)：精确标题 `启发星球，互相赋能`、90 天回看、已核对锚点 `2026-10-10 / EP40 / 13319006708380765410`。会议周期 ID 可变化，发现按精确标题，不锁死旧 ID。
 - 首次只需已授权的 `TENCENT_MEETING_TOKEN` Secret；不需要模型、API Key 或外部内容服务。Token 不放变量、参数、聊天或日志。
 - 新转写会在通过内容检查后直接提交到 `main`；Actions job 需要 `contents: write` 与只读的 `pull-requests: read`（用于去重），不依赖创建 PR 的权限或仓库设置。提交即公开，因此在运行前需确保该场转写已获准公开。
@@ -28,7 +28,7 @@
 
 ## 高级历史补录／检查
 
-- 网页入口为 **历史会议转写 · 查找与补录**：选择 `查找未归档会议`（只读扫描）或 `按日期补录`（按 `date` + `timezone` 精确匹配），默认时区 `Asia/Shanghai`。`pick`、`fetch-check`、`connectivity` 仅保留在维护者 CLI，不出现在普通网页表单；网页输入不接受 EP。
+- 网页统一入口为 **Transcript download**：填写 `date` + `timezone` 精确匹配指定日期，留空自动找最新；旧历史工作流已移除。`pick`、`scan` 等维护命令仍保留在 CLI；只读扫描也保留在 Content CI。网页输入不接受 EP。
 - **期数不是选择依据**。腾讯会议没有期次概念，只有每场会议的实例（meeting_id / sub_meeting_id / 开始时间）；`ep{N}` 只是本仓库 `events/{year}/{YYYYMMDD}-epXX/` 的命名约定，**期数每年重置**（2025 为 ep02…ep50，2026 又从 ep01 开始），且若干目录日期是**迁移遗留**（如 13 个目录共用 `20250428`，`20260808` 被 ep31/ep32 共用，并且缺 ep11/ep29），早 2025 期次甚至可能属于其他会议标题。因此**目录日期不可信**，本流水线**从不按期数或目录推算抓取日期**；抓取目标日期只来自真实腾讯会议数据。
 - 仓库目录映射最多作为**只读扫描中的展示提示** `ep_hint`，且仅在该日期唯一对应一个期次目录时显示；它**不参与选择，也不能用于抓取**。
 - `date` 采用明确选定的 `--timezone`（默认北京时间；还可用 UTC、美西），只按该时区当天开始时间判断，配置 `transcript_selection` 后可收集同日多场候选，准备阶段不读取正文；在 fetch 阶段逐场读取完整转写，必须恰好一场达到门槛。未配置时保留唯一命中要求；无命中不回退其他日期。
@@ -37,7 +37,7 @@
 - **留空 = 只读扫描**：无 date 也无 pick 时，工具在最近 **12 个月**内按 **≤90 天窗口**分块调用 list-ended，排除未来／窗口外场次与重复实例，最多探测 **20** 场**未归档**的项目会议。每场只调用**元数据** `get_records_list` 判断能否读取，**不拉取正文、不写任何公开文件**。输出只有计数、**编号、真实日期与星期**、可选 `ep_hint`、可读布尔与静态原因（不打印原始 payload、Token、姓名或其他会议）。扫描始终退出 0，即使仍有未归档场次。
 - 只读扫描的“可读”判断：优先看该场 list-ended 记录里是否有 `转写` 类型录制文件；没有时再用限定到该场（meeting_id + sub_meeting_id）的原生录制列表兜底区分“仅录制未转写”与“无录制”。该会话 `records[]` 计数已知不可靠（可能为 0 而实际已有转写），因此扫描结果是保守下限，不保证已经能读全。
 - `fetch-check` 不查询 GitHub，也不使用期数或目录日期；即使本地已有稿仍强制读远程全文，仅缓存 `.git/meeting-content-fetch-check.txt`，公开文件不变；运行结束清理 runner 缓存。已有转写／实例时跳过，不覆盖。
-- 维护命令（Actions 注入 Secret）：`python3 scripts/latest_transcript.py fetch-check --date 2025-12-14 --timezone Asia/Shanghai`、`scan`、`prepare --pick 3` / `prepare --date 2025-12-14`，其后使用同一 `fetch / write / publish`。日常入口仍然零输入。
+- 维护命令（Actions 注入 Secret）：`python3 scripts/latest_transcript.py fetch-check --date 2025-12-14 --timezone Asia/Shanghai`、`scan`、`prepare --pick 3` / `prepare --date 2025-12-14`，其后使用同一 `fetch / write / publish`。统一网页入口的日期为可选输入，留空时仍使用自动发现。
 - **录制归属**：原生录制列表必须完整分页并同时匹配会议／子会议 ID；不要求与会议摘要中的文件集合相等。摘要可能滞后，优先读取该场元数据中明确标注的转写文件（其 ID 可与原生媒体不同），并排除与其他实例的归属冲突；无类型候选或类型候选出现文件级 HTTP 5xx 时尝试该场原生列表；缺少可验证归属时停止，不跨日期查找。
 - MCP 源适配合同不变：三个只读工具、运行时 schema、完整模式 `is_compact=false`、已观察的 HTTP/JSON 包装、列表完成标志、完整段落分页及上限。未知结构／分页缺失均安全停止，原始错误隐藏。
 
