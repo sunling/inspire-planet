@@ -2,6 +2,7 @@
 """Bounded, read-only Tencent MCP → transcript-only drafts. Standard library only."""
 import re
 import json
+import time
 from pathlib import Path
 import urllib.request
 import urllib.error
@@ -239,6 +240,23 @@ class MCP:
         return result
 
     def call(self, name, args):
+        # Retry only the same read-only transcript page, never skip a file.
+        for attempt in range(3):
+            try:
+                return self._call_once(name, args)
+            except UpstreamHTTPError as exc:
+                if (name != 'get_transcripts_details'
+                        or exc.status not in (500, 502, 503, 504)):
+                    raise
+                if attempt == 2:
+                    raise SafeError(f'转写读取连续 3 次失败（HTTP {exc.status}）；'
+                                    '未将失败候选视为空，停止筛选；请稍后重试（响应已隐藏）') from None
+                delay = 2 ** (attempt + 1)
+                print(f'转写读取上游 HTTP {exc.status}；{delay} 秒后重试 '
+                      f'({attempt + 2}/3)，未跳过候选。', flush=True)
+                time.sleep(delay)
+
+    def _call_once(self, name, args):
         need(name in TOOL_FIELDS, '禁止非白名单 MCP 工具')
         need(args.get('is_compact', False) is False, 'MCP 必须使用完整模式；拒绝缺失分页标志')
         args = dict(args, is_compact=False)
@@ -278,7 +296,7 @@ class MCP:
                     except (ValueError, TypeError):
                         pass
                     safe_status = status if type(status) is int else 'invalid'
-                    raise SafeError(f'MCP 上游 HTTP 失败：tool={name}，status={safe_status}，code={code}（响应已隐藏）')
+                    raise UpstreamHTTPError(status, f'MCP 上游 HTTP 失败：tool={name}，status={safe_status}，code={code}（响应已隐藏）')
                 need(isinstance(data.get('body'), str), 'MCP HTTP body 结构不支持')
                 try:
                     data = json.loads(data['body'])
@@ -405,7 +423,7 @@ def fetch_occurrence(client, meeting):
 
     transcripts = []
     for index, (_, file_id) in enumerate(candidates, 1):
-        print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。')
+        print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。', flush=True)
         text = read_file_transcript(client, meeting['meeting_id'], file_id)
         if text:
             transcripts.append(text)
@@ -429,6 +447,12 @@ from datetime import datetime, timezone
 
 class SafeError(Exception):
     """Only static, credential-free messages may be raised with this type."""
+
+
+class UpstreamHTTPError(SafeError):
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status = status
 
 
 class NoTranscript(SafeError):
