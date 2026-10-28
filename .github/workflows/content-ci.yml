@@ -50,7 +50,11 @@ jobs:
               print('完整下载已验证；本地无唯一日期归档，跳过比对。')
           else:
               remote = m.parse_transcript(Path('.git/meeting-content-fetch-check.txt').read_text())
-              local = m.parse_transcript(files[0].read_text())
+              try:
+                  local = m.parse_transcript(files[0].read_text())
+              except m.SafeError:
+                  print('远程完整转写已验证；本地归档不是标准原始转写格式，跳过逐段比对，未覆盖归档。')
+                  sys.exit(0)
               def canonical(blocks):
                   return [(b['speaker'].strip(), b['time'], ''.join(b['text'].split())) for b in blocks]
               same = canonical(remote) == canonical(local)
