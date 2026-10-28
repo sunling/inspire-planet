@@ -270,7 +270,7 @@ class MCP:
                     raise
                 if attempt == 2:
                     raise UpstreamHTTPError(exc.status, f'转写读取连续 3 次失败（HTTP {exc.status}）；'
-                                    '未将失败候选视为空，停止筛选；请稍后重试（响应已隐藏）') from None
+                                    '该文件读取失败，未视为空稿（响应已隐藏）') from None
                 delay = 2 ** (attempt + 1)
                 print(f'转写读取上游 HTTP {exc.status}；{delay} 秒后重试 '
                       f'({attempt + 2}/3)，未跳过候选。', flush=True)
@@ -478,28 +478,60 @@ def occurrence_files(client, meeting):
 
 
 def fetch_occurrence(client, meeting):
-    native, candidates, _ = occurrence_files(client, meeting)
-    transcripts = []
-    for index, (_, file_id) in enumerate(candidates, 1):
+    native, candidates, typed = occurrence_files(client, meeting)
+    # Server failures belong to a file, not necessarily the whole occurrence.
+    # Preserve the failure count; never call them empty or use partial bodies.
+    candidates = list(candidates)
+    transcripts, failures, seen = [], [], set()
+    index = 0
+    while index < len(candidates):
+        _, file_id = candidates[index]
+        index += 1
+        if file_id in seen:
+            continue
+        seen.add(file_id)
         print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。', flush=True)
-        text = read_file_transcript(client, meeting['meeting_id'], file_id)
+        try:
+            text = read_file_transcript(client, meeting['meeting_id'], file_id)
+        except UpstreamHTTPError as exc:
+            if exc.status not in (500, 502, 503, 504):
+                raise
+            failures.append(exc.status)
+            print(f'本场文件候选 {index} HTTP {exc.status}；标记读取失败，'
+                  '丢弃该文件的全部临时正文，继续其他候选；不视为空稿。', flush=True)
+            # Metadata can omit real native recordings. Only after a file
+            # server failure also examine the independently verified native
+            # IDs from this SAME occurrence. IDs are deduplicated below.
+            if typed:
+                known = {candidate_id for _, candidate_id in candidates}
+                candidates.extend(item for item in sorted(native) if item[1] not in known)
+                typed = False
+            continue
         if text:
             transcripts.append(text)
     if not transcripts:
+        if failures:
+            raise SafeError(f'本场没有成功读取的非空完整转写；读取失败文件={len(failures)}；'
+                            '不能认定为空稿，停止且不归档')
         raise NoTranscript('本场录制存在，但尚无非空完整文字转写；稍后重试')
 
-    # Compare actual spoken text, not speaker names or timestamp headers.
-    # Every candidate has passed full pagination validation. If two longest
-    # transcripts differ, no unambiguous winner exists: fail closed.
-    scored = [(sum(len(block['text']) for block in parse_transcript(text)), text)
+    # Only successfully completed files participate. We cannot claim they are
+    # longer than unreadable files. Conflicting ties still require review.
+    scored = [(sum(sum(char.isalnum() for char in block['text'])
+                   for block in parse_transcript(text)), text)
               for text in transcripts]
     longest = max(length for length, _ in scored)
     winners = [text for length, text in scored if length == longest]
     need(all(text == winners[0] for text in winners[1:]),
          '同场最长文字转写出现并列且内容不同；请人工核对')
     print(f'同场录制文件={len(native)}；非空完整转写={len(transcripts)}；'
-          f'选择最长正文，字数={longest}；未输出原始转写。')
+          f'读取失败文件={len(failures)}；选择成功完整稿中最长正文，'
+          f'有效字数={longest}；未输出原始转写。', flush=True)
+    if failures:
+        print('注意：部分文件未读取成功，不能确认所选稿比失败文件更长；'
+              '请结合归档比对或回放核对完整性。', flush=True)
     return winners[0]
+
 from datetime import datetime, timezone
 
 
