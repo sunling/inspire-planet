@@ -409,7 +409,8 @@ def fetch_occurrence(client, meeting):
         text = read_file_transcript(client, meeting['meeting_id'], file_id)
         if text:
             transcripts.append(text)
-    need(bool(transcripts), '本场录制存在，但尚无非空完整文字转写；稍后重试')
+    if not transcripts:
+        raise NoTranscript('本场录制存在，但尚无非空完整文字转写；稍后重试')
 
     # Compare actual spoken text, not speaker names or timestamp headers.
     # Every candidate has passed full pagination validation. If two longest
@@ -428,6 +429,10 @@ from datetime import datetime, timezone
 
 class SafeError(Exception):
     """Only static, credential-free messages may be raised with this type."""
+
+
+class NoTranscript(SafeError):
+    """A validated recording has no nonempty text; not a transport failure."""
 
 
 def need(ok, message):
