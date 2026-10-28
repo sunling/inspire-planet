@@ -647,7 +647,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('contents: read', probe)
         self.assertNotIn('write', probe)
         self.assertNotIn('upload-artifact', ci)
-        self.assertEqual(ci.count('secrets.'), 3)
+        self.assertEqual(ci.count('secrets.'), 4)
+        self.assertIn("if: failure() && steps.fetchcheck.outcome == 'failure'", probe)
+        self.assertIn('scripts/diagnose_transcript.py --date', probe)
         latest_probe = ci.split('  latest-readonly:', 1)[1].split('  check:', 1)[0]
         self.assertIn("if: github.event_name == 'workflow_dispatch'", latest_probe)
         self.assertIn('ref: ${{ github.sha }}', latest_probe)

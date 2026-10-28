@@ -380,7 +380,7 @@ def read_file_transcript(client, meeting_id, record_file_id):
     return None
 
 
-def fetch_occurrence(client, meeting):
+def occurrence_files(client, meeting):
     # The ended-meetings records are a stale/incomplete summary. Use the fully
     # paginated recording endpoint as authority, scoped by BOTH occurrence IDs.
     records = meeting.get('records')
@@ -421,6 +421,11 @@ def fetch_occurrence(client, meeting):
     else:
         candidates = sorted(native)
 
+    return native, candidates, bool(typed)
+
+
+def fetch_occurrence(client, meeting):
+    native, candidates, _ = occurrence_files(client, meeting)
     transcripts = []
     for index, (_, file_id) in enumerate(candidates, 1):
         print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。', flush=True)
