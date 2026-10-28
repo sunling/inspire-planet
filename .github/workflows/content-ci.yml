@@ -31,10 +31,17 @@ jobs:
         with:
           python-version: '3.12'
       - name: Selected meeting real readonly fetch-check (explicit dispatch)
+        id: fetchcheck
         env:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
           CONTENT_DATE: ${{ inputs.check_date || '2026-10-10' }}
         run: python3 scripts/latest_transcript.py fetch-check --date "$CONTENT_DATE"
+      - name: Diagnose transcript failure with bounded one-paragraph probes
+        if: failure() && steps.fetchcheck.outcome == 'failure'
+        env:
+          TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
+          CONTENT_DATE: ${{ inputs.check_date || '2026-10-10' }}
+        run: python3 scripts/diagnose_transcript.py --date "$CONTENT_DATE"
       - name: Compare fetched transcript with archived copy
         env:
           CONTENT_DATE: ${{ inputs.check_date || '2026-10-10' }}
@@ -50,7 +57,11 @@ jobs:
               print('完整下载已验证；本地无唯一日期归档，跳过比对。')
           else:
               remote = m.parse_transcript(Path('.git/meeting-content-fetch-check.txt').read_text())
-              local = m.parse_transcript(files[0].read_text())
+              try:
+                  local = m.parse_transcript(files[0].read_text())
+              except m.SafeError:
+                  print('远程完整转写已验证；本地归档不是标准原始转写格式，跳过逐段比对，未覆盖归档。')
+                  sys.exit(0)
               def canonical(blocks):
                   return [(b['speaker'].strip(), b['time'], ''.join(b['text'].split())) for b in blocks]
               same = canonical(remote) == canonical(local)
@@ -59,6 +70,7 @@ jobs:
                   print('下载成功，但与归档内容存在差异；需另行核对，未覆盖归档。')
           PYTHON
       - name: Verify public files unchanged
+        if: always()
         run: test -z "$(git status --porcelain)"
       - name: Remove runner-only transcript cache
         if: always()
