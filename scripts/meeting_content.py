@@ -198,7 +198,10 @@ TOOL_FIELDS = {
     'get_records_list': {'meeting_id': 'string', 'page_size': 'integer', 'page_token': 'string'},
     'get_transcripts_details': {'meeting_id': 'string', 'record_file_id': 'string', 'pid': 'string', 'limit': 'integer'},
 }
-for _fields in TOOL_FIELDS.values():
+OPTIONAL_TOOL_FIELDS = {
+    'get_transcripts_paragraphs': {'meeting_id': 'string', 'record_file_id': 'string'},
+}
+for _fields in list(TOOL_FIELDS.values()) + list(OPTIONAL_TOOL_FIELDS.values()):
     _fields['is_compact'] = 'boolean'  # Full mode preserves business/paging flags.
 MAX_PAGES = 200
 MAX_PARAGRAPHS = 20000
@@ -208,12 +211,13 @@ class MCP:
     def __init__(self, transport):
         self.transport = transport
         self.schemas = {}
+        self.tool_fields = dict(TOOL_FIELDS)
         cursor = None
         seen = set()
         for _ in range(MAX_PAGES):
             result = self.rpc('tools/list', {'cursor': cursor} if cursor else {})
             for tool in result.get('tools', []):
-                if tool.get('name') in TOOL_FIELDS:
+                if tool.get('name') in TOOL_FIELDS or tool.get('name') in OPTIONAL_TOOL_FIELDS:
                     self.schemas[tool['name']] = tool['inputSchema']
             cursor = result.get('nextCursor')
             if not cursor:
@@ -222,7 +226,7 @@ class MCP:
             seen.add(cursor)
         else:
             raise SafeError('MCP 工具列表超过分页上限')
-        need(set(self.schemas) == set(TOOL_FIELDS), 'MCP 缺少所需只读工具；请核对官方 tools/list')
+        need(set(TOOL_FIELDS) <= set(self.schemas), 'MCP 缺少所需只读工具；请核对官方 tools/list')
         for name, fields in TOOL_FIELDS.items():
             schema = self.schemas[name]
             need(schema.get('type') == 'object', 'MCP 工具 schema 不兼容')
@@ -231,6 +235,22 @@ class MCP:
                 actual = props.get(key, {}).get('type')
                 need(actual == expected or (expected == 'integer' and actual == 'number'), 'MCP 参数 schema 已变化；请核对官方 tools/list')
             need(set(schema.get('required', [])) <= set(fields), 'MCP 新增必填参数；请更新适配器')
+
+        # The paragraph index is optional and must advertise the exact known
+        # parameter types before we use it. Old/incompatible servers retain
+        # the previous fail-closed behavior, without breaking ordinary reads.
+        for name, fields in OPTIONAL_TOOL_FIELDS.items():
+            schema = self.schemas.get(name, {})
+            props = schema.get('properties', {})
+            if (schema.get('type') == 'object'
+                    and set(schema.get('required', [])) <= set(fields)
+                    and all(props.get(k, {}).get('type') == typ for k, typ in fields.items())):
+                self.tool_fields[name] = fields
+            else:
+                self.schemas.pop(name, None)
+
+    def supports(self, name):
+        return name in self.tool_fields and name in self.schemas
 
     def rpc(self, method, params):
         packet = self.transport({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})
@@ -249,7 +269,7 @@ class MCP:
                         or exc.status not in (500, 502, 503, 504)):
                     raise
                 if attempt == 2:
-                    raise SafeError(f'转写读取连续 3 次失败（HTTP {exc.status}）；'
+                    raise UpstreamHTTPError(exc.status, f'转写读取连续 3 次失败（HTTP {exc.status}）；'
                                     '未将失败候选视为空，停止筛选；请稍后重试（响应已隐藏）') from None
                 delay = 2 ** (attempt + 1)
                 print(f'转写读取上游 HTTP {exc.status}；{delay} 秒后重试 '
@@ -257,13 +277,13 @@ class MCP:
                 time.sleep(delay)
 
     def _call_once(self, name, args):
-        need(name in TOOL_FIELDS, '禁止非白名单 MCP 工具')
+        need(name in self.tool_fields and name in self.schemas, '禁止非白名单或未验证 MCP 工具')
         need(args.get('is_compact', False) is False, 'MCP 必须使用完整模式；拒绝缺失分页标志')
         args = dict(args, is_compact=False)
         schema = self.schemas[name]
-        need(set(args) <= set(TOOL_FIELDS[name]) and set(schema.get('required', [])) <= set(args), 'MCP 参数不符合已验证 schema')
+        need(set(args) <= set(self.tool_fields[name]) and set(schema.get('required', [])) <= set(args), 'MCP 参数不符合已验证 schema')
         for key, value in args.items():
-            typ = TOOL_FIELDS[name][key]
+            typ = self.tool_fields[name][key]
             need((typ == 'string' and isinstance(value, str)) or (typ == 'integer' and type(value) is int)
                  or (typ == 'boolean' and type(value) is bool), 'MCP 参数类型无效')
         result = self.rpc('tools/call', {'name': name, 'arguments': args})
@@ -342,11 +362,44 @@ def fetch_transcript(client, day, subject, meeting_id):
     return fetch_occurrence(client, meeting)
 
 
+def transcript_index_state(client, meeting_id, record_file_id):
+    """Only an explicit, completed zero-paragraph index proves an empty file.
+
+    Tencent documents total/pids/audio_detect at support/topic/798. Neither
+    HTTP 500 nor a missing tool/index/field is evidence of an empty transcript.
+    """
+    if not getattr(client, 'supports', lambda name: False)('get_transcripts_paragraphs'):
+        return 'unavailable'
+    try:
+        data = client.call('get_transcripts_paragraphs',
+                           {'meeting_id': meeting_id, 'record_file_id': record_file_id})
+    except SafeError:
+        return 'unavailable'
+    total, pids = data.get('total'), data.get('pids')
+    if (type(total) is int and total == 0 and pids == []
+            and type(data.get('audio_detect')) is int and data['audio_detect'] == 1
+            and not any(data.get(k) for k in ('more', 'has_more', 'nextCursor', 'next_page_token', 'page_token'))):
+        return 'confirmed_empty'
+    if type(total) is int and total > 0:
+        return 'nonempty'
+    return 'unresolved'
+
+
 def read_file_transcript(client, meeting_id, record_file_id):
     """Read every page of one recording; return None only when its transcript is empty."""
     paragraphs, pid, seen = [], 0, set()
     for _ in range(MAX_PAGES):
-        data = client.call('get_transcripts_details', {'meeting_id': meeting_id, 'record_file_id': record_file_id, 'pid': str(pid), 'limit': 100})
+        try:
+            data = client.call('get_transcripts_details', {'meeting_id': meeting_id, 'record_file_id': record_file_id, 'pid': str(pid), 'limit': 100})
+        except UpstreamHTTPError as exc:
+            # Only a failed FIRST page may be independently proven empty.
+            # A failure after any received page always rejects truncation.
+            if exc.status == 500 and pid == 0 and not paragraphs:
+                state = transcript_index_state(client, meeting_id, record_file_id)
+                print(f'详情读取失败后的段落索引核验：{state}；未输出文件身份或正文。', flush=True)
+                if state == 'confirmed_empty':
+                    return None
+            raise
         if data.get('empty_transcript'):
             need(not paragraphs, '分页中途返回空转写错误；拒绝截断')
             break

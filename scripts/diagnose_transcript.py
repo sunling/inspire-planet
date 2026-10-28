@@ -18,7 +18,7 @@ def diagnose(client, config, day):
     probes = 0
     seen = set()
     print('只读诊断：每文件最多请求第一页 1 段，不重试、不输出正文或身份；'
-          '全程最多 16 次探测；成功不等于完整转写验证通过。', flush=True)
+          '500 时另查段落索引；全程合计最多 16 次探测；成功不等于完整转写验证通过。', flush=True)
     for index, row in enumerate(sorted(rows, key=lambda r: latest.timestamp(r['start_time'])), 1):
         print(f'诊断场次 {index}/{len(rows)} '
               f'start_utc={latest.iso(latest.timestamp(row["start_time"]))}', flush=True)
@@ -60,6 +60,11 @@ def diagnose(client, config, day):
             except m.UpstreamHTTPError as exc:
                 status = exc.status if type(exc.status) is int else 'invalid'
                 outcome = f'upstream_http={status}'
+                if (exc.status == 500 and probes < MAX_PROBES
+                        and getattr(client, 'supports', lambda name: False)('get_transcripts_paragraphs')):
+                    probes += 1
+                    state = m.transcript_index_state(client, row['meeting_id'], file_id)
+                    outcome += f' index={state}'
             except m.SafeError:
                 outcome = 'rpc_business_or_format_error'
             print(f'文件候选 {ordinal}/{len(files)} source={source} '
