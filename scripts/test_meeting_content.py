@@ -24,6 +24,46 @@ class IdentityTests(unittest.TestCase):
 
 
 class TranscriptTests(unittest.TestCase):
+    def test_transcript_upstream_retry_is_bounded_and_preserves_request(self):
+        import json
+        import io
+        from contextlib import redirect_stdout
+        from unittest.mock import patch
+        for statuses, name, expected_calls, success in (
+            ([500, 503, 200], 'get_transcripts_details', 3, True),
+            ([500, 500, 500], 'get_transcripts_details', 3, False),
+            ([403], 'get_transcripts_details', 1, False),
+            ([500], 'get_records_list', 1, False),
+        ):
+            with self.subTest(statuses=statuses, name=name):
+                calls = []
+                def transport(packet):
+                    if packet['method'] == 'tools/list':
+                        return {'id': 1, 'result': {'tools': [
+                            {'name': n, 'inputSchema': {'type': 'object', 'properties': {k: {'type': t} for k, t in f.items()}}}
+                            for n, f in m.TOOL_FIELDS.items()]}}
+                    calls.append(packet['params'])
+                    status = statuses[len(calls) - 1]
+                    body = {'code': 0, 'more': False, 'minutes': {'paragraphs': []}} if status == 200 else 'private-response'
+                    return {'id': 1, 'result': {'structuredContent': {
+                        'status_code': status, 'body': json.dumps(body)}}}
+                client = m.MCP(transport)
+                args = {'meeting_id': 'private-meeting', 'record_file_id': 'private-file', 'pid': '101', 'limit': 100} if name == 'get_transcripts_details' else {'meeting_id': 'private-meeting'}
+                log = io.StringIO()
+                with patch.object(m.time, 'sleep') as sleep, redirect_stdout(log):
+                    if success:
+                        self.assertFalse(client.call(name, args)['more'])
+                    else:
+                        with self.assertRaises(m.SafeError) as caught:
+                            client.call(name, args)
+                        self.assertNotIn('private', str(caught.exception))
+                        if expected_calls == 3:
+                            self.assertIn('连续 3 次失败', str(caught.exception))
+                self.assertEqual(len(calls), expected_calls)
+                self.assertTrue(all(call == calls[0] for call in calls))
+                self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4] if expected_calls == 3 else [])
+                self.assertNotIn('private', log.getvalue())
+
     def test_observed_http_body_envelopes_decode_and_check_inner_business_code(self):
         # Sanitized structure from live runs 38784249250 / 38784551270;
         # all values below are synthetic, never copied meeting content.
@@ -607,7 +647,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('contents: read', probe)
         self.assertNotIn('write', probe)
         self.assertNotIn('upload-artifact', ci)
-        self.assertEqual(ci.count('secrets.'), 3)
+        self.assertEqual(ci.count('secrets.'), 4)
+        self.assertIn("if: failure() && steps.fetchcheck.outcome == 'failure'", probe)
+        self.assertIn('scripts/diagnose_transcript.py --date', probe)
         latest_probe = ci.split('  latest-readonly:', 1)[1].split('  check:', 1)[0]
         self.assertIn("if: github.event_name == 'workflow_dispatch'", latest_probe)
         self.assertIn('ref: ${{ github.sha }}', latest_probe)
@@ -624,23 +666,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('check-content.py', ci)
         self.assertNotIn("CONTENT_AUTOMATION_ENABLED", flow)
         self.assertIn('name: Transcript download', flow)
-        self.assertNotIn('inputs:', flow)
-        self.assertNotIn('CONTENT_DATE', flow)
+        self.assertIn('inputs.date', flow)
+        self.assertIn('inputs.timezone', flow)
         self.assertNotIn('CONTENT_EPISODE', flow)
         self.assertNotIn('CONTENT_MEETING_', flow)
-        for stage in ('prepare', 'fetch', 'write', 'publish'):
+        self.assertIn('python3 scripts/latest_transcript.py prepare', flow)
+        for stage in ('fetch', 'write', 'publish'):
             self.assertIn('run: python3 scripts/latest_transcript.py ' + stage, flow)
-        history = (root / '.github/workflows/meeting-history.yml').read_text()
-        self.assertIn('default: 查找未归档会议', history)
-        self.assertIn('default: Asia/Shanghai', history)
-        self.assertIn("env.CONTENT_OPERATION == '查找未归档会议'", history)
-        self.assertNotIn('CONTENT_PICK', history)
-        self.assertNotIn('CONTENT_MODE', history)
-        self.assertNotIn('schedule:', history)
-        self.assertNotIn('run: python3 scripts/latest_transcript.py fetch-check', history)
-        self.assertIn('run: python3 scripts/latest_transcript.py scan', history)
-        self.assertIn('run: python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"', history)
-        self.assertIn('run: python3 scripts/latest_transcript.py write', history)
+        self.assertFalse((root / '.github/workflows/meeting-history.yml').exists())
         self.assertNotIn('CONTENT_LLM_', flow)
         self.assertNotIn('CONTENT_SOURCE', flow)
         self.assertNotIn('generate', (root / 'scripts/meeting_content.py').read_text())
@@ -713,10 +746,13 @@ class EndToEndTests(unittest.TestCase):
             with patch.dict(os.environ, {'CONTENT_DATE': '2026-10-17', 'CONTENT_EPISODE': '41'}, clear=True):
                 m.main(['write'], root=root)
             (root / 'scripts').mkdir()
-            shutil.copy(Path(__file__).with_name('check-content.py'), root / 'scripts/check-content.py')
-            checked = subprocess.run(['python3', 'scripts/check-content.py'], cwd=root, capture_output=True, text=True, check=True)
+            for filename in ('check-content.py', 'validate_publication.py'):
+                shutil.copy(Path(__file__).with_name(filename), root / 'scripts' / filename)
+            checked = subprocess.run(['python3', 'scripts/check-content.py'], cwd=root, capture_output=True, text=True)
+            self.assertEqual(checked.returncode, 0, checked.stderr)
             self.assertIn('Content check passed: 1 episodes', checked.stdout)
-            (root / 'scripts/check-content.py').unlink(); (root / 'scripts').rmdir()
+            # The validator imports a helper, which may also create __pycache__.
+            shutil.rmtree(root / 'scripts')
             result = m.publish(root, plan, run)
             self.assertTrue(result['isDraft'])
             self.assertEqual(len(created), 1)

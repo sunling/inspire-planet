@@ -5,5 +5,9 @@
     "date": "2026-10-10",
     "episode": "40",
     "meeting_id": "13319006708380765410"
+  },
+  "transcript_selection": {
+    "min_spoken_chars": 1000,
+    "timezone": "Asia/Shanghai"
   }
 }

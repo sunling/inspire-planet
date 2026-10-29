@@ -2,6 +2,7 @@
 """Bounded, read-only Tencent MCP → transcript-only drafts. Standard library only."""
 import re
 import json
+import time
 from pathlib import Path
 import urllib.request
 import urllib.error
@@ -197,7 +198,10 @@ TOOL_FIELDS = {
     'get_records_list': {'meeting_id': 'string', 'page_size': 'integer', 'page_token': 'string'},
     'get_transcripts_details': {'meeting_id': 'string', 'record_file_id': 'string', 'pid': 'string', 'limit': 'integer'},
 }
-for _fields in TOOL_FIELDS.values():
+OPTIONAL_TOOL_FIELDS = {
+    'get_transcripts_paragraphs': {'meeting_id': 'string', 'record_file_id': 'string'},
+}
+for _fields in list(TOOL_FIELDS.values()) + list(OPTIONAL_TOOL_FIELDS.values()):
     _fields['is_compact'] = 'boolean'  # Full mode preserves business/paging flags.
 MAX_PAGES = 200
 MAX_PARAGRAPHS = 20000
@@ -207,12 +211,13 @@ class MCP:
     def __init__(self, transport):
         self.transport = transport
         self.schemas = {}
+        self.tool_fields = dict(TOOL_FIELDS)
         cursor = None
         seen = set()
         for _ in range(MAX_PAGES):
             result = self.rpc('tools/list', {'cursor': cursor} if cursor else {})
             for tool in result.get('tools', []):
-                if tool.get('name') in TOOL_FIELDS:
+                if tool.get('name') in TOOL_FIELDS or tool.get('name') in OPTIONAL_TOOL_FIELDS:
                     self.schemas[tool['name']] = tool['inputSchema']
             cursor = result.get('nextCursor')
             if not cursor:
@@ -221,7 +226,7 @@ class MCP:
             seen.add(cursor)
         else:
             raise SafeError('MCP 工具列表超过分页上限')
-        need(set(self.schemas) == set(TOOL_FIELDS), 'MCP 缺少所需只读工具；请核对官方 tools/list')
+        need(set(TOOL_FIELDS) <= set(self.schemas), 'MCP 缺少所需只读工具；请核对官方 tools/list')
         for name, fields in TOOL_FIELDS.items():
             schema = self.schemas[name]
             need(schema.get('type') == 'object', 'MCP 工具 schema 不兼容')
@@ -231,6 +236,22 @@ class MCP:
                 need(actual == expected or (expected == 'integer' and actual == 'number'), 'MCP 参数 schema 已变化；请核对官方 tools/list')
             need(set(schema.get('required', [])) <= set(fields), 'MCP 新增必填参数；请更新适配器')
 
+        # The paragraph index is optional and must advertise the exact known
+        # parameter types before we use it. Old/incompatible servers retain
+        # the previous fail-closed behavior, without breaking ordinary reads.
+        for name, fields in OPTIONAL_TOOL_FIELDS.items():
+            schema = self.schemas.get(name, {})
+            props = schema.get('properties', {})
+            if (schema.get('type') == 'object'
+                    and set(schema.get('required', [])) <= set(fields)
+                    and all(props.get(k, {}).get('type') == typ for k, typ in fields.items())):
+                self.tool_fields[name] = fields
+            else:
+                self.schemas.pop(name, None)
+
+    def supports(self, name):
+        return name in self.tool_fields and name in self.schemas
+
     def rpc(self, method, params):
         packet = self.transport({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})
         need(isinstance(packet, dict) and packet.get('id') == 1 and 'error' not in packet, 'MCP RPC 失败；检查连接与授权（响应已隐藏）')
@@ -239,13 +260,30 @@ class MCP:
         return result
 
     def call(self, name, args):
-        need(name in TOOL_FIELDS, '禁止非白名单 MCP 工具')
+        # Retry only the same read-only transcript page, never skip a file.
+        for attempt in range(3):
+            try:
+                return self._call_once(name, args)
+            except UpstreamHTTPError as exc:
+                if (name != 'get_transcripts_details'
+                        or exc.status not in (500, 502, 503, 504)):
+                    raise
+                if attempt == 2:
+                    raise UpstreamHTTPError(exc.status, f'转写读取连续 3 次失败（HTTP {exc.status}）；'
+                                    '该文件读取失败，未视为空稿（响应已隐藏）') from None
+                delay = 2 ** (attempt + 1)
+                print(f'转写读取上游 HTTP {exc.status}；{delay} 秒后重试 '
+                      f'({attempt + 2}/3)，未跳过候选。', flush=True)
+                time.sleep(delay)
+
+    def _call_once(self, name, args):
+        need(name in self.tool_fields and name in self.schemas, '禁止非白名单或未验证 MCP 工具')
         need(args.get('is_compact', False) is False, 'MCP 必须使用完整模式；拒绝缺失分页标志')
         args = dict(args, is_compact=False)
         schema = self.schemas[name]
-        need(set(args) <= set(TOOL_FIELDS[name]) and set(schema.get('required', [])) <= set(args), 'MCP 参数不符合已验证 schema')
+        need(set(args) <= set(self.tool_fields[name]) and set(schema.get('required', [])) <= set(args), 'MCP 参数不符合已验证 schema')
         for key, value in args.items():
-            typ = TOOL_FIELDS[name][key]
+            typ = self.tool_fields[name][key]
             need((typ == 'string' and isinstance(value, str)) or (typ == 'integer' and type(value) is int)
                  or (typ == 'boolean' and type(value) is bool), 'MCP 参数类型无效')
         result = self.rpc('tools/call', {'name': name, 'arguments': args})
@@ -278,7 +316,7 @@ class MCP:
                     except (ValueError, TypeError):
                         pass
                     safe_status = status if type(status) is int else 'invalid'
-                    raise SafeError(f'MCP 上游 HTTP 失败：tool={name}，status={safe_status}，code={code}（响应已隐藏）')
+                    raise UpstreamHTTPError(status, f'MCP 上游 HTTP 失败：tool={name}，status={safe_status}，code={code}（响应已隐藏）')
                 need(isinstance(data.get('body'), str), 'MCP HTTP body 结构不支持')
                 try:
                     data = json.loads(data['body'])
@@ -324,11 +362,44 @@ def fetch_transcript(client, day, subject, meeting_id):
     return fetch_occurrence(client, meeting)
 
 
+def transcript_index_state(client, meeting_id, record_file_id):
+    """Only an explicit, completed zero-paragraph index proves an empty file.
+
+    Tencent documents total/pids/audio_detect at support/topic/798. Neither
+    HTTP 500 nor a missing tool/index/field is evidence of an empty transcript.
+    """
+    if not getattr(client, 'supports', lambda name: False)('get_transcripts_paragraphs'):
+        return 'unavailable'
+    try:
+        data = client.call('get_transcripts_paragraphs',
+                           {'meeting_id': meeting_id, 'record_file_id': record_file_id})
+    except SafeError:
+        return 'unavailable'
+    total, pids = data.get('total'), data.get('pids')
+    if (type(total) is int and total == 0 and pids == []
+            and type(data.get('audio_detect')) is int and data['audio_detect'] == 1
+            and not any(data.get(k) for k in ('more', 'has_more', 'nextCursor', 'next_page_token', 'page_token'))):
+        return 'confirmed_empty'
+    if type(total) is int and total > 0:
+        return 'nonempty'
+    return 'unresolved'
+
+
 def read_file_transcript(client, meeting_id, record_file_id):
     """Read every page of one recording; return None only when its transcript is empty."""
     paragraphs, pid, seen = [], 0, set()
     for _ in range(MAX_PAGES):
-        data = client.call('get_transcripts_details', {'meeting_id': meeting_id, 'record_file_id': record_file_id, 'pid': str(pid), 'limit': 100})
+        try:
+            data = client.call('get_transcripts_details', {'meeting_id': meeting_id, 'record_file_id': record_file_id, 'pid': str(pid), 'limit': 100})
+        except UpstreamHTTPError as exc:
+            # Only a failed FIRST page may be independently proven empty.
+            # A failure after any received page always rejects truncation.
+            if exc.status == 500 and pid == 0 and not paragraphs:
+                state = transcript_index_state(client, meeting_id, record_file_id)
+                print(f'详情读取失败后的段落索引核验：{state}；未输出文件身份或正文。', flush=True)
+                if state == 'confirmed_empty':
+                    return None
+            raise
         if data.get('empty_transcript'):
             need(not paragraphs, '分页中途返回空转写错误；拒绝截断')
             break
@@ -362,7 +433,7 @@ def read_file_transcript(client, meeting_id, record_file_id):
     return None
 
 
-def fetch_occurrence(client, meeting):
+def occurrence_files(client, meeting):
     # The ended-meetings records are a stale/incomplete summary. Use the fully
     # paginated recording endpoint as authority, scoped by BOTH occurrence IDs.
     records = meeting.get('records')
@@ -403,31 +474,79 @@ def fetch_occurrence(client, meeting):
     else:
         candidates = sorted(native)
 
-    transcripts = []
-    for index, (_, file_id) in enumerate(candidates, 1):
-        print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。')
-        text = read_file_transcript(client, meeting['meeting_id'], file_id)
+    return native, candidates, bool(typed)
+
+
+def fetch_occurrence(client, meeting):
+    native, candidates, typed = occurrence_files(client, meeting)
+    # Server failures belong to a file, not necessarily the whole occurrence.
+    # Preserve the failure count; never call them empty or use partial bodies.
+    candidates = list(candidates)
+    transcripts, failures, seen = [], [], set()
+    index = 0
+    while index < len(candidates):
+        _, file_id = candidates[index]
+        index += 1
+        if file_id in seen:
+            continue
+        seen.add(file_id)
+        print(f'正在验证本场转写候选 {index}/{len(candidates)}；未输出文件身份。', flush=True)
+        try:
+            text = read_file_transcript(client, meeting['meeting_id'], file_id)
+        except UpstreamHTTPError as exc:
+            if exc.status not in (500, 502, 503, 504):
+                raise
+            failures.append(exc.status)
+            print(f'本场文件候选 {index} HTTP {exc.status}；标记读取失败，'
+                  '丢弃该文件的全部临时正文，继续其他候选；不视为空稿。', flush=True)
+            # Metadata can omit real native recordings. Only after a file
+            # server failure also examine the independently verified native
+            # IDs from this SAME occurrence. IDs are deduplicated below.
+            if typed:
+                known = {candidate_id for _, candidate_id in candidates}
+                candidates.extend(item for item in sorted(native) if item[1] not in known)
+                typed = False
+            continue
         if text:
             transcripts.append(text)
-    need(bool(transcripts), '本场录制存在，但尚无非空完整文字转写；稍后重试')
+    if not transcripts:
+        if failures:
+            raise SafeError(f'本场没有成功读取的非空完整转写；读取失败文件={len(failures)}；'
+                            '不能认定为空稿，停止且不归档')
+        raise NoTranscript('本场录制存在，但尚无非空完整文字转写；稍后重试')
 
-    # Compare actual spoken text, not speaker names or timestamp headers.
-    # Every candidate has passed full pagination validation. If two longest
-    # transcripts differ, no unambiguous winner exists: fail closed.
-    scored = [(sum(len(block['text']) for block in parse_transcript(text)), text)
+    # Only successfully completed files participate. We cannot claim they are
+    # longer than unreadable files. Conflicting ties still require review.
+    scored = [(sum(sum(char.isalnum() for char in block['text'])
+                   for block in parse_transcript(text)), text)
               for text in transcripts]
     longest = max(length for length, _ in scored)
     winners = [text for length, text in scored if length == longest]
     need(all(text == winners[0] for text in winners[1:]),
          '同场最长文字转写出现并列且内容不同；请人工核对')
     print(f'同场录制文件={len(native)}；非空完整转写={len(transcripts)}；'
-          f'选择最长正文，字数={longest}；未输出原始转写。')
+          f'读取失败文件={len(failures)}；选择成功完整稿中最长正文，'
+          f'有效字数={longest}；未输出原始转写。', flush=True)
+    if failures:
+        print('注意：部分文件未读取成功，不能确认所选稿比失败文件更长；'
+              '请结合归档比对或回放核对完整性。', flush=True)
     return winners[0]
+
 from datetime import datetime, timezone
 
 
 class SafeError(Exception):
     """Only static, credential-free messages may be raised with this type."""
+
+
+class UpstreamHTTPError(SafeError):
+    def __init__(self, status, message):
+        super().__init__(message)
+        self.status = status
+
+
+class NoTranscript(SafeError):
+    """A validated recording has no nonempty text; not a transport failure."""
 
 
 def need(ok, message):

@@ -67,8 +67,8 @@ def local_window(day, zone='Asia/Shanghai'):
             datetime(nxt.year, nxt.month, nxt.day, tzinfo=tz).astimezone(timezone.utc))
 
 
-def historical_local(client, config, day, zone='Asia/Shanghai'):
-    """Match only the requested zone's calendar date; fail on zero or multiple."""
+def historical_candidates(client, config, day, zone='Asia/Shanghai'):
+    """Match only the explicit calendar date; never fall back to another day."""
     m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
     start, end = local_window(day, zone)
     d = datetime.strptime(day, '%Y-%m-%d').date()
@@ -77,8 +77,61 @@ def historical_local(client, config, day, zone='Asia/Shanghai'):
     tz = ZoneInfo(zone)
     matches = [r for r in rows if r.get('subject') == config['title']
                and timestamp(r.get('start_time')).astimezone(tz).date() == d]
+    m.need(bool(matches), '所选时区的当天没有匹配的项目会议；停止且不回退其他日期')
+    return matches
+
+
+def historical_local(client, config, day, zone='Asia/Shanghai'):
+    matches = historical_candidates(client, config, day, zone)
     m.need(len(matches) == 1, '所选时区的当天必须唯一命中一场项目会议；同日多场或没有则停止')
     return matches[0]
+
+
+def transcript_policy(config):
+    policy = config.get('transcript_selection')
+    if policy is None:
+        return None
+    m.need(isinstance(policy, dict), '转写筛选配置无效')
+    minimum, zone = policy.get('min_spoken_chars'), policy.get('timezone')
+    m.need(type(minimum) is int and 1 <= minimum <= m.MAX_TRANSCRIPT_CHARS
+           and zone in LOCAL_ZONES, '转写筛选字数或时区无效')
+    return {'min_spoken_chars': minimum, 'timezone': zone}
+
+
+def spoken_chars(text):
+    # Exclude speaker names, timestamps, whitespace and punctuation-only noise.
+    return sum(sum(char.isalnum() for char in block['text'])
+               for block in m.parse_transcript(text))
+
+
+def select_content_occurrence(client, rows, policy):
+    """Full reads belong only to fetch/fetch-check, never scan or prepare.
+
+    Length rejects accidental entries. It never assigns an EP, chooses between
+    two substantive discussions, or treats a failed read as an empty recording.
+    """
+    unique = {}
+    for row in rows:
+        meta = instance(row)
+        prior = unique.setdefault(meta['instance_key'], row)
+        m.need(prior == row, '同一候选实例的来源信息冲突；请人工核对')
+    rows = sorted(unique.values(), key=lambda row: timestamp(row['start_time']))
+    m.need(0 < len(rows) <= 8, '同日转写场次超过 8 个或为空；请先只读扫描并用序号选择')
+    qualified = []
+    for index, row in enumerate(rows, 1):
+        try:
+            text = m.fetch_occurrence(client, row)
+            count = spoken_chars(text)
+        except m.NoTranscript:
+            text, count = None, 0
+        accepted = count >= policy['min_spoken_chars']
+        print(f'候选 {index}/{len(rows)} start_utc={iso(timestamp(row["start_time"]))}; '
+              f'spoken_chars={count}; discussion={str(accepted).lower()}; 未输出正文或姓名。')
+        if accepted:
+            qualified.append((row, text))
+    m.need(len(qualified) == 1,
+           '没有或不止一份转写达到有效对话字数门槛；请核对日期时间并用历史扫描序号选择；不自动归档')
+    return qualified[0]
 
 
 def episode_mapping(root):
@@ -408,8 +461,13 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     if command == 'fetch-check':
         config = json.loads((root / 'scripts/meeting-project.json').read_text(encoding='utf-8'))
         client = client_factory()
-        meeting = historical_local(client, config, date, args.timezone)
-        text = m.fetch_occurrence(client, meeting)
+        policy = transcript_policy(config)
+        if policy:
+            meeting, text = select_content_occurrence(
+                client, historical_candidates(client, config, date, args.timezone), policy)
+        else:
+            meeting = historical_local(client, config, date, args.timezone)
+            text = m.fetch_occurrence(client, meeting)
         blocks = m.parse_transcript(text)
         check_cache = root / '.git/meeting-content-fetch-check.txt'
         m.need(not check_cache.is_symlink(), '缓存路径不安全')
@@ -432,8 +490,10 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
         if command == 'prepare':
             m.need(run(['git', 'rev-parse', 'HEAD']).strip() == run(['git', 'rev-parse', 'origin/main']).strip(), 'main 已变化；请重新运行')
         moment = now or datetime.now(timezone.utc)
+        policy = transcript_policy(config)
         if date:
-            rows = [historical_local(client_factory(), config, date, args.timezone)]
+            rows = (historical_candidates(client_factory(), config, date, args.timezone)
+                    if policy else [historical_local(client_factory(), config, date, args.timezone)])
         elif pick:
             start, bounds = scan_window(moment)
             items = enumerate_unarchived(client_factory(), config, archive, start, bounds, moment)
@@ -454,6 +514,13 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
             plan.update(latest=True, event=event, episode=mapped_episode, date=metadata['date'],
                         branch='content/meeting-' + metadata['instance_key'], base='main',
                         head=run(['git', 'rev-parse', 'HEAD']).strip())
+            if policy:
+                tz = ZoneInfo(args.timezone if date else policy['timezone'])
+                selected_day = timestamp(plan['meeting']['start_time']).astimezone(tz).date()
+                candidates = [row for row in rows
+                              if timestamp(row['start_time']).astimezone(tz).date() == selected_day]
+                plan['candidate_meetings'] = [plan['meeting']] if pick else candidates
+                plan['transcript_policy'] = policy
         if command == 'prepare':
             state.write_text(json.dumps(plan), encoding='utf-8')
             if os.environ.get('GITHUB_OUTPUT'):
@@ -476,7 +543,28 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
         m.need(instance(plan['meeting']) == plan['metadata'], '读取实例与计划不一致')
         m.need(not (root / plan['event'] / 'transcript.txt').exists(), '已有逐字稿；不重复拉取')
         m.need(not cache.exists(), '已有抓取缓存；禁止重复拉取')
-        text = m.fetch_occurrence(client_factory(), plan['meeting'])
+        if plan.get('transcript_policy'):
+            candidates = plan['candidate_meetings']
+            for row in candidates:
+                meta = instance(row)
+                m.need(meta['instance_key'] not in archive['keys'] and meta['date'] not in archive['dates'],
+                       '候选中已有归档场次；停止且不重复读取正文，请先核对日期')
+            selected, text = select_content_occurrence(client_factory(), candidates, plan['transcript_policy'])
+            meta = instance(selected)
+            if meta != plan['metadata']:
+                # A different occurrence cannot inherit an EP inferred for the
+                # provisional newest record. Only a unique existing map survives.
+                mapped = archive['mapping'].get(meta['date'], set())
+                plan['episode'] = next(iter(mapped)) if len(mapped) == 1 else None
+                plan.update(meeting=selected, metadata=meta, date=meta['date'],
+                            branch='content/meeting-' + meta['instance_key'])
+                plan['event'] = (m.event_identity(meta['date'], plan['episode'])[0] if plan['episode']
+                                 else 'incoming/meetings/' + meta['instance_key'])
+                allowed_paths(plan)
+                m.need(not (root / plan['event'] / 'transcript.txt').exists(), '已选转写已有归档；禁止覆盖')
+            state.write_text(json.dumps(plan), encoding='utf-8')
+        else:
+            text = m.fetch_occurrence(client_factory(), plan['meeting'])
         blocks = m.parse_transcript(text)
         with cache.open('x', encoding='utf-8') as f:
             f.write(text)
