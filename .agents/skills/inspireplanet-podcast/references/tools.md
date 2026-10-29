@@ -2,9 +2,11 @@
 
 在仓库根目录执行。`{skill}` 代表 `.agents/skills/inspireplanet-podcast`，`{work}` 代表本期被忽略的本地制作目录。使用已安装 `scripts/requirements.txt` 依赖的 Python 环境，不硬编码本机临时环境路径。按需在 `replays/.venv/` 安装；不上传音频、不用 GitHub Actions 处理私人回放。
 
+剪辑单可直接引用带声音的回放视频，工具读取音轨，不要求先生成独立音频文件；已有音频也支持。以下以与视频切片共用的 MP4 为例。
+
 ```bash
-python {skill}/scripts/podcast.py inspect 本地回放.m4a
-python {skill}/scripts/podcast.py analyze 本地回放.m4a --output {work}/analysis
+python {skill}/scripts/podcast.py inspect 本地回放.mp4
+python {skill}/scripts/podcast.py analyze 本地回放.mp4 --output {work}/analysis
 python {skill}/scripts/podcast.py render {work}/edit-plan.json --output {work}/export --check
 python {skill}/scripts/podcast.py render {work}/edit-plan.json --output {work}/export
 ```
@@ -17,7 +19,7 @@ python {skill}/scripts/podcast.py render {work}/edit-plan.json --output {work}/e
 
 ```json
 {
-  "source": "../source.m4a",
+  "source": "../source.mp4",
   "cuts": [
     {
       "start": 0,
