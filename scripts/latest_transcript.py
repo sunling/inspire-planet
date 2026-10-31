@@ -255,6 +255,25 @@ def plan_latest(rows, archive, config):
     return {'skip': False, 'metadata': metadata, 'meeting': latest}
 
 
+def resolve_transcript_episode(plan, text, archive):
+    """Use an explicit opening announcement, never arbitrary mentions of an EP.
+
+    Discussion may mention last/next episodes. Require the formal opening phrase
+    and reject conflicting evidence before anything is written publicly.
+    """
+    announced = {str(int(match)) for block in m.parse_transcript(text)
+                 for match in re.findall(r'第\s*([1-9]\d{0,2})\s*期[，,。\s]*正式开始', block['text'])}
+    mapped = archive['mapping'].get(plan['date'], set())
+    evidence = announced | mapped
+    if plan.get('episode'):
+        evidence.add(plan['episode'])
+    m.need(len(evidence) <= 1, '转写开场期次与目录或计划冲突；请人工核对，不归档')
+    m.need(bool(evidence), '无法确认期次；请核对开场及日期目录，不创建 incoming 目录')
+    plan['episode'] = evidence.pop()
+    plan['event'] = m.event_identity(plan['date'], plan['episode'])[0]
+    allowed_paths(plan)
+
+
 def scan_window(now):
     m.need(now.tzinfo is not None, '扫描时间必须有时区')
     start = now - timedelta(days=SCAN_LOOKBACK_DAYS)
@@ -359,6 +378,7 @@ def allowed_paths(plan):
 
 
 def write(root, plan, text):
+    m.need(plan.get('episode') is not None, '期次未确认；不创建 incoming 目录')
     paths = allowed_paths(plan)
     m.parse_transcript(text)
     for relative in paths:
@@ -367,18 +387,7 @@ def write(root, plan, text):
                not any(p.is_symlink() for p in [path, *path.parents] if p != root.parent), '写入路径不安全')
         if relative != 'events/README.md':
             m.need(not path.exists(), '已有材料；禁止覆盖')
-    if plan['episode'] is not None:
-        m.write_draft(root, plan['event'], text)
-    else:
-        target = root / plan['event']
-        target.mkdir(parents=True, exist_ok=True)
-        with (target / 'transcript.txt').open('x', encoding='utf-8') as f:
-            f.write(text)
-        with (target / 'README.md').open('x', encoding='utf-8') as f:
-            f.write('# 待确认期次的公开原始转写\n\n- 本目录与 Draft PR 均公开，不是私人暂存。\n'
-                    '- 日期和实例已定位；期数未确认，未按周数或最大 EP 猜测。\n'
-                    '- 请核对漏期、改期、跨年或多场情况，再确认年份与期数并保留 metadata.json。\n'
-                    '- 原稿未经审核；检查参与者授权与隐私。不生成网站 JSON，不自动合并或发布。\n')
+    m.write_draft(root, plan['event'], text)
     with (root / plan['event'] / 'metadata.json').open('x', encoding='utf-8') as f:
         files = sorted([r['meeting_record_id'], r['record_file_id']] for r in plan.get('meeting', {}).get('records', []))
         json.dump(dict(plan['metadata'], episode=plan['episode'], record_files=files), f, ensure_ascii=False, indent=2)
@@ -387,6 +396,7 @@ def write(root, plan, text):
 
 def publish_main(root, plan, run):
     """Commit only this occurrence's validated files directly to main."""
+    m.need(plan.get('episode') is not None, '期次未确认；禁止提交 incoming 目录')
     paths = allowed_paths(plan)
     m.need(plan['base'] == 'main' and run(['git', 'branch', '--show-current']).strip() == 'main',
            '仅允许在 main 分支直接写入')
@@ -510,6 +520,9 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
                 mapped_episode = next(iter(mapped)) if len(mapped) == 1 else None
             else:
                 mapped_episode = episode_for(plan['meeting'], rows, config)
+                mapped = archive['mapping'].get(metadata['date'], set())
+                if mapped:
+                    mapped_episode = next(iter(mapped)) if len(mapped) == 1 else None
             event = m.event_identity(metadata['date'], mapped_episode)[0] if mapped_episode else 'incoming/meetings/' + metadata['instance_key']
             plan.update(latest=True, event=event, episode=mapped_episode, date=metadata['date'],
                         branch='content/meeting-' + metadata['instance_key'], base='main',
@@ -565,6 +578,9 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
             state.write_text(json.dumps(plan), encoding='utf-8')
         else:
             text = m.fetch_occurrence(client_factory(), plan['meeting'])
+        resolve_transcript_episode(plan, text, archive)
+        m.need(not (root / plan['event'] / 'transcript.txt').exists(), '已选转写已有归档；禁止覆盖')
+        state.write_text(json.dumps(plan), encoding='utf-8')
         blocks = m.parse_transcript(text)
         with cache.open('x', encoding='utf-8') as f:
             f.write(text)
@@ -572,7 +588,7 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     elif command == 'write':
         m.need(cache.is_file(), '请先执行 fetch')
         write(root, plan, cache.read_text(encoding='utf-8'))
-        print('转写与实例信息已准备在工作区；期次不明时写入待确认目录，不生成网站数据。')
+        print('转写与实例信息已准备在 events 期次目录，不生成网站数据。')
     elif command == 'publish':
         m.need(os.environ.get('CONTENT_MAIN_WRITE_ALLOWED') == 'true' and os.environ.get('GITHUB_ACTIONS') == 'true',
                '仅允许显式授权 Actions 直接写入 main')
