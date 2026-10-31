@@ -22,6 +22,35 @@ def row(sub, time):
 
 
 class SelectionTests(unittest.TestCase):
+    def test_opening_resolves_episode_without_confusing_other_mentions(self):
+        meta = l.instance(row('formal', '2026-10-31T00:00:00Z'))
+        plan = dict(metadata=meta, date=meta['date'], episode=None,
+                    branch='content/meeting-' + meta['instance_key'])
+        text = '合成主持人(00:01):\n已经是44期？\n\n合成主持人(00:02):\n那我们第43期正式开始吧。\n'
+        l.resolve_transcript_episode(plan, text, {'mapping': {}})
+        self.assertEqual(plan['episode'], '43')
+        self.assertEqual(plan['event'], 'events/2026/20261031-ep43')
+
+    def test_unknown_or_conflicting_episode_stops_before_public_write(self):
+        meta = l.instance(row('formal', '2026-10-31T00:00:00Z'))
+        for text, mapping in (
+                ('只是提到第43期的故事', {}),
+                ('第43期正式开始', {meta['date']: {'42'}}),
+                ('第43期正式开始，第44期正式开始', {}),
+                ('没有开场', {meta['date']: {'42', '43'}})):
+            plan = dict(metadata=meta, date=meta['date'], episode=None,
+                        branch='content/meeting-' + meta['instance_key'])
+            with self.subTest(text=text), self.assertRaises(m.SafeError):
+                l.resolve_transcript_episode(plan, '合成主持人(00:01):\n' + text + '\n',
+                                             {'mapping': mapping})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(m.SafeError):
+                l.write(root, {'episode': None}, LONG)
+            with self.assertRaises(m.SafeError):
+                l.publish_main(root, {'episode': None}, lambda args: self.fail('must not commit'))
+            self.assertEqual(list(root.iterdir()), [])
+
     def setUp(self):
         self.formal = row('formal', '2026-10-17T00:00:00Z')
         self.accidental = row('accidental', '2026-10-17T08:00:00Z')
@@ -88,7 +117,7 @@ class SelectionTests(unittest.TestCase):
         config = {'title': TITLE, 'lookback_days': 90, 'anchor':
                   {'date': '2026-10-10', 'episode': '40', 'meeting_id': 'synthetic-series'},
                   'transcript_selection': POLICY}
-        archive = {'keys': set(), 'dates': set(), 'mapping': {}}
+        archive = {'keys': set(), 'dates': set(), 'mapping': {'2026-10-17': {'41'}}}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / '.git').mkdir(); (root / 'scripts').mkdir()
@@ -105,6 +134,8 @@ class SelectionTests(unittest.TestCase):
                        now=datetime(2026, 10, 18, tzinfo=timezone.utc))
             fetch.assert_not_called()
             plan = json.loads((root / '.git/latest-plan.json').read_text())
+            self.assertEqual(plan['episode'], '41')
+            self.assertEqual(plan['event'], 'events/2026/20261017-ep41')
             self.assertEqual(len(plan['candidate_meetings']), 2)
             self.assertFalse((root / 'events').exists())
 

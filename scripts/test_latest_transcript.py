@@ -282,11 +282,11 @@ class LatestTests(unittest.TestCase):
                 self.assertEqual(plan['episode'], '48' if mapped else None)
                 expected = 'events/2025/20251011-ep48' if mapped else 'incoming/meetings/' + l.instance(row)['instance_key']
                 self.assertEqual(plan['event'], expected)
-                with patch.object(m, 'fetch_occurrence', return_value='合成甲(00:01):\n合成全文\n') as fetch:
+                with patch.object(m, 'fetch_occurrence', return_value='合成甲(00:01):\n第48期正式开始\n') as fetch:
                     l.main(['fetch'], root=root, run=run, client_factory=Client)
                     fetch.assert_called_once()
                 l.main(['write'], root=root, run=run)
-                self.assertTrue((root / expected / 'metadata.json').is_file())
+                self.assertTrue((root / 'events/2025/20251011-ep48/metadata.json').is_file())
                 with self.assertRaises(m.SafeError): l.main(['write'], root=root, run=run)
                 self.assertFalse(list(root.rglob('summary.json')))
 
@@ -402,12 +402,12 @@ class LatestTests(unittest.TestCase):
             git('remote', 'add', 'origin', str(remote))
             (root / 'events').mkdir()
             # Git does not track empty directories; provide a real baseline file.
-            baseline = '# Synthetic index\n'
+            baseline = '# Synthetic index\n\n| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n|---|---|---|---|---|---|\n'
             (root / 'events/README.md').write_text(baseline, encoding='utf-8')
             git('add', '.'); git('commit', '-m', 'baseline'); git('push', 'origin', 'main')
             metadata = l.instance(self.row('2026-10-17'))
-            event = 'incoming/meetings/' + metadata['instance_key']
-            plan = dict(latest=True, event=event, metadata=metadata, episode=None,
+            event = 'events/2026/20261017-ep41'
+            plan = dict(latest=True, event=event, metadata=metadata, episode='41',
                         date=metadata['date'], branch='content/meeting-' + metadata['instance_key'],
                         base='main', head=git('rev-parse', 'HEAD').strip())
             text = '合成甲(00:01):\n这是合成转写。\n'
@@ -421,14 +421,14 @@ class LatestTests(unittest.TestCase):
             self.assertEqual(set(result['paths']), set(paths))
             self.assertEqual(result['commit'], git('ls-remote', 'origin', 'refs/heads/main').split()[0])
             self.assertEqual(git('show', f'main:{event}/transcript.txt'), text)
-            self.assertEqual(git('show', 'main:events/README.md'), baseline)
+            self.assertIn('20261017-ep41', git('show', 'main:events/README.md'))
             self.assertFalse(git('ls-remote', '--heads', 'origin', plan['branch']).strip())
             self.assertEqual(git('status', '--porcelain').strip(), '')
 
-    def test_pending_and_known_writes_scoped_real_git_public_draft(self):
+    def test_known_writes_scoped_real_git_public_draft(self):
         l = self.latest()
         import tempfile, subprocess, json
-        for episode in (None, '41'):
+        for episode in ('41',):
             with self.subTest(episode=episode), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp) / 'repo'; root.mkdir()
                 remote = Path(tmp) / 'remote.git'
@@ -501,22 +501,24 @@ class LatestTests(unittest.TestCase):
                 self.assertFalse((root / '.git/latest-transcript.txt').exists())
                 self.assertEqual(set(p.name for p in (root / 'scripts').iterdir()), {'meeting-project.json'})
 
-    def test_zero_input_new_pending_download_once_preserves_instance_records(self):
+    def test_zero_input_gap_resolves_opening_episode_and_preserves_instance_records(self):
         l = self.latest()
         import tempfile, json
         config = {'title': '启发星球，互相赋能', 'lookback_days': 90,
                   'anchor': {'date': '2026-10-10', 'episode': '40', 'meeting_id': 'series'}}
         record = {'record_file_id': 'file', 'meeting_record_id': 'record', 'type': '转写', 'duration': '01:00'}
-        # Gap -> pending, not guessed EP42. Source adapter remains strict.
+        # Gap is unresolved during prepare; only the opening confirms EP42.
         row = self.row('2026-10-24', records=[record]); calls = []
         class Client:
             def call(self, name, args):
                 calls.append(name)
                 if name == 'get_user_ended_meetings': return {'meeting_info_list': [row], 'has_more': False}
                 if name == 'get_records_list': return {'record_meetings': [dict(meeting_id='series', sub_meeting_id='2026-10-24', meeting_record_id='record', record_files=[{'record_file_id': 'file'}])], 'has_more': False}
-                return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0, 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '合成全文'}]}]}]}, 'more': False}
+                return {'minutes': {'paragraphs': [{'pid': '0', 'start_time': 0, 'speaker': {'user_name': '合成甲'}, 'sentences': [{'words': [{'text': '第42期正式开始'}]}]}]}, 'more': False}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); (root / '.git').mkdir(); (root / 'scripts').mkdir()
+            (root / 'events').mkdir()
+            (root / 'events/README.md').write_text('| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n|---|---|---|---|---|---|\n')
             (root / 'scripts/meeting-project.json').write_text(json.dumps(config))
             def run(args):
                 if args[:2] == ['git', 'fetch'] or args[:2] == ['git', 'ls-remote']: return ''
@@ -533,10 +535,10 @@ class LatestTests(unittest.TestCase):
             self.assertEqual(calls.count('get_user_ended_meetings'), 1)
             l.main(['write'], root=root, run=run, client_factory=Client)
             plan = json.loads((root / '.git/latest-plan.json').read_text())
-            self.assertIsNone(plan['episode'])
+            self.assertEqual(plan['episode'], '42')
             metadata = json.loads((root / plan['event'] / 'metadata.json').read_text())
             self.assertEqual(metadata['record_files'], [['record', 'file']])
-            self.assertFalse((root / 'events/README.md').exists())
+            self.assertIn('20261024-ep42', (root / 'events/README.md').read_text())
             (root / '.git/latest-transcript.txt').unlink()
             def raced(args):
                 if args[:2] == ['git', 'ls-remote']: return 'b'*40 + '\trefs/heads/existing'

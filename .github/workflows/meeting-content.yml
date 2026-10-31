@@ -62,7 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         run: python3 scripts/latest_transcript.py fetch
-      - name: Write transcript with durable identity (pending if EP unknown)
+      - name: Write transcript to confirmed episode directory
         if: steps.plan.outputs.skip == 'false'
         run: python3 scripts/latest_transcript.py write
       - name: Check content before commit
