@@ -265,10 +265,15 @@ def resolve_transcript_episode(plan, text, archive):
                  for match in re.findall(r'第\s*([1-9]\d{0,2})\s*期[，,。\s]*正式开始', block['text'])}
     mapped = archive['mapping'].get(plan['date'], set())
     evidence = announced | mapped
+    if plan.get('confirmed_episode'):
+        local_day = timestamp(plan['metadata']['start_time']).astimezone(
+            ZoneInfo(plan['confirmed_timezone'])).date().isoformat()
+        m.need(local_day == plan['confirmed_date'], '人工确认期次与所选会议日期不符；不归档')
+        evidence.add(plan['confirmed_episode'])
     if plan.get('episode'):
         evidence.add(plan['episode'])
     m.need(len(evidence) <= 1, '转写开场期次与目录或计划冲突；请人工核对，不归档')
-    m.need(bool(evidence), '无法确认期次；请核对开场及日期目录，不创建 incoming 目录')
+    m.need(bool(evidence), '无法确认期次；请指定 date 和 episode 重新运行，或核对开场及日期目录；不创建 incoming 目录')
     plan['episode'] = evidence.pop()
     plan['event'] = m.event_identity(plan['date'], plan['episode'])[0]
     allowed_paths(plan)
@@ -432,9 +437,14 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
     parser.add_argument('--date', help='会议日期 YYYY-MM-DD；配合 --timezone 精确匹配')
     parser.add_argument('--timezone', choices=LOCAL_ZONES, default='Asia/Shanghai', help='会议日期所属时区（默认北京时间）')
     parser.add_argument('--pick', help='从只读扫描编号中选择一场未归档项目会议（如 3）；仅用于 prepare')
+    parser.add_argument('--episode', help='人工确认的期数（如 44）；仅用于指定日期的 prepare，不猜测期次')
     args = parser.parse_args(argv)
     command = args.command
     date = args.date if args.date else None
+    if args.episode is not None:
+        m.need(command == 'prepare' and bool(date) and args.pick is None,
+               '人工确认期次仅用于指定日期的 prepare；必须同时填写 date')
+        m.need(bool(re.fullmatch(r'[1-9]\d{0,2}', args.episode)), '期数须为 1–999 的整数，如 44')
     pick = args.pick if args.pick else None
     historical_input = args.date is not None or args.pick is not None
     if historical_input:
@@ -527,6 +537,10 @@ def main(argv=None, root=None, run=None, client_factory=None, now=None):
             plan.update(latest=True, event=event, episode=mapped_episode, date=metadata['date'],
                         branch='content/meeting-' + metadata['instance_key'], base='main',
                         head=run(['git', 'rev-parse', 'HEAD']).strip())
+            if args.episode is not None:
+                m.need(not mapped or mapped == {args.episode}, '人工确认期次与已有目录冲突；不归档')
+                plan.update(confirmed_episode=args.episode, confirmed_date=date,
+                            confirmed_timezone=args.timezone)
             if policy:
                 tz = ZoneInfo(args.timezone if date else policy['timezone'])
                 selected_day = timestamp(plan['meeting']['start_time']).astimezone(tz).date()

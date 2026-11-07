@@ -15,6 +15,10 @@ on:
           - America/Los_Angeles
           - UTC
         default: Asia/Shanghai
+      episode:
+        description: '可选：已核对的期数，如 44；未报期数的会议须同时填 date，不覆盖冲突证据'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -36,6 +40,7 @@ jobs:
     env:
       CONTENT_DATE: ${{ inputs.date }}
       CONTENT_TIMEZONE: ${{ inputs.timezone || 'Asia/Shanghai' }}
+      CONTENT_EPISODE: ${{ inputs.episode }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,7 +56,9 @@ jobs:
           TENCENT_MEETING_TOKEN: ${{ secrets.TENCENT_MEETING_TOKEN }}
         shell: bash
         run: |
-          if [ -n "$CONTENT_DATE" ]; then
+          if [ -n "$CONTENT_EPISODE" ]; then
+            python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE" --episode "$CONTENT_EPISODE"
+          elif [ -n "$CONTENT_DATE" ]; then
             python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"
           else
             python3 scripts/latest_transcript.py prepare

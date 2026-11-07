@@ -22,6 +22,64 @@ def row(sub, time):
 
 
 class SelectionTests(unittest.TestCase):
+    def test_confirmed_episode_survives_prepare_fetch_and_write(self):
+        meeting = row('formal', '2026-11-07T00:00:00Z')
+        archive = {'keys': set(), 'dates': set(), 'mapping': {}}
+        def run(args):
+            if args[:3] == ['git', 'branch', '--show-current']:
+                return 'main'
+            if args[:2] == ['git', 'rev-parse']:
+                return 'a' * 40
+            if args[:3] == ['git', 'status', '--porcelain']:
+                return ''
+            self.fail(f'unexpected command: {args}')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            (root / '.git').mkdir()
+            (root / 'scripts').mkdir()
+            (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': TITLE}))
+            (root / 'events').mkdir()
+            (root / 'events/README.md').write_text(
+                (Path(__file__).parents[1] / 'events/README.md').read_text())
+            with patch.object(l, 'archives', return_value=archive), \
+                    patch.object(l, 'historical_local', return_value=meeting), \
+                    patch.object(m, 'fetch_occurrence', return_value=LONG):
+                l.main(['prepare', '--date', '2026-11-07', '--episode', '44'],
+                       root=root, run=run, client_factory=object)
+                l.main(['fetch'], root=root, run=run, client_factory=object)
+                l.main(['write'], root=root, run=run)
+            self.assertEqual((root / 'events/2026/20261107-ep44/transcript.txt').read_text(), LONG)
+            self.assertIn('20261107-ep44', (root / 'events/README.md').read_text())
+
+    def test_confirmed_episode_handles_unannounced_meeting_and_rejects_conflicts(self):
+        meta = l.instance(row('formal', '2026-11-07T00:00:00Z'))
+        for text, mapping, day, zone, ok in (
+                ('轻松聊一聊。', {}, '2026-11-07', 'Asia/Shanghai', True),
+                ('轻松聊一聊。', {}, '2026-11-06', 'America/Los_Angeles', True),
+                ('第43期正式开始', {}, '2026-11-07', 'Asia/Shanghai', False),
+                ('轻松聊一聊。', {meta['date']: {'43'}}, '2026-11-07', 'Asia/Shanghai', False),
+                ('轻松聊一聊。', {}, '2026-11-08', 'Asia/Shanghai', False)):
+            plan = dict(metadata=meta, date=meta['date'], episode=None,
+                        branch='content/meeting-' + meta['instance_key'],
+                        confirmed_episode='44', confirmed_date=day, confirmed_timezone=zone)
+            with self.subTest(text=text, day=day, zone=zone):
+                if ok:
+                    l.resolve_transcript_episode(plan, '合成主持人(00:01):\n' + text + '\n', {'mapping': mapping})
+                    self.assertEqual(plan['event'], 'events/2026/20261107-ep44')
+                else:
+                    with self.assertRaises(m.SafeError):
+                        l.resolve_transcript_episode(plan, '合成主持人(00:01):\n' + text + '\n', {'mapping': mapping})
+
+    def test_episode_input_requires_explicit_date_and_prepare_before_any_io(self):
+        for argv in (['prepare', '--episode', '44'],
+                     ['prepare', '--date', '', '--episode', '44'],
+                     ['prepare', '--date', '2026-11-07', '--episode', 'EP44'],
+                     ['prepare', '--date', '2026-11-07', '--episode', '0'],
+                     ['fetch-check', '--date', '2026-11-07', '--episode', '44']):
+            with self.subTest(argv=argv), self.assertRaises(m.SafeError):
+                l.main(argv, run=lambda args: self.fail('invalid input must not run commands'),
+                       client_factory=lambda: self.fail('invalid input must not fetch'))
+
     def test_opening_resolves_episode_without_confusing_other_mentions(self):
         meta = l.instance(row('formal', '2026-10-31T00:00:00Z'))
         plan = dict(metadata=meta, date=meta['date'], episode=None,

@@ -668,7 +668,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('name: Transcript download', flow)
         self.assertIn('inputs.date', flow)
         self.assertIn('inputs.timezone', flow)
-        self.assertNotIn('CONTENT_EPISODE', flow)
+        self.assertIn('CONTENT_EPISODE: ${{ inputs.episode }}', flow)
         self.assertNotIn('CONTENT_MEETING_', flow)
         self.assertIn('python3 scripts/latest_transcript.py prepare', flow)
         for stage in ('fetch', 'write', 'publish'):
