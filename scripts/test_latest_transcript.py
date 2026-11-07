@@ -315,14 +315,15 @@ class LatestTests(unittest.TestCase):
         self.assertIn('pull-requests: read', workflow)
         self.assertNotIn('pull-requests: write', workflow)
         for required in ('inputs.date', 'inputs.timezone', 'default: Asia/Shanghai',
-                         'if [ -n "$CONTENT_DATE" ]; then',
+                         'elif [ -n "$CONTENT_DATE" ]; then',
+                         'inputs.episode', '--episode "$CONTENT_EPISODE"',
                          'python3 scripts/latest_transcript.py prepare --date "$CONTENT_DATE" --timezone "$CONTENT_TIMEZONE"',
                          'python3 scripts/latest_transcript.py prepare',
                          'scripts/latest_transcript.py fetch', 'scripts/latest_transcript.py write',
                          'scripts/latest_transcript.py publish', 'if: always()'):
             self.assertIn(required, workflow)
         for forbidden in ('inputs.pick', 'inputs.mode', 'inputs.operation',
-                          'inputs.episode', '--episode', 'CONTENT_YEAR', 'run: ${{'):
+                          'CONTENT_YEAR', 'run: ${{'):
             self.assertNotIn(forbidden, workflow)
         self.assertFalse((Path(__file__).parents[1] / '.github/workflows/meeting-history.yml').exists())
 

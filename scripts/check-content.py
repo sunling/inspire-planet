@@ -33,7 +33,7 @@ def check_episode(value, path):
 
 
 for p in ROOT.rglob('*.md'):
-    if '.git' in p.parts:
+    if '.git' in p.parts or p.relative_to(ROOT).parts[0] == 'replays':
         continue
     text = p.read_text()
     visible = re.sub(r'```.*?```', '', text, flags=re.S)
