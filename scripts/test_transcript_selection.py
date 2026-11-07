@@ -40,7 +40,9 @@ class SelectionTests(unittest.TestCase):
             (root / 'scripts/meeting-project.json').write_text(json.dumps({'title': TITLE}))
             (root / 'events').mkdir()
             (root / 'events/README.md').write_text(
-                (Path(__file__).parents[1] / 'events/README.md').read_text())
+                '# Synthetic index\n\n'
+                '| 期次与日期 | 转写 | 纪要 | 金句 | 发布文案 | 封面 |\n'
+                '|---|---|---|---|---|---|\n')
             with patch.object(l, 'archives', return_value=archive), \
                     patch.object(l, 'historical_local', return_value=meeting), \
                     patch.object(m, 'fetch_occurrence', return_value=LONG):
