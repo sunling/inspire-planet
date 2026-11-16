@@ -31,6 +31,7 @@ events/{year}/{YYYYMMDD}-epXX/
 
 - 转写下载／历史补录 → [会议转写说明](../../../docs/meeting-content.md)。已有转写不重复下载；下载会提交公开 main，须先确认该场转写的公开授权，整理请求不等于下载公开授权。
 - 公众号文章、标题、摘要 → `inspireplanet-gzh`。知乎计划开通，开通后再明确适配方式，不默认另生成知乎稿。
+- 公众号文章封面 → `inspireplanet-cover`。整篇文章交付时由 gzh 默认衔接，按最终正文制作统一暖色手绘横版封面；小幅文字修改不重复生成。不恢复旧图卡渲染或自动发布流程。
 - 网站回顾与会后群消息 → `inspireplanet-summary`。默认同时生成 `summary.json` 与 `group-message.md`；用户只要其中一项时只做该项。群消息只选一个片段、一个主要入口，不同时堆放多个渠道链接。
 - 金句 JSON → `inspireplanet-cards`。网站金句展示与导出继续使用 JSON 数据。
 - 小红书／视频号原声短视频及发布文案 → `inspireplanet-clips`。缺少回放时先请求本地素材路径；有素材时先推荐选段，确认后初剪。

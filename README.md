@@ -8,7 +8,7 @@
 
 | 输出 | 当前发布去向 | 交付物 | 制作入口 |
 | --- | --- | --- | --- |
-| 文字 | 公众号；知乎计划开通 | 一篇一个人一件事，正文、标题、备选标题和摘要保存在 `gzh-{slug}.md` | [文章 skill](.agents/skills/inspireplanet-gzh/SKILL.md) |
+| 文字 | 公众号；知乎计划开通 | 一篇一个人一件事，正文、标题、备选标题和摘要保存在 `gzh-{slug}.md`；整篇交付默认附暖色手绘封面 | [文章 skill](.agents/skills/inspireplanet-gzh/SKILL.md) |
 | 视频 | 视频号、小红书 | 原声切片、字幕、两平台标题与文案；独立封面按需制作 | [短视频 skill](.agents/skills/inspireplanet-clips/SKILL.md) |
 | 音频 | 暂时以小宇宙为唯一发布去向 | 一期一集的轻剪播客、标题、简介与成品时间轴 | [播客 skill](.agents/skills/inspireplanet-podcast/SKILL.md) |
 
@@ -30,6 +30,8 @@
 这是完整会后流程的默认顺序；用户只要单项时直接做该项。各项生成与发布分别核对事实、署名、隐私和公开范围；用户发布，或明确授权后代为操作。会后群消息只放一个片段和本期详情页入口；媒体与内部制作记录留在本地。
 
 完整的输入、步骤、交付、存放位置和可用请求见 [内容制作流程](docs/content-workflow.md)。
+
+公众号封面使用 [封面 skill](.agents/skills/inspireplanet-cover/SKILL.md)，由文章流程衔接；在具备图像生成能力的环境制作，图片默认本地交付，不因提交文章自动运行 GitHub 生图或自动发布。
 
 ## 文件放哪里
 
