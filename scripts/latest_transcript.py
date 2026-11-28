@@ -42,14 +42,24 @@ def iso(dt):
     return dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
 
 
+def project_titles(config):
+    # Explicit exact-match allowlist; accept legacy single-title configs.
+    titles = config.get('titles', [config.get('title')])
+    m.need(isinstance(titles, list) and bool(titles)
+           and all(isinstance(title, str) and bool(title.strip()) for title in titles),
+           '项目标题未配置')
+    return set(titles)
+
+
 def discover(client, config, now):
     days = config['lookback_days']
-    m.need(type(days) is int and 1 <= days <= 90 and bool(config['title']), '发现配置无效')
+    titles = project_titles(config)
+    m.need(type(days) is int and 1 <= days <= 90, '发现配置无效')
     m.need(now.tzinfo is not None, '发现时间必须有时区')
     start = now - timedelta(days=days)
     rows = m.token_pages(client, 'get_user_ended_meetings',
                          {'start_time': iso(start), 'end_time': iso(now)}, 'meeting_info_list')
-    selected = [r for r in rows if r.get('subject') == config['title']
+    selected = [r for r in rows if r.get('subject') in titles
                 and start <= timestamp(r.get('start_time')) <= now]
     return sorted(selected, key=lambda r: timestamp(r['start_time']))
 
@@ -69,13 +79,13 @@ def local_window(day, zone='Asia/Shanghai'):
 
 def historical_candidates(client, config, day, zone='Asia/Shanghai'):
     """Match only the explicit calendar date; never fall back to another day."""
-    m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
+    titles = project_titles(config)
     start, end = local_window(day, zone)
     d = datetime.strptime(day, '%Y-%m-%d').date()
     rows = m.token_pages(client, 'get_user_ended_meetings',
                         {'start_time': iso(start), 'end_time': iso(end)}, 'meeting_info_list')
     tz = ZoneInfo(zone)
-    matches = [r for r in rows if r.get('subject') == config['title']
+    matches = [r for r in rows if r.get('subject') in titles
                and timestamp(r.get('start_time')).astimezone(tz).date() == d]
     m.need(bool(matches), '所选时区的当天没有匹配的项目会议；停止且不回退其他日期')
     return matches
@@ -319,14 +329,13 @@ def enumerate_unarchived(client, config, archive, start, bounds, now):
     and out-of-window occurrences are excluded, and the same occurrence is never
     returned twice (deduped by instance identity across windows and pages).
     """
-    m.need(isinstance(config.get('title'), str) and bool(config['title'].strip()), '项目标题未配置')
-    title = config['title']
+    titles = project_titles(config)
     found = {}
     for begin, end in bounds:
         rows = m.token_pages(client, 'get_user_ended_meetings',
                              {'start_time': iso(begin), 'end_time': iso(end)}, 'meeting_info_list')
         for row in rows:
-            if row.get('subject') != title:
+            if row.get('subject') not in titles:
                 continue
             if not (start <= timestamp(row.get('start_time')) <= now):
                 continue

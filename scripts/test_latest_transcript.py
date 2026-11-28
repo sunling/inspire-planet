@@ -17,6 +17,25 @@ class LatestTests(unittest.TestCase):
         return dict(subject='启发星球，互相赋能', meeting_id='series', sub_meeting_id=day,
                     start_time=day + 'T00:00:00Z', **kw)
 
+    def test_project_title_aliases_across_discovery_paths(self):
+        l = self.latest()
+        from unittest.mock import patch
+        config = {'titles': ['启发星球', '启发星球，互相赋能'], 'lookback_days': 90}
+        old = self.row('2026-11-21')
+        new = dict(self.row('2026-11-28'), subject='启发星球', meeting_id='new-series')
+        unrelated = dict(new, subject='启发星球测试', sub_meeting_id='other')
+        now = datetime(2026, 11, 28, 3, tzinfo=timezone.utc)
+        start = now - timedelta(days=90)
+        with patch.object(m, 'token_pages', return_value=[old, new, unrelated]):
+            self.assertEqual(l.discover(None, config, now), [old, new])
+            self.assertEqual(l.historical_candidates(None, config, '2026-11-28'), [new])
+            self.assertEqual(l.historical_candidates(None, config, '2026-11-21'), [old])
+            results = l.enumerate_unarchived(None, config, {'keys': set(), 'dates': set()},
+                                             start, [(start, now)], now)
+            self.assertEqual([row for _, row in results], [old, new])
+        with self.assertRaises(m.SafeError):
+            l.project_titles({'titles': []})
+
     def test_history_local_date_matches_utc_shanghai_and_la_zones(self):
         l = self.latest()
         import tempfile, json
