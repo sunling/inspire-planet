@@ -311,13 +311,12 @@ class TranscriptTests(unittest.TestCase):
     def test_empty_meeting_records_rejects_ambiguous_native_scope(self):
         meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
                    'start_time': '2026-10-10T00:00:00Z', 'records': []}
-        for case in ('other-week', 'duplicate', 'too-many'):
+        for case in ('other-week', 'duplicate'):
             with self.subTest(case=case):
                 class Client:
                     def call(self, name, args):
                         if name == 'get_records_list':
-                            ids = (['a', 'a'] if case == 'duplicate' else
-                                   [str(i) for i in range(9)] if case == 'too-many' else ['a'])
+                            ids = ['a', 'a'] if case == 'duplicate' else ['a']
                             return {'record_meetings': [{
                                 'meeting_id': 'series',
                                 'sub_meeting_id': 'different-week' if case == 'other-week' else 'correct-week',
@@ -327,6 +326,33 @@ class TranscriptTests(unittest.TestCase):
                         raise AssertionError('Must fail before reading any transcript')
                 with self.assertRaises(m.SafeError):
                     m.fetch_occurrence(Client(), meeting)
+
+    def test_many_recordings_select_longest_without_truncating(self):
+        for typed in (False, True):
+            with self.subTest(typed=typed):
+                ids = [f'f{i:02}' for i in range(20)]
+                meeting = {'meeting_id': 'series', 'sub_meeting_id': 'correct-week',
+                           'records': [{'type': '转写', 'meeting_record_id': 'group',
+                                        'record_file_id': i} for i in ids] if typed else []}
+                calls = []
+                class Client:
+                    def call(self, name, args):
+                        if name == 'get_records_list':
+                            return {'record_meetings': [{'meeting_id': 'series',
+                                'sub_meeting_id': 'correct-week', 'meeting_record_id': 'group',
+                                'record_files': [{'record_file_id': i} for i in ids]}],
+                                'has_more': False}
+                        if name == 'get_transcripts_details':
+                            file_id = args['record_file_id']
+                            calls.append(file_id)
+                            content = '最长完整正文' * 100 if file_id == ids[-1] else '短稿'
+                            p = {'pid': '0', 'start_time': 0, 'speaker': {'user_name': '合成甲'},
+                                 'sentences': [{'words': [{'text': content}]}]}
+                            return {'minutes': {'paragraphs': [p]}, 'more': False}
+                        raise AssertionError('Unexpected API')
+                result = m.fetch_occurrence(Client(), meeting)
+                self.assertIn('最长完整正文', result)
+                self.assertEqual(calls, ids)
 
     def test_runtime_schema_changes_fail_before_any_tool_call(self):
         import copy

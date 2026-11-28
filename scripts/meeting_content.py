@@ -454,7 +454,6 @@ def occurrence_files(client, meeting):
     # even across recording groups within this occurrence.
     need(len({file_id for _, file_id in native}) == len(native),
          '本场录制文件 ID 重复；需人工核对')
-    need(len(native) <= 8, '本场录制文件超过读取上限；拒绝遗漏并需人工核对')
     # Transcript IDs in occurrence metadata can be distinct from native media
     # IDs. Prefer the explicitly typed transcript artifacts of this occurrence;
     # do not send audio/video file IDs to the transcript endpoint unnecessarily.
@@ -463,8 +462,8 @@ def occurrence_files(client, meeting):
     if typed:
         ids = [file_id for _, file_id in typed]
         need(all(isinstance(file_id, str) and bool(file_id) for file_id in ids)
-             and len(set(ids)) == len(ids) and len(ids) <= 8,
-             '本场转写文件身份缺失、重复或超过上限')
+             and len(set(ids)) == len(ids),
+             '本场转写文件身份缺失或重复')
         other_ids = {file.get('record_file_id') for group in groups
                      if (group.get('meeting_id'), group.get('sub_meeting_id')) !=
                         (meeting['meeting_id'], sub)
