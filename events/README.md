@@ -51,7 +51,7 @@
 | 20261107-ep44 | [转写](2026/20261107-ep44/transcript.txt) | [会议总结](2026/20261107-ep44/summary.json) · [本期导航](2026/20261107-ep44/README.md) | [卡片 JSON](2026/20261107-ep44/quote-cards.json) | [公众号 4 篇](2026/20261107-ep44/README.md) · [群消息](2026/20261107-ep44/group-message.md) | — |
 | 20261114-ep45 | [转写](2026/20261114-ep45/transcript.txt) | [会议总结](2026/20261114-ep45/summary.json) · [本期导航](2026/20261114-ep45/README.md) | [卡片 JSON](2026/20261114-ep45/quote-cards.json) | [公众号 4 篇](2026/20261114-ep45/README.md) · [群消息](2026/20261114-ep45/group-message.md) | — |
 | 20261121-ep46 | [转写](2026/20261121-ep46/transcript.txt) | — | — | — | — |
-| 20261128-ep47 | [转写](2026/20261128-ep47/transcript.txt) | — | — | — | — |
+| 20261128-ep47 | [转写](2026/20261128-ep47/transcript.txt) | [会议总结](2026/20261128-ep47/summary.json) · [本期导航](2026/20261128-ep47/README.md) | [卡片 JSON](2026/20261128-ep47/quote-cards.json) | [公众号 3 篇](2026/20261128-ep47/README.md) · [群消息](2026/20261128-ep47/group-message.md) | — |
 
 2026-10-06 起，公众号文章的标题、备选标题与摘要放在 `gzh-{slug}.md`，本期导航、命令与发布备注在 `README.md`，不再新增 `promo.md`。上表历史期的「发布文案」指向当时的 `promo.md`，保留原样。
 
